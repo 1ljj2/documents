@@ -1,0 +1,98 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.ArchiveTemplate;
+import org.jit.sose.domain.param.ArchiveTemInfoParam;
+import org.jit.sose.domain.param.ListArchiveTemParam;
+import org.jit.sose.domain.vo.ListArchiveTemVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.ArchiveTemCategoryConMapper;
+import org.jit.sose.mapper.ArchiveTemProcessConMapper;
+import org.jit.sose.mapper.ArchiveTemplateMapper;
+import org.jit.sose.service.ArchiveTemplateService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-10-07 15:10:18
+ */
+@Service
+public class ArchiveTemplateServiceImpl implements ArchiveTemplateService {
+
+    @Autowired
+    private ArchiveTemplateMapper archiveTemplateMapper;
+
+    @Autowired
+    private ArchiveTemProcessConMapper archiveTemProcessConMapper;
+
+    @Autowired
+    private ArchiveTemCategoryConMapper archiveTemCategoryConMapper;
+
+    @Transactional
+    @Override
+    public void addArchiveTem(ArchiveTemInfoParam param) {
+        //新增档案模板信息
+        ArchiveTemplate archiveTemplate = new ArchiveTemplate();
+        archiveTemplate.setName(param.getName());
+        archiveTemplate.setNumber(param.getNumber());
+        archiveTemplate.setRemark(param.getRemark());
+        if (param.getTermId() != null) {
+            archiveTemplate.setTermId(param.getTermId());
+        }
+        if (param.getCourseId() != null) {
+            archiveTemplate.setCourseId(param.getCourseId());
+        }
+        archiveTemplateMapper.addArchiveTem(archiveTemplate);
+        //获取自增的主键
+        Integer archiveTemId = archiveTemplate.getId();
+        //新增档案模板 流程关联
+        if (param.getProcessId() != null) {
+            archiveTemProcessConMapper.insertCon(archiveTemId, param.getProcessId());
+        }
+        //新增档案模板 分类关联
+        if (param.getCategoryId() != null) {
+            archiveTemCategoryConMapper.insertCon(archiveTemId, param.getCategoryId());
+        }
+    }
+
+    @Transactional
+    @Override
+    public void editArchiveTem(ArchiveTemInfoParam param) {
+        //修改档案模板信息
+        ArchiveTemplate archiveTemplate = new ArchiveTemplate();
+        archiveTemplate.setId(param.getId());
+        archiveTemplate.setName(param.getName());
+        archiveTemplate.setNumber(param.getNumber());
+        archiveTemplate.setRemark(param.getRemark());
+        if (param.getTermId() != null) {
+            archiveTemplate.setTermId(param.getTermId());
+        }
+        if (param.getCourseId() != null) {
+            archiveTemplate.setCourseId(param.getCourseId());
+        }
+        archiveTemplateMapper.editArchiveTem(archiveTemplate);
+        //修改档案模板 流程关联
+        if (param.getProcessId() != null) {
+            archiveTemProcessConMapper.changeCon(param.getId(), param.getProcessId());
+        }
+        //修改档案模板 分类关联
+        if (param.getCategoryId() != null) {
+            archiveTemCategoryConMapper.changeCon(param.getId(), param.getCategoryId());
+        }
+    }
+
+    @Override
+    public PageInfoVo<ListArchiveTemVo> listArchiveTemByCondition(ListArchiveTemParam param) {
+        // 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        // 查询集合(包括流程信息、所属学院idList、服务角色idList、公文模板idList)
+        List<ListArchiveTemVo> voList = archiveTemplateMapper.listArchiveTemByCondition(param);
+        PageInfo<ListArchiveTemVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+    }
+}

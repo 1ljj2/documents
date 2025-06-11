@@ -1,0 +1,97 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.param.AddEditProcessParam;
+import org.jit.sose.domain.param.ListProcessParam;
+import org.jit.sose.domain.vo.ListProcessVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-07-01 22:29:35
+ */
+public interface ProcessService {
+
+//    /**
+//     * 根据processName模糊查询流程名称、标识
+//     *
+//     * @param processName
+//     * @return
+//     */
+//    List<SimProcessVo> listProcessByName(String processName);
+//
+//    /**
+//     * (根据processId)查询所有的流程信息及其子步骤idList
+//     *
+//     * @param id
+//     * @return
+//     */
+//    List<ProcessAndStepIdVo> selectProcessAndStepIdList(Integer id);
+//
+//    /**
+//     * 根据processId查询第一个步骤标识firstStepId
+//     *
+//     * @param id
+//     * @return
+//     */
+//    Integer selectStepIdById(Integer id);
+//
+//    /**
+//     * 根据【流程名称、分页参数、用户】筛选流程列表对象
+//     *
+//     * @param param
+//     * @return
+//     */
+//    PageInfoVo<ListSimProcessVo> listProcessByNameUser(ListSimProcessParam param);
+
+    /**
+     * 编辑流程项
+     *
+     * @param param
+     */
+    void editProcess(AddEditProcessParam param);
+
+    /**
+     * 新增流程
+     *
+     * @param param
+     */
+    void addProcess(AddEditProcessParam param);
+
+
+    /**
+     * 单个更改流程项启用禁用状态
+     *
+     * @param id
+     * @param enable
+     */
+    void changeEnableProcess(Integer id, String enable);
+
+    /**
+     * 删除单个流程项
+     *
+     * @param id
+     */
+    void removeProcess(Integer id);
+
+    /**
+     * 批量禁用流程项
+     *
+     * @param idList
+     */
+    void disableProcessSelect(List<Integer> idList);
+
+    /**
+     * 批量删除流程项
+     *
+     * @param idList
+     */
+    void removeProcessSelect(List<Integer> idList);
+
+    /**
+     * 根据【流程名称、所属分類、服务角色】筛选流程列表对象
+     */
+    PageInfoVo<ListProcessVo> listByCondition(ListProcessParam param);
+
+}

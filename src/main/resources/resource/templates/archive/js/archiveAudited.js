@@ -1,0 +1,714 @@
+var archiveAudited = new Vue({
+        el: '#archiveAudited',
+        data: function () {
+            return {
+                //---------------------------------接口路径参数-------------------------
+                processPath: '/process/process',
+                processStepsPath: '/process/processSteps',
+                rolePath: '/account/role',
+                categoryPath: '/config/category',
+                userPath: '/account/user',
+                yearTermPath: '/account/yearTerm',
+                fileInfoPath: '/file/file',
+                coursePath: '/account/course',
+                archiveTemPath: '/archive/archiveTem',
+                archiveTemEmpFilePath: '/archive/archiveTemEmpFile',
+                //------------------------------------------------------------------------------------！！公有！！-------------------------
+                categoryList: [],//分类
+                termList: [],//学期
+                courseList: [],//课程
+                userList: [],//用户
+                stateList: [],//状态
+                processList: [],//流程
+                activeName: 'yearTermTab',//当前选中tab的名称
+                sArchive: {archiveName: '', categoryId: '', courseId: '', termId: '', soltByTerm: true,
+                    soltByCourse:false,isAudit:true},//我的文档搜索条件
+                componentSize: 'medium',// 组件尺寸
+                archiveFilePooInfo: {archiveFilePoolTitle: '', archiveTemplateId: ''},//文档文件池名称
+                loading: true,
+                temLoading: true,
+                loadingMsg: '',// 加载提示
+                selection: [],
+                archive: {
+                    categoryId: '',
+                    categoryName: "",
+                    courseId: '',
+                    courseName: "",
+                    id: '',
+                    name: "",
+                    number: "",
+                    processId: '',
+                    processName: '',
+                    remark: "",
+                    stateTimeString: "",
+                    termId: '',
+                    termName: ""
+                },//当前档案信息
+                archiveTotalNum: 0, archivePageNum: 1, archivePageSize: 10,  // 分页参数
+                archiveFilePoolTotalNum: 0, archiveFilePoolPageNum: 1, archiveFilePoolPageSize: 10,  // 分页参数
+                archiveFilePoolData: [],
+                archiveData: [],//我的档案列表
+                fileList: [],//上传文件列表
+                //--------------------------------------流程操作---------------------------------------------------------------
+                submitAuditButton:true,//提交审核按钮是否出现
+                categoryListD: [],//流程的分类
+                proConditions: {processName: '', categoryId: ''},//流程搜索信息
+                proTotalNum: 0, proPageNum: 1, proPageSize: 6,  // 流程分页参数
+                proColumn: [
+                    {title: "流程名称", key: "processName", minWidth: 200},
+                    {title: "分类", key: "categoryName", minWidth: 150},
+                    {title: "更新时间", key: "stateTimeString", minWidth: 150},
+                ], // 表头信息
+                nowProData: [],//流程表格目前的参数
+                process: {
+                    id: '',
+                    stepId: '',
+                    roleName: '',
+                    processName: '',
+                    remark: '',
+                    processStepsList: [],
+                },//流程参数
+                selectedProcess: false,
+                forReviewData: {processId: '', userId: '', stepId: '',archiveTemplateId:''},//选择流程，审核人的参数
+                processSelected: false,//是否选择了流程
+                userConditions: {userName: '', phone: '', departmentId: ''},//审批人搜索信息
+                userColumn: [
+                    {title: "姓名", key: "userName", minWidth: 100},
+                    {title: "电话号码", key: "phone", minWidth: 150},
+                    {title: "Email地址", key: "email", minWidth: 200},
+                ], // 表头信息
+                nowUserData: [],
+                userTotalNum: 0, userPageNum: 1, userPageSize: 4,  // 分页参数
+                user: {
+                    id: '', schoolId: '', departmentId: '', userName: '', phone: '', email: '',
+                },
+                fileAuditPath: '/file/fileAudit',
+                myArchivePath: '/archive/myArchive',
+                departmentPath: '/account/department',
+                departmentList: [],
+                //----------------------------模态框/抽屉-----------------------------------------------------------------------
+                submitArchiveFileModal: false,//提交档案文件抽屉
+                archiveFilePool: false,//文档文件池
+                viewProcessStepModal: false,//查看流程步骤模态框
+                forReviewModal: false,//送审模态框
+
+
+                //----------------------测试数据
+
+
+            }
+        },
+        components: {
+            'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+            'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+            'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+        },
+        beforeCreate: function () {
+            CheckPermissions();
+        },
+        mounted() {
+            this.setProcessTableTitle();//流程表格的表头
+            this.setUserTableTitle();//审核人表格的表头
+            // //页面初始化
+            // this.initPage();
+            //获取分类列表
+            this.getCategoryList();
+
+            // this.getArchiveTemData();//测试方法
+            this.getArchiveData();//测试方法
+        },
+        methods: {
+            // /**
+            //  * 页面初始化加载项 表格表头
+            //  */
+            // initPage() {
+            //     //获取文档表格数据
+            //     this.getArchiveTemData();
+            //     //设置匹配文档模板给档案模板的表头
+            //     this.setMatchingFileTableTitle();
+            // },
+            //TODO--------------------------------------------------------------------！！公有！！--------------------------------
+            /**
+             * 改变页码
+             */
+            onArchivePageChange(pageNum) {
+                this.archivePageNum = pageNum;
+                this.getArchiveData();
+            },
+            /**
+             * 切换每页条数
+             */
+            onArchivePageSizeChange(pageSize) {
+                this.archivePageSize = pageSize;
+                this.getArchiveData();
+            },
+
+            /**
+             * 处理点击tab事件
+             * @param tab
+             * @param event
+             */
+            handleClick(tab, event) {
+                // console.log("tab, event",tab, event);
+                console.log("activeName",this.activeName)
+                if (tab.index == 1) {
+                    this.activeName = "courseTab"
+                    this.clearSArchive()
+                    this.getArchiveData()
+                } else {
+                    this.activeName = "yearTermTab"
+                    this.clearSArchive()
+                    this.getArchiveData()
+                }
+            },
+            /**
+             * 获取档案分类列表
+             */
+            getCategoryList() {
+                setTimeout(() => {
+                    let url = this.categoryPath + '/listArchiveCategory';
+                    CallAjaxGetNoParam(url, this.getCategoryListSuc);
+                }, 200);
+            },
+            getCategoryListSuc(data) {
+                // console.log("getCategoryListSuc", data)
+                this.categoryList = data.obj;
+            },
+            /**
+             * 获取档案模板
+             */
+            getArchiveData() {
+                // sArchive:{archiveName:'',categoryId:'',courseId:'',termId:''},//我的文档搜索条件
+                let data = {
+                    archiveName: this.sArchive.archiveName,
+                    termId: this.sArchive.termId,
+                    categoryId: this.sArchive.categoryId,
+                    courseId: this.sArchive.courseId,
+                    pageNum: this.archivePageNum,
+                    pageSize: this.archivePageSize,
+                    soltByTerm: this.sArchive.soltByTerm,
+                    soltByCourse: this.sArchive.soltByCourse,
+                    isAudit: this.sArchive.isAudit,
+                };
+                let url = this.archiveTemPath + '/listArchiveTemByCondition';
+                console.log("getArchiveData参数：", data)
+                CallAjaxPost(url, data, this.getArchiveDataSuc);
+                this.loadingMsg = MessageLoading();//打开上传文件加载提示
+            },
+            getArchiveDataSuc(data) {
+                CloseMessageLoading(this.loadingMsg)//关闭加载提示
+                this.archiveData = data.obj.list;
+                for(let i = 0;i<this.archiveData.length;i++) {
+                    if (this.archiveData[i].auditState == 'B') {
+                        this.archiveData[i].auditStateString = '审核中'
+                    } else if (this.archiveData[i].auditState == 'C') {
+                        this.archiveData[i].auditStateString = '审核通过'
+                    } else if (this.archiveData[i].auditState == 'D') {
+                        this.archiveData[i].auditStateString = '审核不通过'
+                    } else {
+                        this.archiveData[i].auditStateString = '未审核'
+                    }
+                }
+                console.log("getArchiveDataSuc", this.archiveData);
+                this.archiveTotalNum = data.obj.total;
+                // 再次设置当前页码,若查询记录为空，设为第一页
+                this.archivePageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+                // //清除历史记录
+                // this.clearList();
+            },
+            /**
+             * 清空我的文档搜索条件
+             */
+            clearSArchive() {
+                // sArchive:{archiveName:'',categoryId:'',courseId:'',termId:'',soltByTerm:true},//我的文档搜索条件
+                this.sArchive.archiveName = '';
+                this.sArchive.categoryId = '';
+                this.sArchive.courseId = '';
+                this.sArchive.termId = '';
+                if(this.activeName=='yearTermTab'){
+                    this.sArchive.soltByTerm = true;
+                    this.sArchive.soltByCourse = false;
+                }else{
+                    this.sArchive.soltByTerm = false;
+                    this.sArchive.soltByCourse = true;
+                }
+                // if(this.activeName=='courseTab'){
+                //     this.sArchive.soltByCourse = true;
+                // }else{
+                //     this.sArchive.soltByCourse = false;
+                // }
+
+            },
+            /**
+             * 根据输入的termName获得termList
+             */
+            listTermByName(name) {
+                let data = {
+                    name: name,
+                };
+                let url = this.yearTermPath + '/listTermByName';
+                // console.log("listTermByName参数：", data)
+                CallAjaxPost(url, data, this.listTermByNameSuc);
+            },
+            listTermByNameSuc(data) {
+                this.termList = data.obj;
+                // console.log("listTermByNameSuc: ", this.termList);
+            },
+            /**
+             * 根据输入的courseName获得courseList
+             */
+            listCourseByName(name) {
+                let data = {
+                    name: name,
+                };
+                let url = this.coursePath + '/listCourseByName';
+                // console.log("listTermByName参数：", data)
+                CallAjaxPost(url, data, this.listCourseByNameSuc);
+            },
+            listCourseByNameSuc(data) {
+                this.courseList = data.obj;
+                // console.log("listCourseByNameSuc: ", this.courseList);
+            },
+
+            /**
+             * 打开抽屉文件池
+             * @param o
+             */
+            openDrawer(o) {
+                // if(!o.processId){
+                //     this.submitAuditButton = true;
+                // }else{
+                //     this.submitAuditButton = false;
+                // }
+
+                this.submitAuditButton = false;
+                this.archive.id = o.id;//当前档案id
+                this.forReviewData.archiveTemplateId = o.id;////当前档案id
+                this.archiveFilePooInfo.archiveFilePoolTitle = o.name;
+                this.archiveFilePooInfo.archiveTemplateId = o.id;
+                // let url = this.archiveTemEmpFilePath+"/getFilePool"
+                let url = this.archiveTemEmpFilePath + "/getArchiveFilePool"
+                let data = {
+                    archiveTemId: o.id,
+                    pageNum: this.archiveFilePoolPageNum,
+                    pageSize: this.archiveFilePoolPageSize,
+                }
+                CallAjaxPost(url, data, this.openDrawerSuc)
+
+                console.log('o', o)
+
+            },
+            openDrawerSuc(data) {
+                console.log(data);
+                this.archiveFilePoolData = data.obj.list;
+                this.archiveFilePool = true;
+            },
+
+
+            /**
+             * 下载模板文件
+             * @param index
+             * @param archiveFilePoolData
+             */
+            downloadArchiveFileTem(index, row) {
+                console.log("index", index);
+                console.log("archiveFilePoolData", row);
+                downloadFileEncrypt(row.archTemFileId);
+            },
+            /**
+             * 下载用户已经上传的文件
+             * @param index
+             * @param archiveFilePoolData
+             */
+            downloadUserFile(index, row) {
+                console.log("index", index);
+                console.log("archiveFilePoolData", row);
+                downloadFileEncrypt(row.userFileId);
+            },
+            /**
+             * 关闭抽屉文件池调用该方法
+             * @param done
+             */
+            handleClose(done) {
+                console.log(done)
+                this.archiveFilePool = false;
+                this.submitButton = true;
+                // this.$confirm('还有未保存的工作哦确定关闭吗？')
+                //     .then(_ => {
+                //         done();
+                //     })
+                //     .catch(_ => {});
+            },
+
+            /**
+             * 设置表格行颜色
+             * @param row
+             * @param rowIndex
+             * @returns {string}
+             */
+            tableRowClassName({row, rowIndex}) {
+                console.log("row,rowIndex", row, rowIndex)
+                if (row.userFileId != null) {
+                    return 'success-row';
+                } else {
+                    return 'warning-row';
+                }
+                return 'warning-row';
+            },
+            //--------------------------------------流程操作---------------------------------------------------------------
+            /**
+             * 设置表头
+             */
+            setProcessTableTitle() {
+                // 添加自定义slot-scope(操作栏)
+                this.proColumn.push(HeadActionSlot(true, 250));
+                // 添加序号
+                this.proColumn.unshift(HeadIndex(true));
+            },
+            /**
+             * 设置表头
+             */
+            setUserTableTitle() {
+                // 添加自定义slot-scope(操作栏)#f78989
+                this.userColumn.push(HeadActionSlot(true, 100));
+                // 添加序号
+                this.userColumn.unshift(HeadIndex(true));
+            },
+            /**
+             * 在多选模式下有效，只要选中项发生变化时就会触发
+             * @param selection 已选项数据
+             */
+            onSelectionChange(selection) {
+                this.selection = selection;
+                // console.log(this.selection);
+            },
+            /**
+             * 选择流程----改变页码
+             */
+            onProPageChange(pageNum) {
+                this.proPageNum = pageNum;
+                this.listProcessByQuery();
+            },
+            /**
+             * 选择审核人----改变页码
+             */
+            onUserPageChange(pageNum) {
+                this.userPageNum = pageNum;
+                this.listAuditUser();
+            },
+            /**
+             * 展示出流程给文档送审
+             */
+            listProcessByQuery() {
+                let data = {
+                    processName: this.proConditions.processName,
+                    categoryId: this.proConditions.categoryId,
+                    pageNum: this.proPageNum,
+                    pageSize: this.proPageSize,
+                };
+                let url = this.processPath + '/listForReviewByCondition';
+                // console.log("listProcessByQuery参数：", data)
+                CallAjaxPost(url, data, this.listProcessByQuerySuc);
+            },
+            listProcessByQuerySuc(data) {
+                this.nowProData = data.obj.list;
+                console.log("listProcessByQuerySuc", this.nowProData);
+                this.proTotalNum = data.obj.total;
+                this.proPageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+            },
+            /**
+             * 清空流程的搜索条件
+             */
+            clearProConditions() {
+                this.proConditions.processName = '';
+                this.proConditions.categoryId = '';
+                //重新查询选择流程表格数据
+                this.listProcessByQuery();
+            },
+            selectProcess(index) {
+                console.log(this.nowProData[index])
+                //根据索引，获取当前选择的流程的标识
+                this.process.id = this.nowProData[index].id;
+                this.process.stepId = this.nowProData[index].stepId;
+                //选择完流程之后的下一个步骤所需审核的用户角色
+                this.process.roleName = this.nowProData[index].roleName;
+                //获取到stepId，可以获取审核用户集合
+                this.listAuditUser();
+                //将所有的都改为“未选中”
+                for (let i = 0; i < this.nowProData.length; i++) {
+                    this.nowProData[i].isSelected = false;
+                }
+                //将此索引所对应行的按钮变为“已选择”
+                this.nowProData[index].isSelected = true;
+                //将流程标识传给送审的参数
+                this.forReviewData.stepId = this.process.stepId;
+                this.forReviewData.processId = this.process.id;
+                console.log("流程标识：", this.forReviewData.processId);
+                this.processSelected = true;
+            },
+            /**
+             * 根据条件搜索用户-用于审核
+             */
+            listAuditUser() {
+                let data = {
+                    stepId: this.process.stepId,
+                    userName: this.userConditions.userName,
+                    phone: this.userConditions.phone,
+                    departmentId: this.userConditions.departmentId,
+                    pageNum: this.userPageNum,
+                    pageSize: this.userPageSize,
+                };
+                let url = this.userPath + '/listAuditUser';
+                // console.log("listAuditUser参数：", data)
+                CallAjaxPost(url, data, this.listAuditUserSuc);
+            },
+            listAuditUserSuc(data) {
+                this.nowUserData = data.obj.list;
+                // console.log("listAuditUserSuc", this.nowUserData);
+                this.userTotalNum = data.obj.total;
+                this.userPageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+            },
+            /**
+             * 清除用户搜索条件
+             */
+            clearUserConditions() {
+                this.userConditions.userName = '';
+                this.userConditions.phone = '';
+                this.userConditions.departmentId = '';
+                this.listAuditUser();
+            },
+            /**
+             * 选择审核人
+             * @param index
+             */
+            selectAuditUser(index) {
+                //根据索引，获取当前选择的用户的标识
+                this.user.id = this.nowUserData[index].id;
+                //将所有的都改为“未选中”
+                for (let i = 0; i < this.nowUserData.length; i++) {
+                    this.nowUserData[i].isSelected = false;
+                }
+                //将此索引所对应行的按钮变为“已选择”
+                this.nowUserData[index].isSelected = true;
+                this.forReviewData.userId = this.user.id;
+                console.log("用户标识：", this.forReviewData.userId);
+            },
+            /**
+             * 打开送审，模态框
+             * @param o 当前档案信息
+             */
+            openForReviewModal() {
+                // //当前文件的标识
+                // this.fileInfo.id = this.nowData[index].fileId;
+                // console.log(this.fileInfo.id)
+                this.listProcessByQuery();//获取可供选择的流程
+                this.archiveFilePool = false;//关闭抽屉
+                this.forReviewModal = true;//打开送审的模态框
+            },
+            // /**
+            //  * 提交档案审核
+            //  * @param o
+            //  */
+            // archiveSubmitAudit(o) {
+            //     console.log("archiveSubmitAudit", o)
+            // },
+            /**
+             * 送审
+             */
+            forReview() {
+                let data = {
+                    processId: this.forReviewData.processId,
+                    userId: this.forReviewData.userId,
+                    stepId: this.forReviewData.stepId,
+                    archiveTemplateId: this.forReviewData.archiveTemplateId,
+                    // fileId: this.fileInfo.id,
+                };
+                let url = this.myArchivePath + '/myArchiveForReview';
+                // // console.log("forReview参数：", data)
+                CallAjaxPost(url, data, this.forReviewSuc);
+            },
+            forReviewSuc(data) {
+                console.log("forReviewSuc",data)
+                this.submitAuditButton = false;//已提交审核，提交审核按钮消失
+                //关闭模态框
+                this.forReviewModal = false;
+                this.archiveFilePool = true;//重新打开抽屉
+
+            },
+            /**
+             * 取消送审
+             */
+            cancelForReview() {
+                this.forReviewModal = false;//关闭送审模态框
+                this.archiveFilePool = true;//重新打开抽屉
+                //将选择的流程置空
+                if (IsNotEmpty(this.process.id)) {
+                    this.nowProData[this.process.id].isSelected = false;
+                }
+                if (IsNotEmpty(this.user.id)) {
+                    this.nowUserData[this.user.id].isSelected = false;
+                }
+                this.process.id = null;
+                this.user.id = null;
+                this.forReviewData.processId = null;
+                this.forReviewData.userId = null;
+                this.forReviewData.archiveTemplateId = null;
+            },
+
+
+
+            //--------------------------------------文件操作---------------------------------------------------------
+            /**
+             * 文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+             * @param file 当前文件
+             * @param fileList 文件列表
+             */
+            handleChange(file, fileList) {
+                // console.log('handleChange',fileList)
+                this.fileList = fileList;
+                // console.log("this.fileList", this.fileList)
+                console.log("archiveFilePoolData", this.archiveFilePoolData)
+                for (let i = 0; i < this.fileList.length; i++) {
+                    for (let j = 0; j < this.archiveFilePoolData.length; j++) {
+                        if (this.fileList[i].name == this.archiveFilePoolData[j].temFileName) {
+                            if (this.archiveFilePoolData[j].userFileId == null) {
+                                this.archiveFilePoolData[j].userFileName = this.fileList[i].name;
+                                this.fileList[i].archTemFileId = this.archiveFilePoolData[j].temFileId;
+                                break;
+                            } else {
+                                this.fileList.splice(i, 1);
+                                i--;
+                                console.log("fileList", this.fileList)
+                                break;
+                            }
+                            // this.archiveFilePoolData[j].userFileName = this.fileList[i].name;
+                            // this.fileList[i].archTemFileId = this.archiveFilePoolData[j].temFileId;
+                            // break;
+                        } else {
+                            if (j == (this.archiveFilePoolData.length - 1)) {
+                                this.fileList.splice(i, 1);
+                                i--;
+                                console.log("fileList", this.fileList)
+                            }
+                        }
+
+                    }
+                }
+
+            },
+
+            /**
+             * 文件列表移除文件时的钩子
+             * @param file 移除的文件
+             * @param fileList 文件列表
+             */
+            handleRemove(file, fileList) {
+                console.log('handleRemove', fileList)
+                this.fileList = fileList;
+                console.log("handleRemove this.fileList", this.fileList);
+                console.log("this.archiveFilePoolData", this.archiveFilePoolData);
+                let temp = 0;
+                // if(this.fileList.length==0){
+                for (let i = 0; i < this.archiveFilePoolData.length; i++) {
+                    if (this.archiveFilePoolData[i].userFileId != null) {
+
+                    } else {
+                        this.archiveFilePoolData[i].userFileName = null;
+                    }
+
+                }
+                // }
+                for (let i = 0; i < this.fileList.length; i++) {
+                    for (let j = (0 + temp); j < this.archiveFilePoolData.length; j++) {
+                        this.archiveFilePoolData[j].userFileName = null;
+                        if (this.fileList[i].name == this.archiveFilePoolData[j].temFileName) {
+                            if (this.archiveFilePoolData[j].userFileId == null) {
+                                this.archiveFilePoolData[j].userFileName = this.fileList[i].name;
+                                this.fileList[i].archTemFileId = this.archiveFilePoolData[j].temFileId;
+                                temp++;
+                                break;
+                            } else {
+                                this.fileList.splice(i, 1);
+                                i--;
+                                console.log("fileList", this.fileList)
+                                break;
+                            }
+
+                        } else {
+                            if (j == (this.archiveFilePoolData.length - 1)) {
+                                this.fileList.splice(i, 1);
+                                i--;
+                                console.log("fileList", this.fileList)
+                            }
+                        }
+
+                    }
+                }
+            },
+
+            /**
+             * 点击文件列表中已上传的文件时的钩子
+             * @param file 当前文件
+             */
+            handlePreview(file) {
+                console.log('handleRemove', fileList)
+                console.log(file);
+            },
+
+            /**
+             * 文件超出个数限制
+             */
+            handleExceedLimit() {
+                MessageWarning('已超出最大文件个数');
+            },
+
+            /**
+             * 打开提交档案文件抽屉
+             */
+            openSubmitArchiveFileModal() {
+                // this.submitArchiveFileModal = true;
+                this.$confirm('确认提交文件？')
+                    .then(_ => {
+                        this.submitMyFile();
+                    })
+                    .catch(_ => {
+                    });
+            },
+            /**
+             * 关闭确认档案文件抽屉关闭时调用的方法
+             */
+            handleCloseSubmitArchiveFileConfirm() {
+                this.submitArchiveFileModal = false;
+            },
+            /**
+             * 提交文件
+             */
+            submitMyFile() {
+                if (this.fileList.length == 0) {
+                    MessageWarning("无文件可上传");
+                    return
+                }
+                /**
+                 * 第一个参数为文件
+                 * 第二个参数为回调方法
+                 * 第三个参数为文件类型
+                 * 第四个参数为对应档案模板的id
+                 * 第五个参数为对应档案模板的名字
+                 */
+                SubmitFileList(this.fileList, this.submitMyFileSuc, "C2",
+                    this.archiveFilePooInfo.archiveTemplateId,
+                    this.archiveFilePooInfo.archiveFilePoolTitle)
+            },
+            submitMyFileSuc(data) {
+                console.log("submitMyFileSuc", data);
+                let url = this.archiveTemEmpFilePath + "/getArchiveFilePool"
+                // let data2 ={
+                //     archiveTemId: o.id,
+                //     pageNum: this.archiveFilePoolPageNum,
+                //     pageSize: this.archiveFilePoolPageSize,
+                // }
+                // CallAjaxPost(url,data2,this.openDrawerSuc)
+            },
+        }
+    })
+;

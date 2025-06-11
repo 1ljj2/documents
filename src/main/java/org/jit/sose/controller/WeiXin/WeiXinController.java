@@ -1,0 +1,662 @@
+package org.jit.sose.controller.WeiXin;
+
+
+import cn.binarywang.wx.miniapp.api.WxMaQrcodeService;
+import cn.binarywang.wx.miniapp.api.WxMaService;
+import cn.binarywang.wx.miniapp.bean.WxMaCodeLineColor;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.http.client.ClientProtocolException;
+import org.jit.sose.config.WeiXinConfig;
+import org.jit.sose.config.WxMaConfiguration;
+import org.jit.sose.domain.entity.Role;
+import org.jit.sose.domain.entity.User;
+import org.jit.sose.domain.entity.UserInfo;
+import org.jit.sose.domain.entity.UserRole;
+import org.jit.sose.domain.vo.LoginInfoVo;
+import org.jit.sose.mapper.UserMapper;
+import org.jit.sose.redis.RedisService;
+import org.jit.sose.service.RoleService;
+import org.jit.sose.service.UserInfoService;
+import org.jit.sose.service.UserRoleService;
+import org.jit.sose.service.UserService;
+import org.jit.sose.util.HttpClientUtils;
+import org.jit.sose.util.MD5Util;
+import org.jit.sose.util.StringUtil;
+import org.jit.sose.util.WxPKCS7Encoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * @author 小红
+ */
+@Slf4j
+@Api(tags = "微信小程序接口")
+@RestController
+@RequestMapping("/weixin")
+public class WeiXinController {
+    @Autowired
+    RedisService redisService;
+
+    @Autowired
+    UserService userService;
+
+    @Autowired
+    RoleService roleService;
+
+    @Autowired
+    UserRoleService userRoleService;
+
+    @Autowired
+    UserInfoService userInfoService;
+
+    @Autowired
+    private UserMapper userMapper;
+
+    /**
+     * 根据appid、appSecret获取access_token
+     *
+     * @return access_token
+     */
+    @RequestMapping(value = "/getAccessToken", method = RequestMethod.GET)
+    public Map<String, Object> getAccessToken() {
+        System.out.println(WeiXinConfig.APPID);
+        System.out.println(WeiXinConfig.SECRET);
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        String appid = WeiXinConfig.APPID; // 小程序appid
+        String secret = WeiXinConfig.SECRET; // 小程序app_secret
+
+        String url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" + appid + "&secret="
+                + secret;
+        System.out.println("请求路径：" + url);
+
+        // 定义返回值
+        String result = null;
+        try {
+            // 发送请求
+            result = HttpClientUtils.get(url);
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result)) {
+            return null;
+        }
+
+        // 获取accessToken
+        JSONObject contentj = JSON.parseObject(result);
+        System.out.println(contentj);
+        String accessToken = contentj.getString("access_token");
+        map.put("access_token", accessToken);
+        return map;
+    }
+
+    /**
+     * 获取小程序二维码
+     *
+     * @param str
+     * @return 小程序码图片Buffer
+     * @throws Exception
+     */
+    @RequestMapping(value = "/getMiniProgramCode", method = RequestMethod.POST)
+    public String getMiniProgramCode(@RequestBody String str) throws Exception {
+        JSONObject strj = JSON.parseObject(str);
+//        String accessToken = strj.getString("access_token");
+        String accessToken = "34_pQRM0UGxjyadtFs5-DFKrFumHnjoLCHMby1iyXMG37FkenAnf3a9Kzc4nOZtub6Wmd0NwCFsjYtrbjntyxD8eYH6xxHecmhf9JJv7AOf7XirFWoX0P1LnT3S6or9jix3AaCOnQ1-3HM9DoKLBTGbAIATLY";
+//        String scene = strj.getString("scene");
+        String scene = "a=1";
+//        String page = strj.getString("page");
+        Boolean isHyaline = strj.getBoolean("is_hyaline"); // 设置透明底色的小程序码
+
+        String url = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=" + accessToken;
+
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("scene", scene); // houseId，userId等参数
+        paramMap.put("is_hyaline", isHyaline);
+//        paramMap.put("page", page);
+
+        System.out.println("请求路径：" + url);
+        // 定义返回值
+        String result = null;
+        // 发送请求
+        result = HttpClientUtils.postImg(url, paramMap);
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result)) {
+            result = null;
+        }
+        return result;
+
+    }
+
+    /**
+     * 获取小程序码
+     *
+     * @return 小程序码图片Buffer
+     * @throws Exception
+     */
+    @RequestMapping(value = "/getMiniProgramCode2", method = RequestMethod.GET)
+    public String getMiniProgramCode2() throws Exception {
+//        Map<String, Object> map = new HashMap<String, Object>();
+        String appid = WeiXinConfig.APPID; // 小程序appid
+        String secret = WeiXinConfig.SECRET; // 小程序app_secret
+
+        String url1 = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" + appid + "&secret="
+                + secret;
+        System.out.println("请求路径：" + url1);
+
+        // 定义返回值
+        String result1 = null;
+        try {
+            // 发送请求
+            result1 = HttpClientUtils.get(url1);
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result1)) {
+            return null;
+        }
+
+        // 获取accessToken
+        JSONObject contentj1 = JSON.parseObject(result1);
+        System.out.println(contentj1);
+        String accessToken = contentj1.getString("access_token");
+
+
+//        String accessToken = strj.getString("access_token");
+//        String accessToken = "34_XAQqiztIObP9fE_6dIBHK8s27s-8EQw2H_ls5dnhWJrQ7DlJ1nhYl0DnC60Zs59a3n9IVvOI_I-KbNDtzVKmnP_V-1j83rVUdX-g_3UhDjFVBJ9PNYi3-JZ33oSt83Y2akUA8a6dHeQfPPXuWKXaAGANBO";
+//        String scene = strj.getString("scene");
+        String scene = "a=1";
+//        String page = strj.getString("page");
+//        Boolean isHyaline = strj.getBoolean("is_hyaline"); // 设置透明底色的小程序码
+        Boolean isHyaline = true; // 设置透明底色的小程序码
+        Integer width = 280; // 设置二维码的宽度
+
+        String url = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=" + accessToken;
+
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("scene", scene); // houseId，userId等参数
+        paramMap.put("is_hyaline", isHyaline);
+        paramMap.put("width", width);
+//        paramMap.put("page", page);
+
+        System.out.println("请求路径：" + url);
+        // 定义返回值
+        String result = null;
+        // 发送请求
+        result = HttpClientUtils.postImg(url, paramMap);
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result)) {
+            result = null;
+        }
+        System.out.println(result);
+        return result;
+    }
+
+    /**
+     * 获取微信小程序带参数的二维码
+     *
+     * @return
+     */
+    @RequestMapping("/getAppletQrCode")
+    public void getAppletCode(@RequestParam("sceneStr") String sceneStr, @RequestParam("pathStr") String pathStr, HttpServletResponse response) {
+        log.info("[微信小程序]获取微信小程序二维码,参数->sceneStr:" + sceneStr + ", pathStr:" + pathStr);
+        WxMaService wxMaService = WxMaConfiguration.getWxMaService();
+        // 获取小程序二维码生成实例
+        WxMaQrcodeService wxMaQrcodeService = wxMaService.getQrcodeService();
+        // 设置小程序二维码线条颜色为黑色
+        WxMaCodeLineColor lineColor = new WxMaCodeLineColor("0", "0", "0");
+        // 生成二维码图片字节流
+        byte[] qrCodeBytes = null;
+        try {
+            qrCodeBytes = wxMaQrcodeService.createWxaCodeUnlimitBytes(sceneStr, pathStr, 430, false, lineColor, false);
+//            //设置二维码180s失效
+//            redisUtils.setex("qrcode:" + sceneStr, 3 * 60, sceneStr);
+        } catch (Exception e) {
+            log.error("[微信小程序]生成小程序码出现异常:{}", e);
+        }
+        response.setContentType("image/png");
+        //写入response的输出流中
+        try {
+            OutputStream outputStream = response.getOutputStream();
+            outputStream.write(Base64.encodeBase64(qrCodeBytes));
+            outputStream.flush();
+            outputStream.close();
+        } catch (Exception e) {
+            log.error("[微信小程序]输出流写出小程序码出现异常:{}", e);
+        }
+    }
+
+
+    /**
+     * 根据微信临时登录凭证code获取openid和session_key
+     *
+     * @param str 登录凭证code
+     * @return openid和session_key
+     */
+    @RequestMapping(value = "/onLogin", method = RequestMethod.POST, consumes = "application/json;charset=UTF-8")
+    public Map<String, Object> onLogin(@RequestBody String str) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        System.out.println("获取openid");
+        JSONObject strj = JSON.parseObject(str);
+        System.out.println(strj);
+
+        String appid = WeiXinConfig.APPID; // 小程序appid
+        String secret = WeiXinConfig.SECRET; // 小程序app_secret
+        String js_code = strj.getString("code"); // 临时登录凭证code
+        // String grant_type = "authorization_code";
+
+        // 拼接获取openid的url
+        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid + "&secret=" + secret + "&js_code="
+                + js_code + "&grant_type=authorization_code";
+
+        // String url =
+        // "https://api.weixin.qq.com/sns/oauth2/access_token?appid=" + appid +
+        // "&secret=" + secret + "&code="
+        // + js_code + "&grant_type=authorization_code";
+
+        System.out.println("请求路径：" + url);
+
+        // 定义返回值
+        String result = null;
+        try {
+            // 发送请求
+            result = HttpClientUtils.get(url);
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result)) {
+            return null;
+        }
+
+        // 获取openid和session_key
+        JSONObject contentj = JSON.parseObject(result);
+        System.out.println(contentj);
+        String openid = contentj.getString("openid");
+        String session_key = contentj.getString("session_key");
+        map.put("openid", openid);
+        map.put("session_key", session_key);
+        return map;
+    }
+
+    /**
+     * 根据微信临时登录凭证code获取openid和session_key
+     *
+     * @param str 登录凭证code
+     * @return openid和session_key
+     */
+    @RequestMapping(value = "/onLogin2", method = RequestMethod.POST, consumes = "application/json;charset=UTF-8")
+    public Map<String, Object> onLogin2(@RequestBody JSONObject str) {
+//        Map<String, Object> map = new HashMap<String, Object>();
+//        System.out.println("获取openid");
+//        System.out.println(str);
+////        JSONObject strj1 = JSON.parseObject(str);
+////        System.out.println(strj1);
+//        try {
+//            JSONObject strj = JSON.parseObject(str);
+//            System.out.println(strj);
+//
+//            String appid = "wx48763608ed55604d"; // 小程序appid
+//             //wx5d1cf92dcd2c6ee4
+//            String secret = "fdd650636116ae5373d6c947f45b88b5"; // 小程序app_secret
+//            // f642b2aa817e75452b5e26c470c4df93
+//            String code = strj.getString("str"); // 临时登录凭证code  //原来是code
+//            String grant_type = "authorization_code";
+//
+//            Map<String, String> params = new HashMap<String, String>();
+//            params.put("appid", appid);
+//            params.put("secret", secret);
+//            params.put("code", code);
+//            params.put("grant_type", grant_type);
+//            String url = "https://api.weixin.qq.com/sns/jscode2session";
+//
+//            /**
+//             * 处理post请求.
+//             *
+//             * @param url    请求路径
+//             * @param params 参数
+//             * @return json
+//             */
+//            // 实例化httpClient
+//            CloseableHttpClient httpclient = HttpClients.createDefault();
+//            // 实例化post方法
+//            HttpPost httpPost = new HttpPost(url);
+//            // 处理参数
+//            List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+//            Set<String> keySet = params.keySet();
+//            for (String key : keySet) {
+//                nvps.add(new BasicNameValuePair(key, params.get(key)));
+//            }
+//            // 结果
+//            CloseableHttpResponse response = null;
+//            String content = "";
+//            try {
+//                // 提交的参数
+//                UrlEncodedFormEntity uefEntity = new UrlEncodedFormEntity(nvps, "UTF-8");
+//                // 将参数给post方法
+//                httpPost.setEntity(uefEntity);
+//                // 执行post方法
+//                response = httpclient.execute(httpPost);
+//                if (response.getStatusLine().getStatusCode() == 200) {
+//                    content = EntityUtils.toString(response.getEntity(), "utf-8");
+//                    System.out.println("成功");
+//                    System.out.println(content);
+//                }
+//                JSONObject contentj = JSON.parseObject(content);
+//                System.out.println("contentj");
+//                String openid = contentj.getString("openid");
+//                String session_key = contentj.getString("session_key");
+//                map.put("openid", openid);
+//                map.put("session_key", session_key);
+//            } catch (ClientProtocolException e) {
+//                System.out.println("失败1");
+//                e.printStackTrace();
+//            } catch (IOException e) {
+//                System.out.println("失败2");
+//                e.printStackTrace();
+//            }
+//
+//        } catch (Exception e) {
+//        }
+//        return map;
+
+        System.out.println(str);
+//        String appid = WeiXinConfig.APPID; // 小程序appid
+        Map<String, Object> map = new HashMap<String, Object>();
+      //  System.out.println("获取openid");
+        //JSONObject strj = JSON.parseObject(str);
+      //  System.out.println(str);
+
+//            String appid = "wx5d1cf92dcd2c6ee4"; // 小程序appid
+        String appid = "wx48763608ed55604d"; // 小程序appid
+//            String secret = "f642b2aa817e75452b5e26c470c4df93"; // 小程序app_secret
+        String secret = "fdd650636116ae5373d6c947f45b88b5"; // 小程序app_secret
+        String code = str.getString("code"); // 临时登录凭证code
+       // String loginId = strj.getString("loginId"); // 个人Redis登录参数
+        Map<String, Object> redis = new HashMap<String, Object>();//存放在Redis中用于验证登录的个人数据
+
+
+        // 拼接获取openid的url ‘https://api.weixin.qq.com/sns/jscode2session
+        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid + "&secret=" + secret + "&js_code="
+                + code + "&grant_type=authorization_code";
+
+
+       // System.out.println("请求路径：" + url);
+
+        // 定义返回值
+        String result = null;
+        try {
+            // 发送请求
+            result = HttpClientUtils.get(url);
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result)) {
+            return null;
+        }
+
+        // 获取openid和session_key
+        JSONObject contentj = JSON.parseObject(result);
+        //System.out.println(contentj);
+        String openid = contentj.getString("openid");
+        if(openid != null && str.getString("flag")==null){
+          // UserInfo userInfo= userMapper.selectUserInfo(openid);
+           User oneUser=userMapper.selectByOpenid(openid);
+           //User oneUser=userMapper.select
+            System.out.println(oneUser.toString());
+            redisService.set(str.getString("UUID"),oneUser);
+           // boolean flag2= redisService.set("password",str.getString("UUID"));
+           // redisService.set(str.getString("UUID"),userInfo);
+            System.out.println("===");
+        }
+        if(openid != null && str.getString("flag")!=null){
+            map.put("openid", openid);
+            return map;
+        }
+
+        ///String session_key = contentj.getString("session_key");
+        map.put("openid", openid);
+       // map.put("session_key", session_key);
+       // System.out.println(map);
+        //redis.put("loginId",loginId);
+       // redis.put("openid",openid);
+//        redisService.set("loginParam",redis,300);
+      //  redisService.set(loginId,redis,300);
+//        System.out.println(redisService.get("loginParam"));
+      //  System.out.println(redisService.get(loginId));
+        return map;
+    }
+
+    /**
+     * 获取解密后的手机号
+     *
+     *  sessionKey    会话密钥
+     *  encryptedData 密文
+     *  iv            偏移量
+     * @return 解密后的手机号
+     */
+    @RequestMapping(value = "/getPhone", method = RequestMethod.POST)
+    public String getPhone(@RequestBody String str) {
+        JSONObject strj = JSON.parseObject(str);
+        String sessionKey = strj.getString("sessionKey");
+        String encryptedData = strj.getString("encryptedData");
+        String iv = strj.getString("iv");
+        String phone;
+        try {
+            phone = WxPKCS7Encoder.decrypt(encryptedData, sessionKey, iv, "UTF-8");
+        } catch (Exception e) {
+            phone = null;
+            e.printStackTrace();
+        }
+        return phone;
+    }
+
+    /**
+     * 根据微信临时登录凭证code获取openid和session_key
+     * @param str
+     * @return openid和session_key
+     */
+    @RequestMapping(value = "/setLoginRedis", method = RequestMethod.POST)
+    public Map<String, Object> setLoginRedis(@RequestBody String str) {
+
+        System.out.println(str);
+//        String appid = WeiXinConfig.APPID; // 小程序appid
+        Map<String, Object> map = new HashMap<String, Object>();
+        System.out.println("获取openid");
+        JSONObject strj = JSON.parseObject(str);
+        System.out.println(strj);
+
+//            String appid = "wx5d1cf92dcd2c6ee4"; // 小程序appid
+        String appid = WeiXinConfig.APPID; // 小程序appid
+//            String secret = "f642b2aa817e75452b5e26c470c4df93"; // 小程序app_secret
+        String secret = WeiXinConfig.SECRET; // 小程序app_secret
+        String code = strj.getString("code"); // 临时登录凭证code
+        String loginId = strj.getString("loginId"); // 个人Redis登录参数
+        Map<String, Object> redis = new HashMap<String, Object>();//存放在Redis中用于验证登录的个人数据
+
+
+        // 拼接获取openid的url
+        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid + "&secret=" + secret + "&js_code="
+                + code + "&grant_type=authorization_code";
+
+
+        System.out.println("请求路径：" + url);
+
+        // 定义返回值
+        String result = null;
+        try {
+            // 发送请求
+            result = HttpClientUtils.get(url);
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result)) {
+            return null;
+        }
+
+        // 获取openid和session_key
+        JSONObject contentj = JSON.parseObject(result);
+        System.out.println(contentj);
+        String openid = contentj.getString("openid");
+        String session_key = contentj.getString("session_key");
+        map.put("openid", openid);
+        map.put("session_key", session_key);
+        System.out.println(map);
+        redis.put("loginId",loginId);
+        redis.put("openid",openid);
+//        redisService.set("loginParam",redis,300);
+        redisService.set(loginId,redis,300);
+//        System.out.println(redisService.get("loginParam"));
+        System.out.println(redisService.get(loginId));
+        return map;
+        /**/
+    }
+
+    /**
+     * 用于轮询是否扫码登录成功
+     * @param str
+     * @return
+     */
+    @RequestMapping(value = "/searchLoginId", method = RequestMethod.POST)
+    public LoginInfoVo searchLoginId(@RequestBody String str) {
+        System.out.println(str);
+        JSONObject strj = JSON.parseObject(str);
+        String loginId = strj.getString("loginId");
+
+
+
+        Map<String, Object> redis = (Map<String, Object>) redisService.get(loginId);//存放个人登录信息查询结果，测试时暂时注释掉
+//        String redis="A";
+        if(redis==null){//为空则还未扫码登录成功，返回null
+            return null;
+        }else{//不为空则扫码登录成功
+            //生成token令牌
+            String token=UUID.randomUUID()+"";
+            //输出查看结果，理论上会有一个loginId和一个openid
+            System.out.println("redis"+redis);
+            //获取Redis中的openid
+            String openid = (String) redis.get("openid");//测试时暂时注释掉
+//            String openid = "oJxfz5N51tRgdOlkICM9GnKDxEgU";
+            //获取当前登录的用户的信息
+            User user=userService.selectByOpenid(openid);
+            //输出查看查询结果
+            System.out.println("user"+user);
+            //在Redis中存储登陆用户的信息
+            redisService.set(token,user,1800);
+            //输出查看Redis中的登录用户数据
+            System.out.println(redisService.get(token));
+            // 假登录
+            LoginInfoVo loginInfoVo = new LoginInfoVo();
+            loginInfoVo.setMessage("success");
+            loginInfoVo.setUserName("admin");
+            loginInfoVo.setToken(token);//设置返回信息中的token令牌
+            return loginInfoVo;
+        }
+
+    }
+
+    /**
+     * 注册
+     * @param str
+     * @return
+     */
+    @RequestMapping(value = "/register", method = RequestMethod.POST)
+    public String register(@RequestBody String str) {
+        System.out.println(str);
+        JSONObject strj = JSON.parseObject(str);
+        String code = strj.getString("code");// 临时登录凭证code
+        String userName = strj.getString("name");//用户名
+        String password = strj.getString("password");//明文密码
+        String phone = strj.getString("tel");//手机号
+        String email = strj.getString("email");//邮箱
+        Integer age = strj.getInteger("age");//年龄
+        String sex = strj.getString("sex");//性别
+        String weixinName = strj.getString("weixinName");//微信名称
+        String userRole = strj.getString("userRole");//用户基本角色
+
+
+        String appid = WeiXinConfig.APPID; // 小程序appid
+        String secret = WeiXinConfig.SECRET; // 小程序app_secret
+
+
+        // 拼接获取openid的url
+        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid + "&secret=" + secret + "&js_code="
+                + code + "&grant_type=authorization_code";
+
+        // 定义返回值
+        String result = null;
+        try {
+            // 发送请求
+            result = HttpClientUtils.get(url);
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // 若响应内容为空，返回空
+        if (StringUtil.isEmpty(result)) {
+            return null;
+        }
+        // 获取openid和session_key
+        JSONObject contentj = JSON.parseObject(result);
+        String openid = contentj.getString("openid");
+        String session_key = contentj.getString("session_key");
+
+        User user = new User();
+        user.setUserName(userName);
+        user.setPhone(phone);
+        user.setPassword(MD5Util.md5(password,userName));//设置MD5加密后的密码
+        Integer userRegister = userService.register(user);
+        System.out.println("user"+user);
+
+        Role role = new Role();
+        role.setRoleName(userRole);
+
+        UserRole userRole1 = new UserRole();
+        userRole1.setRoleId(roleService.selectByRoleName(role).getId());
+        userRole1.setUserId(user.getId());
+        Integer userRoleRegister = userRoleService.register(userRole1);
+
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(user.getId());
+        userInfo.setOpenid(openid);
+        userInfo.setWeixinName(weixinName);
+        userInfo.setSex(sex);
+        userInfo.setAge(age);
+        userInfo.setEmail(email);
+        Integer userInfoRegister = userInfoService.register(userInfo);
+
+
+
+
+        return "success";
+    }
+
+
+
+
+}

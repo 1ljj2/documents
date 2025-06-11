@@ -1,0 +1,22 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.vo.ListFilePoolVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+
+/**
+ * @author wufang
+ * @Date 2020-10-08 16:08:13
+ */
+public interface ArchiveTemplateEmpFileService {
+
+    /**
+     * 根据档案模板标识获取文档文件池
+     *
+     * @param archiveTemId
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
+    PageInfoVo<ListFilePoolVo> getFilePool(Integer archiveTemId, Integer pageNum, Integer pageSize);
+
+}

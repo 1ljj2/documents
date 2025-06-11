@@ -1,0 +1,872 @@
+var vMyArchive = new Vue({
+        el: '#myArchive',
+        data: function () {
+            return {
+                //---------------------------------接口路径参数-------------------------
+                processPath: '/process/process',
+                processStepsPath: '/process/processSteps',
+                rolePath: '/account/role',
+                categoryPath: '/config/category',
+                userPath: '/account/user',
+                yearTermPath: '/account/yearTerm',
+                fileInfoPath: '/file/file',
+                coursePath: '/account/course',
+                archiveTemPath: '/archive/archiveTem',
+                archiveTemEmpFilePath: '/archive/archiveTemEmpFile',
+                //------------------------------------------------------------------------------------！！公有！！-------------------------
+                categoryList: [],//分类
+                termList: [],//学期
+                courseList: [],//课程
+                userList: [],//用户
+                stateList: [],//状态
+                processList: [],//流程
+                activeName:'yearTermTab',//当前选中tab的名称
+                sArchive:{archiveName:'',categoryId:'',courseId:'',termId:'',soltByTerm:true},//我的文档搜索条件
+                componentSize: 'medium',// 组件尺寸
+                archiveFilePool:false,//文档文件池
+                archiveFilePoolTitle:'',//文档文件池名称
+                loading: true,
+                temLoading: true,
+                loadingMsg: '',// 加载提示
+                selection: [],
+                archiveTotalNum: 0, archivePageNum: 1, archivePageSize: 10,  // 分页参数
+                archiveFilePoolTotalNum: 0, archiveFilePoolPageNum: 1, archiveFilePoolPageSize: 10,  // 分页参数
+                archiveFilePoolData:[],
+                archiveData:[],//我的档案列表
+                fileList:[],//上传文件列表
+                tableRowClassName:[],//表格行样式
+
+
+
+
+                //----------------------测试数据
+                gridData: [{
+                    date: '2016-05-02',
+                    name: '王小虎',
+                    address: '上海市普陀区金沙江路 1518 弄'
+                }, {
+                    date: '2016-05-04',
+                    name: '王小虎',
+                    address: '上海市普陀区金沙江路 1518 弄'
+                }, {
+                    date: '2016-05-01',
+                    name: '王小虎',
+                    address: '上海市普陀区金沙江路 1518 弄'
+                }, {
+                    date: '2016-05-03',
+                    name: '王小虎',
+                    address: '上海市普陀区金沙江路 1518 弄'
+                }],
+
+
+
+
+
+
+
+
+
+
+                temConditions: {archiveTemName: '', termId: '', categoryId: ''},//搜索信息
+                archiveTemData: [],//card列表目前的参数
+                temTotalNum: 0, temPageNum: 1, temPageSize: 10,  // 分页参数
+
+                archiveTem: {
+                    id: '',
+                    categoryId: '',
+                    categoryName: '',
+                    courseId: '',
+                    courseName: '',
+                    name: '',
+                    number: '',
+                    remark: '',
+                    processId: '',
+                    processName: '',
+                    stateTimeString: '',
+                    termId: '',
+                    termName: '',
+                },
+                cloneArchiveTem: {
+                    termId: '',
+                    termName: '',
+                    courseId: '',
+                    courseName: '',
+                    categoryId: '',
+                    categoryName: '',
+                    processId: '',
+                    processName: '',
+                },
+                fileTemList: [],//档案所包含的文件池文件集合
+                fileList: [],// 文件模板本地上传的列表
+                fileTemToArchiveList: [],//给档案模板的文档模板集合，用于新增
+                matchFileColumn: [
+                    {title: "文档模板名称", key: "fileName", minWidth: 200},
+                    {title: "编号", key: "number", minWidth: 120},
+                ], // 表头信息
+                matchFileTableData: [],//表格数据
+                matchFileTotalNum: 0, matchFilePageNum: 1, matchFilePageSize: 5,  // 分页参数
+                //--------------文件池
+                filePoolData: [],//表格数据
+                filePoolTotalNum: 0, filePoolPageNum: 1, filePoolPageSize: 10,  // 分页参数
+                //---------------------------------------------------模态框---------------------------
+                editArchiveTemModal: false,
+                addArchiveTemModal: false,
+                removeMatchFileTemModal: false,
+                removeFilePoolTemModal: false,
+                //------------------------------------------------------------------------------------！！系统文档监管参数！！-------------------------
+
+            }
+        },
+        components: {
+            'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+            'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+            'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+        },
+        beforeCreate: function () {
+            CheckPermissions();
+        },
+        mounted() {
+            // //页面初始化
+            // this.initPage();
+            //获取分类列表
+            this.getCategoryList();
+
+            // this.getArchiveTemData();//测试方法
+            this.getArchiveData();//测试方法
+        },
+        methods: {
+            // /**
+            //  * 页面初始化加载项 表格表头
+            //  */
+            // initPage() {
+            //     //获取文档表格数据
+            //     this.getArchiveTemData();
+            //     //设置匹配文档模板给档案模板的表头
+            //     this.setMatchingFileTableTitle();
+            // },
+            //TODO--------------------------------------------------------------------！！公有！！--------------------------------
+            /**
+             * 处理点击tab事件
+             * @param tab
+             * @param event
+             */
+            handleClick(tab, event) {
+                // console.log(tab, event);
+                if (tab.index == 1) {
+                    // this.getChargingFileTableData()
+                } else {
+
+                }
+            },
+            /**
+             * 获取档案分类列表
+             */
+            getCategoryList() {
+                setTimeout(() => {
+                    let url = this.categoryPath + '/listArchiveCategory';
+                    CallAjaxGetNoParam(url, this.getCategoryListSuc);
+                }, 200);
+            },
+            getCategoryListSuc(data) {
+                // console.log("getCategoryListSuc", data)
+                this.categoryList = data.obj;
+            },
+            /**
+             * 获取档案模板
+             */
+            getArchiveData() {
+                // sArchive:{archiveName:'',categoryId:'',courseId:'',termId:''},//我的文档搜索条件
+                let data = {
+                    archiveName: this.sArchive.archiveName,
+                    termId: this.sArchive.termId,
+                    categoryId: this.sArchive.categoryId,
+                    courseId: this.sArchive.courseId,
+                    pageNum: this.archivePageNum,
+                    pageSize: this.archivePageSize,
+                    soltByTerm: this.sArchive.soltByTerm,
+                };
+                let url = this.archiveTemPath + '/listArchiveTemByCondition';
+                console.log("getArchiveData参数：", data)
+                CallAjaxPost(url, data, this.getArchiveDataSuc);
+                this.loadingMsg = MessageLoading();//打开上传文件加载提示
+            },
+            getArchiveDataSuc(data) {
+                CloseMessageLoading(this.loadingMsg)//关闭加载提示
+                this.archiveData = data.obj.list;
+                console.log("getArchiveDataSuc", this.archiveData);
+                this.archiveTotalNum = data.obj.total;
+                // 再次设置当前页码,若查询记录为空，设为第一页
+                this.archivePageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+                // //清除历史记录
+                // this.clearList();
+            },
+            /**
+             * 清空我的文档搜索条件
+             */
+            clearSArchive(){
+                // sArchive:{archiveName:'',categoryId:'',courseId:'',termId:'',soltByTerm:true},//我的文档搜索条件
+                this.sArchive.archiveName = '';
+                this.sArchive.categoryId = '';
+                this.sArchive.courseId = '';
+                this.sArchive.termId = '';
+                this.sArchive.soltByTerm = true;
+            },
+            /**
+             * 根据输入的termName获得termList
+             */
+            listTermByName(name) {
+                let data = {
+                    name: name,
+                };
+                let url = this.yearTermPath + '/listTermByName';
+                // console.log("listTermByName参数：", data)
+                CallAjaxPost(url, data, this.listTermByNameSuc);
+            },
+            listTermByNameSuc(data) {
+                this.termList = data.obj;
+                // console.log("listTermByNameSuc: ", this.termList);
+            },
+            /**
+             * 根据输入的courseName获得courseList
+             */
+            listCourseByName(name) {
+                let data = {
+                    name: name,
+                };
+                let url = this.coursePath + '/listCourseByName';
+                // console.log("listTermByName参数：", data)
+                CallAjaxPost(url, data, this.listCourseByNameSuc);
+            },
+            listCourseByNameSuc(data) {
+                this.courseList = data.obj;
+                // console.log("listCourseByNameSuc: ", this.courseList);
+            },
+            /**
+             * 打开抽屉文件池
+             * @param o
+             */
+            openDrawer(o){
+                this.archiveFilePoolTitle = o.name;
+                // let url = this.archiveTemEmpFilePath+"/getFilePool"
+                let url = this.archiveTemEmpFilePath+"/getArchiveFilePool"
+                let data ={
+                    archiveTemId: o.id,
+                    pageNum: this.archiveFilePoolPageNum,
+                    pageSize: this.archiveFilePoolPageSize,
+                }
+                CallAjaxPost(url,data,this.openDrawerSuc)
+
+                // console.log('o',o)
+
+            },
+            openDrawerSuc(data){
+                console.log(data);
+                this.archiveFilePoolData = data.obj.list;
+                this.archiveFilePool = true;
+            },
+            /**
+             * 下载模板文件
+             * @param index
+             * @param archiveFilePoolData
+             */
+            downloadArchiveFileTem(index, row){
+                console.log("index",index);
+                console.log("archiveFilePoolData",row);
+                downloadFileEncrypt(row.archTemFileId);
+            },
+            /**
+             * 关闭抽屉文件池调用该方法
+             * @param done
+             */
+            handleClose(done) {
+                console.log(done)
+                this.archiveFilePool = false;
+                // this.$confirm('还有未保存的工作哦确定关闭吗？')
+                //     .then(_ => {
+                //         done();
+                //     })
+                //     .catch(_ => {});
+            },
+
+            /**
+             * 设置表格行颜色
+             * @param row
+             * @param rowIndex
+             * @returns {string}
+             */
+            tableRowClassName({row, rowIndex}) {
+                console.log(row,rowIndex)
+                if (rowIndex === 1) {
+                    return 'warning-row';
+                } else if (rowIndex === 3) {
+                    return 'success-row';
+                }
+                return '';
+            },
+
+            //------------------------------------文件操作----------------------------------------------
+            /**
+             * 文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+             * @param file 当前文件
+             * @param fileList 文件列表
+             */
+            handleChange(file, fileList) {
+                // console.log('handleChange',fileList)
+                this.fileList = fileList;
+                // console.log("this.fileList", this.fileList)
+                // console.log("archiveFilePoolData",this.archiveFilePoolData)
+                for(let i=0;i<this.fileList.length;i++){
+                    for(let j = 0;j<this.archiveFilePoolData.length;j++){
+                        if(this.fileList[i].name == this.archiveFilePoolData[j].temFileName){
+                            this.archiveFilePoolData[j].userFileName = this.fileList[i].name;
+                            break;
+                        }else{
+                            if(j==(this.archiveFilePoolData.length-1)){
+                                this.fileList.splice(i,1);
+                                i--;
+                                console.log("fileList",this.fileList)
+                            }
+                        }
+
+                    }
+                }
+
+            },
+
+            /**
+             * 文件列表移除文件时的钩子
+             * @param file 移除的文件
+             * @param fileList 文件列表
+             */
+            handleRemove(file, fileList) {
+                console.log('handleRemove',fileList)
+                this.fileList = fileList;
+                console.log("handleRemove this.fileList", this.fileList);
+                let temp=0;
+                if(this.fileList.length==0){
+                    for(let i=0;i<this.archiveFilePoolData.length;i++){
+                        this.archiveFilePoolData[i].userFileName = null;
+                    }
+                }
+                for(let i=0;i<this.fileList.length;i++){
+                    for(let j = (0+temp);j<this.archiveFilePoolData.length;j++){
+                        this.archiveFilePoolData[j].userFileName = null;
+                        if(this.fileList[i].name == this.archiveFilePoolData[j].temFileName){
+                            this.archiveFilePoolData[j].userFileName = this.fileList[i].name;
+                            temp++;
+                            break;
+                        }else{
+                            if(j==(this.archiveFilePoolData.length-1)){
+                                this.fileList.splice(i,1);
+                                i--;
+                                console.log("fileList",this.fileList)
+                            }
+                        }
+
+                    }
+                }
+            },
+
+            /**
+             * 点击文件列表中已上传的文件时的钩子
+             * @param file 当前文件
+             */
+            handlePreview(file) {
+                console.log('handleRemove',fileList)
+                console.log(file);
+            },
+
+
+            /**
+             * 文件超出个数限制
+             */
+            handleExceedLimit() {
+                MessageWarning('已超出最大文件个数');
+            },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //--------------------------------test----------------------------------------------
+            /**
+             * 获取档案模板
+             */
+            getArchiveTemData() {
+                let data = {
+                    archiveTemName: this.temConditions.archiveTemName,
+                    termId: this.temConditions.termId,
+                    categoryId: this.temConditions.categoryId,
+                    pageNum: this.temPageNum,
+                    pageSize: this.temPageSize,
+                };
+                let url = this.archiveTemPath + '/listArchiveTemByCondition';
+                console.log("getArchiveTemData参数：", data)
+                CallAjaxPost(url, data, this.getArchiveTemDataSuc);
+                // 显示加载
+                this.temLoading = true;
+            },
+            getArchiveTemDataSuc(data) {
+                // 取消显示加载
+                this.temLoading = false;
+                this.archiveTemData = data.obj.list;
+                //获取默认显示档案模板的文件池
+                if (IsNotEmpty(this.archiveTemData)) {
+                    this.archiveTem.id = data.obj.list[0].id;
+                    this.nowArchiveName = data.obj.list[0].name;
+                    this.getFilePool();
+                }
+                console.log("getArchiveTemDataSuc", this.archiveTemData);
+                this.temTotalNum = data.obj.total;
+                // 再次设置当前页码,若查询记录为空，设为第一页
+                this.temPageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+                //清除历史记录
+                this.clearList();
+            },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            /**
+             * 根据用户名查询用户列表
+             */
+            listUserByName(name) {
+                let data = {
+                    userName: name,
+                };
+                let url = this.userPath + '/listUserByName';
+                console.log("listUserByName参数：", data)
+                CallAjaxPost(url, data, this.listUserByNameSuc);
+            },
+            listUserByNameSuc(data) {
+                this.userList = data.obj;
+                console.log("listUserByNameSuc: ", this.courseList);
+            },
+            /**
+             * 根据流程名称查询流程列表
+             */
+            listProcessByName(name) {
+                let data = {
+                    processName: name,
+                };
+                let url = this.processPath + '/listProcessByName';
+                console.log("listProcessByName参数：", data)
+                CallAjaxPost(url, data, this.listProcessByNameSuc);
+            },
+            listProcessByNameSuc(data) {
+                this.processList = data.obj;
+                console.log("listProcessByNameSuc: ", this.courseList);
+            },
+            /**
+             * 清除搜索下拉框数据
+             */
+            clearList() {
+                this.courseList = [];
+                this.termList = [];
+                this.userList = [];
+                this.stateList = [];
+            },
+            //TODO---------------------------------------------------------------------------！！档案模板管理！！--------------------------------
+            /**
+             * 改变页码
+             */
+            onTemPageChange(pageNum) {
+                this.temPageNum = pageNum;
+                this.getArchiveTemData();
+            },
+            /**
+             * 切换每页条数
+             */
+            onTemPageSizeChange(pageSize) {
+                this.temPageSize = pageSize;
+                this.getArchiveTemData();
+            },
+            /**
+             * 设置表头
+             */
+            setFileTemTableTitle() {
+                //添加“备注”所在列信息
+                this.temColumn.push(HeadTooltip('remark', '备注'));
+                // 添加自定义slot-scope(操作栏)
+                this.temColumn.push(HeadActionSlot(true, 260));
+                // 添加序号
+                this.temColumn.unshift(HeadIndex(true));
+            },
+
+            /**
+             * 清除档案模板搜索条件
+             */
+            clearTemConditions() {
+                this.temConditions.archiveTemName = null;
+                this.temConditions.termId = null;
+                this.temConditions.categoryId = null;
+                this.getArchiveTemData();
+            },
+            /**
+             * 清除【档案模板】信息
+             */
+            clearTemInfo() {
+                this.archiveTem.id = '';
+                this.archiveTem.categoryId = '';
+                this.archiveTem.categoryName = '';
+                this.archiveTem.courseId = '';
+                this.archiveTem.courseName = '';
+                this.archiveTem.name = '';
+                this.archiveTem.number = '';
+                this.archiveTem.processId = '';
+                this.archiveTem.processName = '';
+                this.archiveTem.remark = '';
+                this.archiveTem.stateTimeString = '';
+                this.archiveTem.termId = '';
+                this.archiveTem.termName = '';
+            },
+            /**
+             * 检验档案模板数据有效性
+             */
+            checkArchiveTem() {
+                if (CheckEmpty(this.archiveTem.name, '档案模板名称不能为空') ||
+                    CheckEmpty(this.archiveTem.categoryId, '请选择该文档模板的分类') ||
+                    CheckEmpty(this.archiveTem.termId, '请选择该文档模板所属的学年学期') ||
+                    CheckEmpty(this.archiveTem.courseId, '请选择该文档模板所属的课程') ||
+                    CheckLength(this.archiveTem.name, '50', '请控制档案模板名称在50字以内')) {
+                    return true;
+                }
+            },
+            //--------------------------------------------------TODO  编辑档案模板----------
+            /**
+             * 打开【新增档案模板】模态框
+             */
+            openEditArchiveModal(item) {
+                console.log(item)
+                this.archiveTem.id = item.id;
+                this.archiveTem.remark = item.remark;
+                this.archiveTem.number = item.number;
+                this.archiveTem.name = item.name;
+                this.archiveTem.categoryId = this.cloneArchiveTem.categoryName = item.categoryName;
+                this.cloneArchiveTem.categoryId = item.categoryId;
+                this.archiveTem.courseId = this.cloneArchiveTem.courseName = item.courseName;
+                this.cloneArchiveTem.courseId = item.courseId;
+                this.archiveTem.processId = this.cloneArchiveTem.processName = item.processName;
+                this.cloneArchiveTem.processId = item.processId;
+                this.archiveTem.termId = this.cloneArchiveTem.termName = item.termName;
+                this.cloneArchiveTem.termId = item.termId;
+                //打开编辑模态框
+                this.editArchiveTemModal = true;
+            },
+            /**
+             * 取消【编辑档案模板】
+             */
+            cancelEditArchiveTem() {
+                // 关闭模态框
+                this.editArchiveTemModal = false;
+                // 清除信息
+                this.clearTemInfo()
+                this.clearList();
+            },
+            /**
+             * 编辑档案模板
+             */
+            editArchiveTem() {
+                console.log(this.archiveTem)
+                //编辑前对数据进行校验
+                if (this.checkArchiveTem()) {
+                    return;
+                }
+                let data = {
+                    id: this.archiveTem.id,
+                    name: this.archiveTem.name,
+                    number: this.archiveTem.number,
+                    remark: this.archiveTem.remark,
+                };
+                //检验学期
+                if (!(this.cloneArchiveTem.termId == this.archiveTem.termId || typeof (this.archiveTem.termId) == "string")) {
+                    data["termId"] = this.archiveTem.termId;
+                }
+                //检验课程
+                if (!(this.cloneArchiveTem.courseId == this.archiveTem.courseId || typeof (this.archiveTem.courseId) == "string")) {
+                    data["courseId"] = this.archiveTem.courseId;
+                }
+                //检验分类
+                if (!(this.cloneArchiveTem.categoryId == this.archiveTem.categoryId || typeof (this.archiveTem.categoryId) == "string")) {
+                    data["categoryId"] = this.archiveTem.categoryId;
+                }
+                //检验流程
+                if (!(this.cloneArchiveTem.processId == this.archiveTem.processId || typeof (this.archiveTem.processId) == "string")) {
+                    data["processId"] = this.archiveTem.processId;
+                }
+                console.log("editArchiveTem数据:", data)
+                let url = this.archiveTemPath + '/editArchiveTem';
+                CallAjaxPost(url, data, this.editArchiveTemSuc);
+                // 打开加载提示
+                this.loadingMsg = MessageLoading();
+            },
+            editArchiveTemSuc() {
+                // 关闭加载提示
+                CloseMessageLoading(this.loadingMsg);
+                // 关闭模态框
+                this.editArchiveTemModal = false;
+                MessageSuccess("修改成功");
+                // 重新查询数据
+                this.getArchiveTemData();
+                //清除信息
+                this.clearTemInfo()
+                this.clearList();
+            },
+            //---------------------------------------------------TODO  新增档案模板----------------
+            /**
+             * 打开【新增档案模板】模态框
+             */
+            openAddArchiveTemModal() {
+                //打开模态框
+                this.addArchiveTemModal = true;
+            },
+            /**
+             * 取消新增档案模板
+             */
+            cancelAddArchiveTem() {
+                // 关闭模态框
+                this.addArchiveTemModal = false;
+                // 清除信息
+                this.clearTemInfo();
+                this.clearList();
+            },
+            /**
+             * 改变页码
+             */
+            onMatchFilePageChange(pageNum) {
+                this.matchFilePageNum = pageNum;
+                //获取匹配文档模板给档案
+                this.listMatchFile();
+            },
+            /**
+             * 设置表头
+             */
+            setMatchingFileTableTitle() {
+                // 添加自定义slot-scope(操作栏)
+                this.matchFileColumn.push(HeadActionSlot(true, 180));
+                // 添加序号
+                this.matchFileColumn.unshift(HeadIndex(true));
+            },
+            /**
+             * 新增档案模板时：   学期下拉框获得值
+             */
+            termSelected() {
+                this.listMatchFile();
+            },
+            /**
+             * 新增档案模板时：   课程下拉框获得值
+             */
+            courseSelected() {
+                this.listMatchFile();
+            },
+            /**
+             *  课程和学期都选好时，获取匹配文档模板给档案模板参考
+             */
+            listMatchFile() {
+                if (IsNotEmpty(this.archiveTem.termId) && IsNotEmpty(this.archiveTem.courseId)) {
+                    let data = {
+                        termId: this.archiveTem.termId,
+                        courseId: this.archiveTem.courseId,
+                        pageNum: this.matchFilePageNum,
+                        pageSize: this.matchFilePageSize,
+                    };
+                    console.log("listMatchFile参数：", data)
+                    let url = this.fileInfoPath + '/listMatchFile';
+                    CallAjaxPost(url, data, this.listMatchFileSuc);
+                }
+            },
+            listMatchFileSuc(data) {
+                console.log("listMatchFileSuc:", data)
+                this.matchFileTableData = data.obj.list;
+                this.matchFileTotalNum = data.obj.total;
+                this.matchFilePageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+            },
+            /**
+             * 打开下载【匹配文件给档案】的模态框
+             */
+            downMatchFileTem(index) {
+                // console.log(index)
+                // console.log("this.temTableData[index]",this.temTableData[index])
+                downloadFileEncrypt(this.temTableData[index].fileId)
+            },
+            /**
+             * 打开【删除匹配文件给档案】的模态框
+             */
+            openRemoveMatchFileTemModal(index) {
+                //获取索引值
+                // this.fileTem.fileId = this.temTableData[index].fileId;
+                //打开模态框
+                this.removeMatchFileTemModal = true;
+                console.log(index)
+            },
+            /**
+             * 删除匹配文件给档案
+             */
+            removeMatchFileTem() {
+
+            },
+            /**
+             * 新增【档案模板】
+             */
+            addArchiveTem() {
+                // 新增前对数据进行校验
+                if (this.checkArchiveTem()) {
+                    return;
+                }
+                //检验给档案模板的文档模板是否为空
+                if (IsEmpty(this.fileTemToArchiveList)) {
+                    MessageWarning("请保证该档案模板中含有文档模板");
+                }
+                let data = {
+                    name: this.archiveTem.name,
+                    number: this.archiveTem.number,
+                    remark: this.archiveTem.remark,
+                    termId: this.archiveTem.termId,
+                    courseId: this.archiveTem.courseId,
+                };
+                //分类
+                if (!(this.cloneArchiveTem.categoryId == this.archiveTem.categoryId || typeof (this.archiveTem.categoryId) == "string")) {
+                    data["categoryId"] = this.archiveTem.categoryId;
+                }
+                //流程
+                if (!(this.cloneArchiveTem.processId == this.archiveTem.processId || typeof (this.archiveTem.processId) == "string")) {
+                    data["processId"] = this.archiveTem.processId;
+                }
+                let url = this.archiveTemPath + '/addArchiveTem';
+                CallAjaxPost(url, data, this.addArchiveTemSuc);
+            },
+            addArchiveTemSuc() {
+                // 关闭模态框
+                this.addArchiveTemModal = false;
+                MessageSuccess("档案模板新增成功");
+                // 重新查询数据
+                this.getArchiveTemData();
+                // 清除信息
+                this.clearTemInfo()
+                this.clearList();
+            },
+            //-----------------------------------------------------TODO  文件池-------------------------
+            /**
+             * 改变页码
+             */
+            onFilePoolPageChange(pageNum) {
+                this.filePoolPageNum = pageNum;
+                //获取匹配文档模板给档案
+                this.getFilePool();
+            },
+            /**
+             * 获取文档模板池
+             */
+            getFilePool(item) {
+                console.log("档案信息：", item)
+                this.archiveTem.id = item.id;
+                console.log("档案标识：", this.archiveTem.id)
+                let data = {
+                    archiveTemId: this.archiveTem.id,
+                    pageNum: this.filePoolPageNum,
+                    pageSize: this.filePoolPageSize,
+                };
+                let url = this.archiveTemEmpFilePath + '/getFilePool';
+                CallAjaxPost(url, data, this.getFilePoolSuc);
+            },
+            getFilePoolSuc(data) {
+                console.log("getFilePoolSuc:", data)
+            },
+            unfoldFile() {
+            },
+            /**
+             * 下载文件池中的档案文档模板
+             */
+            downFilePoolTem(index) {
+                console.log(index)
+            },
+            /**
+             * 打开删除文件池中档案文档模态框
+             */
+            openRemoveFilePoolTemModal(index) {
+                this.removeFilePoolTemModal = true;
+                console.log(index)
+            },
+            /**
+             * 删除文件池中档案文档
+             */
+            removeFilePoolTem() {
+
+            },
+            /**
+             * TODO--------------------------------------------------------------------！！系统文档监管！！--------------------------------
+             */
+
+
+        }
+    })
+;

@@ -1,0 +1,111 @@
+package org.jit.sose.service;
+
+import java.util.List;
+
+import org.jit.sose.domain.entity.NoticeAudit;
+import org.jit.sose.domain.param.AddNoticeAuditParam;
+import org.jit.sose.domain.param.AddNoticeParam;
+import org.jit.sose.domain.param.ListNoticeParam;
+import org.jit.sose.domain.vo.ListNoticeVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+
+/** 
+* @author jinyu: 
+* @Date 2020年9月24日 下午2:50:21 
+*  
+*/
+public interface NoticeService {
+
+	/**
+	 * 公告查询
+	 * @param param
+	 * @return
+	 */
+	PageInfoVo<ListNoticeVo> listNotice(ListNoticeParam param);
+
+	/**
+     * 批量删除公告
+     *
+     * @param idList
+     */
+	void removeNoticeSelect(List<Integer> idList);
+
+	/**
+     * 删除单个公告
+     *
+     * @param id
+     */
+	void removeNotice(Integer id);
+	
+	/**
+	 * 新增公告
+	 * @param param
+	 */
+	void addNotice(AddNoticeParam param);
+
+	/**
+	 * 编辑公告
+	 * @param param
+	 */
+	void editNotice(AddNoticeParam param);
+
+	/**
+	 * 禁用公告
+	 * @param id
+	 */
+	void disableNotice(Integer id);
+
+	/**
+	 * 置顶公告
+	 * @param id
+	 */
+	void setTopNotice(Integer id);
+
+	/**
+	 * 添加公告和审核人的关联
+	 * @param addNoticeAuditParam
+	 */
+	void addAuditNoticeCon(AddNoticeAuditParam addNoticeAuditParam);
+
+	/**
+	 * 我的提醒页面公告，并分页展示
+	 * @param param
+	 * @return
+	 */
+	PageInfoVo<ListNoticeVo> listNoticeMyRemind(ListNoticeParam param);
+
+	/**
+	 * 通过公告
+	 * @param id
+	 */
+	void checkAuditTrue(Integer id);
+
+	/**
+	 * 根据【标题、发布部门、发布用户、分类、分页参数】筛选公告审核人对应的列表对象
+	 * @param param
+	 * @return
+	 */
+	PageInfoVo<ListNoticeVo> listAuditNotice(ListNoticeParam param);
+
+	/**
+	 * 查询新的公告个数
+	 * @return
+	 */
+	int newNoticeCount();
+
+	/**
+	 * 筛选我的提醒待审核公告
+	 * @param param
+	 * @return
+	 */
+	PageInfoVo<ListNoticeVo> listAuditNoticeMyRemind(ListNoticeParam param);
+
+	/**
+	 * 查询待审核的公告个数
+	 * @param userId
+	 * @return
+	 */
+	int newNoticeToAuditCount(Integer userId);
+
+}
+ 

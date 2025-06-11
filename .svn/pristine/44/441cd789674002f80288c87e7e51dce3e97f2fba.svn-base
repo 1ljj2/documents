@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.ArchiveExampleFileMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="example_id" property="exampleId" jdbcType="INTEGER" />
+    <result column="empty_file_id" property="emptyFileId" jdbcType="INTEGER" />
+    <result column="file_id" property="fileId" jdbcType="INTEGER" />
+    <result column="state" property="state" jdbcType="CHAR" />
+    <result column="state_time" property="stateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  
+  <sql id="Base_Column_List" >
+    id, example_id, empty_file_id, file_id, state, state_time
+  </sql>
+  
+  <select id="listArchiveFileByCondition" resultType="org.jit.sose.domain.vo.ListArchiveFileVo"
+  		  parameterType="org.jit.sose.domain.param.ListChargingArchiveParam">
+	  SELECT DISTINCT
+		fi.file_name,
+		fi.id
+	FROM
+		`t_archive_example_file` aef 
+	LEFT JOIN `a_file_info` fi ON (fi.state != 'X' AND fi.id = file_id)
+	WHERE aef.state != 'X'
+        AND aef.example_id = #{id,jdbcType=INTEGER}
+	ORDER BY
+		aef.state_time DESC
+  </select>
+
+  <!--查询用户上传档案的文件及模板列表-->
+  <select id="listArchiveFile" resultType="org.jit.sose.domain.vo.ListArchiveFileForAuditVo"
+          parameterType="java.lang.Integer">
+	  SELECT
+          arf.file_id AS fileId,
+          fi.file_name AS fileName,
+          arf.empty_file_id AS exampleFileId,
+          fi2.file_name AS exampleFileName
+      FROM
+          t_archive_example_file arf
+          LEFT JOIN t_archive_example_process aep ON aep.id = arf.example_id
+          LEFT JOIN a_file_info fi ON fi.id = arf.file_id
+          LEFT JOIN a_file_info fi2 ON fi2.id = arf.empty_file_id
+      WHERE
+          arf.example_id = #{exampleId,jdbcType=INTEGER}
+  </select>
+
+  <select id="listFileIdByExampleId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        SELECT
+            aef.file_id
+        FROM
+            `t_archive_example_file` aef
+        WHERE
+            aef.state = 'A'
+        AND aef.example_id = #{id,jdbcType=INTEGER}
+  </select>
+
+  <!--批量插入个人文档-档案关联-->
+  <insert id="insertList" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" useGeneratedKeys="true" keyProperty="id" >
+    insert into t_archive_example_file (example_id,empty_file_id, file_id)
+    values
+    <foreach collection="list" item="ArchiveExampleFile" index="index" separator=",">
+      (#{ArchiveExampleFile.example_id,jdbcType=INTEGER},
+      #{ArchiveExampleFile.emptyFileId,jdbcType=INTEGER},
+       #{ArchiveExampleFile.fileId,jdbcType=INTEGER})
+    </foreach>
+  </insert>
+
+  <!--插入个人文档-档案关联-->
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile"
+          useGeneratedKeys="true" keyProperty="id">
+    insert into t_archive_example_file
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="exampleId != null" >
+        example_id,
+      </if>
+      <if test="emptyFileId != null" >
+        empty_file_id,
+      </if>
+      <if test="fileId != null" >
+        file_id,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="exampleId != null" >
+        #{exampleId,jdbcType=INTEGER},
+      </if>
+      <if test="emptyFileId != null" >
+        #{emptyFileId,jdbcType=INTEGER},
+      </if>
+      <if test="fileId != null" >
+        #{fileId,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+
+
+
+
+
+
+
+
+
+
+
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from t_archive_example_file
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from t_archive_example_file
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    insert into t_archive_example_file (id, example_id, empty_file_id, 
+      file_id, state, state_time
+      )
+    values (#{id,jdbcType=INTEGER}, #{exampleId,jdbcType=INTEGER}, #{emptyFileId,jdbcType=INTEGER}, 
+      #{fileId,jdbcType=INTEGER}, #{state,jdbcType=CHAR}, #{stateTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    update t_archive_example_file
+    <set >
+      <if test="exampleId != null" >
+        example_id = #{exampleId,jdbcType=INTEGER},
+      </if>
+      <if test="emptyFileId != null" >
+        empty_file_id = #{emptyFileId,jdbcType=INTEGER},
+      </if>
+      <if test="fileId != null" >
+        file_id = #{fileId,jdbcType=INTEGER},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+      <if test="stateTime != null" >
+        state_time = #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    update t_archive_example_file
+    set example_id = #{exampleId,jdbcType=INTEGER},
+      empty_file_id = #{emptyFileId,jdbcType=INTEGER},
+      file_id = #{fileId,jdbcType=INTEGER},
+      state = #{state,jdbcType=CHAR},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

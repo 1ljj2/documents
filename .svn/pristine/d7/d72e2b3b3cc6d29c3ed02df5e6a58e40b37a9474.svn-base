@@ -1,0 +1,21 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.vo.ListCategoryVo;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-09-22 11:17:32
+ */
+public interface CategoryService {
+
+
+    /**
+     * 根据类型获取分类
+     *
+     * @param type
+     * @return
+     */
+    List<ListCategoryVo> listCategoryByType(String type);
+}

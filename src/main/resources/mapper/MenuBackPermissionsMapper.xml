@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.MenuBackPermissionsMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.MenuBackPermissions">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="menu_back_id" property="menuBackId" jdbcType="INTEGER"/>
+        <result column="permission_id" property="permissionId" jdbcType="INTEGER"/>
+        <result column="create_date" property="createDate" jdbcType="TIMESTAMP"/>
+        <result column="update_date" property="updateDate" jdbcType="TIMESTAMP"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, menu_back_id, permission_id, create_date, update_date, state
+  </sql>
+
+    <insert id="insertOrUpdate" parameterType="org.jit.sose.domain.entity.MenuBackPermissions">
+    INSERT INTO a_menu_back_permissions (
+        menu_back_id,
+        permission_id,
+        state
+    )
+    VALUES(
+        #{menuBackId,jdbcType=INTEGER},
+        #{permissionId,jdbcType=INTEGER},
+        'A'
+    )
+    ON DUPLICATE KEY UPDATE
+    menu_back_id = VALUES(menu_back_id),
+    permission_id = VALUES(permission_id),
+    state = VALUES(state)
+  </insert>
+
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select
+        <include refid="Base_Column_List"/>
+        from a_menu_back_permissions
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from a_menu_back_permissions
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+
+    <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.MenuBackPermissions">
+        update a_menu_back_permissions
+        <set>
+            <if test="menuBackId != null">
+                menu_back_id = #{menuBackId,jdbcType=INTEGER},
+            </if>
+            <if test="permissionId != null">
+                permission_id = #{permissionId,jdbcType=INTEGER},
+            </if>
+            <if test="createDate != null">
+                create_date = #{createDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateDate != null">
+                update_date = #{updateDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="state != null">
+                state = #{state,jdbcType=CHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.MenuBackPermissions">
+    update a_menu_back_permissions
+    set menu_back_id = #{menuBackId,jdbcType=INTEGER},
+      permission_id = #{permissionId,jdbcType=INTEGER},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      update_date = #{updateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

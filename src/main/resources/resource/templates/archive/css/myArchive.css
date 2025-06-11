@@ -1,0 +1,186 @@
+@CHARSET "UTF-8";
+body {
+    height: 100%;
+    overflow: auto;
+}
+
+.layout-main {
+    float: right;
+    width: 87%;
+    height: 100%;
+    border: 24px solid #FFF5EE;
+    overflow-x: hidden;
+}
+
+.el-tabs__header {
+    position: relative;
+    margin: 0 0 0px;
+    background-color: #FFF5EE;
+    padding-bottom: 15px;
+}
+
+.ivu-tabs-nav .ivu-tabs-tab {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.el-tabs__item {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.card-item {
+    padding: 10px;
+    margin: 15px 6px;
+}
+
+.card-list-introduce {
+}
+
+.card-list-name {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.card-list-tags {
+    padding-top: 5px;
+}
+
+.card-list-categoryName {
+    background-color: #0db8a8;
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 10px;
+}
+
+.card-list-processName {
+    background-color: #686de0;
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 10px;
+}
+
+.card-list-courseName {
+    background-color: #d5af28;
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 10px;
+}
+.audit-user {
+    width: 70%;
+    padding-right: 20px;
+}
+.card-list-termName {
+    background-color: #fab1a0;
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 10px;
+}
+
+.audit-user {
+    width: 70%;
+    padding-right: 20px;
+}
+
+
+.card-list-otherInfo {
+    color: #9ea0a0;
+    font-size: 13px;
+    padding-top: 20px;
+}
+.null-process-class {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f78989;
+    height: 100px;
+    line-height: 100px;
+    text-align: center;
+}
+
+.bottom {
+    line-height: 12px;
+}
+
+.button {
+    padding: 0;
+    float: right;
+}
+
+.clearfix:before,
+.clearfix:after {
+    display: table;
+    content: "";
+}
+
+.clearfix:after {
+    clear: both
+}
+
+.file-pool-class {
+    border: 3px dashed #485460;
+}
+.class-float-left {
+    float: left;
+}
+.modal-content{
+    min-height: 500px;
+}
+.file-class{
+    padding-left: 10px;
+}
+.matching-file{
+
+}
+.table-tr-space{
+    height: 60px;
+}
+.file-pool-archiveName{
+    font-size: 20px;
+    text-align: center;
+}
+.file-pool-class .el-collapse-item__header{
+    height: 38px;
+    line-height: 38px;
+}
+.collapse-class{
+    position: absolute;
+}
+.collapse-a-class{
+    position: relative;
+
+}
+.process-name{
+    font-weight: 600;
+    padding-bottom: 10px;
+}
+.process-steps .el-step__title {
+    font-size: 12px;
+}
+.step-row2 {
+    width: 200px;
+    margin: 0;
+    font-size: 8px;
+}
+
+.process-steps .el-step__title {
+    font-size: 12px;
+}
+.process-steps .el-step__icon.is-text {
+    border: 1px solid;
+}
+.process-steps .el-step__icon {
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+}
+.process-steps .el-step.is-vertical .el-step__line {
+    top: 20px;
+    left: 5px;
+}
+.process-steps .el-step.is-vertical .el-step__main {
+    padding-left: 0px;
+}

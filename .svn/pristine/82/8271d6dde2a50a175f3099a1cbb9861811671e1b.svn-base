@@ -1,0 +1,170 @@
+package org.jit.sose.service.impl;
+
+import java.util.List;
+
+import org.jit.sose.domain.entity.Mess;
+import org.jit.sose.domain.entity.MessReadUser;
+import org.jit.sose.domain.param.AddEditMessParam;
+import org.jit.sose.domain.param.AddNoticeParam;
+import org.jit.sose.domain.param.ListMessParam;
+import org.jit.sose.domain.vo.ListMessVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.MessCategoryConMapper;
+import org.jit.sose.mapper.MessFileConMapper;
+import org.jit.sose.mapper.MessMapper;
+import org.jit.sose.mapper.MessReadUserMapper;
+import org.jit.sose.mapper.MessRoleConMapper;
+import org.jit.sose.mapper.MessUserConMapper;
+import org.jit.sose.mapper.UserRoleMapper;
+import org.jit.sose.service.MessageService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+
+/** 
+* @author jinyu: 
+* @Date 2020年9月22日 上午10:55:35 
+*  
+*/
+@Service
+public class MessageServiceImpl implements MessageService {
+	
+	@Autowired
+	private MessMapper messMapper;
+	
+	@Autowired
+	private MessUserConMapper messUserConMapper;
+	
+	@Autowired
+	private MessCategoryConMapper messCategoryConMapper;
+	
+	@Autowired
+	private MessRoleConMapper messRoleConMapper;
+	
+	@Autowired
+	private MessReadUserMapper messReadUserMapper;
+	
+	@Autowired
+	private UserRoleMapper userRoleMapper;
+
+	@Autowired
+	private MessFileConMapper messFileConMapper;
+	
+	@Override
+	public PageInfoVo<ListMessVo> listMess(ListMessParam param) {
+		// 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        //【标题、发布部门、发布用户、分类、分页参数】
+        List<ListMessVo> voList = messMapper.listMess(param);
+        PageInfo<ListMessVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+	}
+	
+	@Override
+	public void removeMessSelect(List<Integer> idList) {
+		messMapper.removeMessSelect(idList);
+	}
+
+	@Override
+	public void removeMess(Integer id) {
+		messMapper.removeMess(id);
+	}
+
+	@Override
+	public void editMess(AddEditMessParam param) {
+		// 创建Mess对象并赋值
+		Mess mess = new Mess();
+		mess.setId(param.getId());
+		mess.setTitle(param.getTitle());
+		mess.setContent(param.getContent());
+        // 编辑消息
+		messMapper.editMess(mess);
+		int messId = param.getId();
+		param.setMessId(messId);
+		System.out.println("====MessServiceImpl:editMess===="+param);
+		//修改绑定消息和用户相关，加入到t_mess_user_con表中
+		messUserConMapper.editMessUserCon(param);
+		//修改绑定消息和分类相关，加入到t_mess_category_con表中
+		messCategoryConMapper.editMessCategoryCon(param);
+		//修改消息和面向用户的绑定
+		if(param.getReadUserId()!= null) {
+			//把所有原来的绑定状态置为"X"
+			messReadUserMapper.setXByMessId(messId);
+			//新增相应的绑定
+			messReadUserMapper.addConList(messId,param.getReadUserId());
+		}
+		//修改消息和面向角色的绑定
+		if(param.getRoleId() != null) {
+			//把所有原来的绑定状态置为"X"
+			messRoleConMapper.setXByMessId(messId);
+			//新增相应的绑定
+			messRoleConMapper.addConList(messId, param.getRoleId());
+			//查询出目前这些角色对应的用户idlist
+			List<Integer> rIds = param.getRoleId();
+			for (Integer rId : rIds) {
+				//查出一个role对应的readUserIdList
+				List<Integer> readUserIdList=userRoleMapper.selectUserIdByRole(rId);
+				//把这些userId去查询消息和面向用户的表，把原来有的绑定置为"X"
+				for (Integer ruId : readUserIdList) {
+					MessReadUser mr = new MessReadUser();
+					mr.setMessId(messId);
+					mr.setUserId(ruId);
+					messReadUserMapper.setXByUserId(mr);
+				}
+				//再添加新的绑定
+				messReadUserMapper.addConList(messId,readUserIdList);
+			}
+		}
+	}
+
+	@Override
+	public void addMess(AddEditMessParam param) {
+		// 创建Mess对象并赋值
+		Mess mess = new Mess();
+		mess.setTitle(param.getTitle());
+		mess.setContent(param.getContent());
+        // 新增消息
+		messMapper.addMess(mess);
+		int messId = mess.getId();
+		param.setMessId(messId);
+		System.out.println("====MessServiceImpl:addMess===="+param);
+		//增加绑定消息和用户相关，加入到t_mess_user_con表中
+		messUserConMapper.addMessUserCon(param);
+		//增加绑定消息和分类相关，加入到t_mess_category_con表中
+		messCategoryConMapper.addMessCategoryCon(param);
+		//增加绑定消息和文件相关，加入到t_mess_file_con表中
+		messFileConMapper.addMessFileCon(param);
+		//增加消息和面向用户的绑定
+		if(param.getReadUserId()!= null) {
+			//新增相应的绑定
+			messReadUserMapper.addConList(messId,param.getReadUserId());
+		}
+		//增加消息和面向角色的绑定
+		if(param.getRoleId() != null) {
+			//新增相应的绑定
+			messRoleConMapper.addConList(messId, param.getRoleId());
+			//查询出目前这些角色对应的用户idlist
+			List<Integer> rIds = param.getRoleId();
+			for (Integer rId : rIds) {
+				//查出一个role对应的readUserIdList
+				List<Integer> readUserIdList=userRoleMapper.selectUserIdByRole(rId);
+				//再添加新的绑定
+				messReadUserMapper.addConList(messId,readUserIdList);
+			}
+		}
+	}
+
+	@Override
+	public PageInfoVo<ListMessVo> listMessMyRemind(ListMessParam param) {
+		// 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        //【面向用户、分页参数】
+        List<ListMessVo> voList = messMapper.listMessMyRemind(param);
+        PageInfo<ListMessVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+	}
+
+}
+ 

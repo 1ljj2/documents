@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.ProcessMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.Process">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="process_name" property="processName" jdbcType="VARCHAR"/>
+        <result column="process_step_id" property="processStepId" jdbcType="INTEGER"/>
+        <result column="role_id" property="roleId" jdbcType="INTEGER"/>
+        <result column="is_enable" property="isEnable" jdbcType="BIT"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="state_date" property="stateDate" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, process_name, process_step_id, role_id, is_enable, state, remark, create_time,
+    state_date
+  </sql>
+  
+    <select id="listForReviewByCondition" resultType="org.jit.sose.domain.vo.ListProcessForReviewVo"
+            parameterType="org.jit.sose.domain.param.ListProcessParam">
+        SELECT
+        p.id,
+        p.process_name AS processName,
+        p.process_step_id AS stepId,
+        r.role_name AS roleName,
+        p.state_date AS stateTimeString,
+        pcc.category_id AS categoryId,
+        c.`name` AS categoryName
+        FROM
+        `t_process` p
+        LEFT JOIN t_process_category_con pcc ON (
+        pcc.state = 'A'
+        AND pcc.process_id = p.id
+        )
+        LEFT JOIN a_category c ON (
+        c.state = 'A'
+        AND c.id = pcc.category_id
+        )
+        LEFT JOIN t_process_steps ps ON (
+        ps.state = 'A'
+        AND ps.p_step_id = p.process_step_id
+        )
+        INNER JOIN a_role r ON (
+        r.state = 'A'
+        AND r.id = ps.role_id
+        )
+        WHERE
+        p.state = 'A'
+        AND p.is_enable = 1
+        <if test="processName != null">
+            AND p.process_name LIKE CONCAT('%', #{processName,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="categoryId != null">
+            AND pcc.category_id = #{categoryId,jdbcType=INTEGER}
+        </if>
+        <if test="processName== null and categoryId == null and roleIdList != null">
+            AND p.role_id IN
+            <foreach collection="roleIdList" item="id" index="index" separator="," open="(" close=")">
+                #{id,jdbcType=INTEGER}
+            </foreach>
+            OR 1 IN
+            <foreach collection="roleIdList" item="id" index="index" separator="," open="(" close=")">
+                #{id,jdbcType=INTEGER}
+            </foreach>
+        </if>
+        ORDER BY
+        p.state_date DESC
+    </select>
+
+
+    <select id="listProcessByName" resultType="org.jit.sose.domain.vo.ListIdNameVo"
+            parameterType="java.lang.String">
+        SELECT
+        id,
+        process_name AS `name`
+        FROM
+        `t_process`
+        WHERE
+        state = 'A'
+        AND is_enable = 1
+        <if test="processName != null">
+            AND process_name LIKE CONCAT('%',#{processName,jdbcType=VARCHAR},'%')
+        </if>
+    </select>
+
+    <update id="editProcess" parameterType="org.jit.sose.domain.entity.Process">
+        update t_process
+        <set>
+            <if test="processName != null">
+                process_name = #{processName,jdbcType=VARCHAR},
+            </if>
+            <if test="processStepId != null">
+                process_step_id = #{processStepId,jdbcType=INTEGER},
+            </if>
+            <if test="roleId != null">
+                role_id = #{roleId,jdbcType=INTEGER},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <update id="changeEnableProcess" parameterType="java.util.Map">
+        UPDATE t_process
+        <if test="enable == 'true'">
+            SET is_enable = 0
+        </if>
+        <if test="enable == 'false'">
+            SET is_enable = 1
+        </if>
+        WHERE
+        id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <update id="updateStepId" parameterType="java.util.Map">
+    UPDATE t_process
+    SET process_step_id = #{stepId,jdbcType=INTEGER}
+    WHERE
+        id = #{processId,jdbcType=INTEGER}
+  </update>
+
+    <select id="selectStepIdById" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+    SELECT
+        process_step_id
+    FROM
+        `t_process`
+    WHERE
+        state = 'A'
+    AND id = #{id,jdbcType=INTEGER}
+  </select>
+
+    <update id="removeProcess" parameterType="java.lang.Integer">
+    UPDATE t_process
+    SET state = 'X'
+    WHERE
+        id = #{id,jdbcType=INTEGER}
+  </update>
+
+    <update id="disableProcessSelect" parameterType="java.util.List">
+        UPDATE t_process
+        SET is_enable = 0
+        WHERE
+        id IN
+        <!--每次从list集合中取出数据放入id中 -->
+        <foreach collection="list" item="id" index="index"
+                 separator="," open="(" close=")">
+            #{id,jdbcType=INTEGER}
+        </foreach>
+    </update>
+
+    <update id="removeProcessSelect" parameterType="java.util.List">
+        UPDATE t_process
+        SET state = 'X'
+        WHERE
+        id IN
+        <foreach collection="list" item="id" index="index" separator="," open="(" close=")">
+            #{id,jdbcType=INTEGER}
+        </foreach>
+    </update>
+
+    <insert id="addProcess" parameterType="org.jit.sose.domain.entity.Process" useGeneratedKeys="true" keyProperty="id">
+        insert into t_process
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            process_name,process_step_id,role_id,
+            <if test="remark != null">
+                remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{processName,jdbcType=VARCHAR},#{processStepId,jdbcType=INTEGER},#{roleId,jdbcType=INTEGER},
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <select id="listByCondition" resultType="org.jit.sose.domain.vo.ListProcessVo"
+            parameterType="org.jit.sose.domain.param.ListProcessParam">
+        SELECT
+        p.id,
+        p.process_name AS processName,
+        p.remark,
+        p.is_enable AS 'enable',
+        p.role_id AS roleId,
+        r.role_name AS roleName,
+        p.state_date AS stateTimeString,
+        pcc.category_id AS categoryId,
+        c.`name` AS categoryName
+        FROM
+        `t_process` p
+        LEFT JOIN t_process_category_con pcc ON (
+        pcc.state = 'A'
+        AND pcc.process_id = p.id
+        )
+        INNER JOIN a_category c ON (
+        c.state = 'A'
+        AND c.id = pcc.category_id
+        )
+        INNER JOIN a_role r ON (
+        r.state = 'A'
+        AND r.id = p.role_id
+        )
+        WHERE
+        p.state = 'A'
+        <if test="processName != null">
+            AND p.process_name LIKE CONCAT('%', #{processName,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="categoryId != null">
+            AND pcc.category_id = #{categoryId,jdbcType=INTEGER}
+        </if>
+        <if test="roleId != null">
+            AND p.role_id = #{roleId,jdbcType=INTEGER}
+        </if>
+        <if test="processName== null and categoryId == null and roleIdList != null">
+            AND p.role_id IN
+            <foreach collection="roleIdList" item="id" index="index" separator="," open="(" close=")">
+                #{id,jdbcType=INTEGER}
+            </foreach>
+            OR 1 IN
+            <foreach collection="roleIdList" item="id" index="index" separator="," open="(" close=")">
+                #{id,jdbcType=INTEGER}
+            </foreach>
+        </if>
+        ORDER BY
+        p.state_date DESC
+    </select>
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select
+        <include refid="Base_Column_List"/>
+        from t_process
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_process
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.Process">
+    insert into t_process (id, process_name, process_step_id,
+      role_id, is_enable, state, remark, 
+      create_time, state_date)
+    values (#{id,jdbcType=INTEGER}, #{processName,jdbcType=VARCHAR}, #{processStepId,jdbcType=INTEGER},
+      #{roleId,jdbcType=INTEGER}, #{isEnable,jdbcType=BIT}, #{state,jdbcType=CHAR}, #{remark,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{stateDate,jdbcType=TIMESTAMP})
+  </insert>
+    <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.Process">
+        insert into t_process
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="processName != null">
+                process_name,
+            </if>
+            <if test="processStepId != null">
+                process_step_id,
+            </if>
+            <if test="roleId != null">
+                role_id,
+            </if>
+            <if test="isEnable != null">
+                is_enable,
+            </if>
+            <if test="state != null">
+                state,
+            </if>
+            <if test="remark != null">
+                remark,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="stateDate != null">
+                state_date,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="processName != null">
+                #{processName,jdbcType=VARCHAR},
+            </if>
+            <if test="processStepId != null">
+                #{processStepId,jdbcType=INTEGER},
+            </if>
+            <if test="roleId != null">
+                #{roleId,jdbcType=INTEGER},
+            </if>
+            <if test="isEnable != null">
+                #{isEnable,jdbcType=BIT},
+            </if>
+            <if test="state != null">
+                #{state,jdbcType=CHAR},
+            </if>
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="stateDate != null">
+                #{stateDate,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.Process">
+    update t_process
+    set process_name = #{processName,jdbcType=VARCHAR},
+      process_step_id = #{processStepId,jdbcType=INTEGER},
+      role_id = #{roleId,jdbcType=INTEGER},
+      is_enable = #{isEnable,jdbcType=BIT},
+      state = #{state,jdbcType=CHAR},
+      remark = #{remark,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      state_date = #{stateDate,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

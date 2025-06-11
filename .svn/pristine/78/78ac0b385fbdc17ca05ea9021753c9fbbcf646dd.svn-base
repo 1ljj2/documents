@@ -1,0 +1,193 @@
+@CHARSET "UTF-8";
+html {
+    overflow: hidden;
+}
+
+body {
+    height: 100%;
+    overflow: auto;
+}
+
+/**
+新的
+ */
+.card-item{
+    padding: 15px;
+    margin: 15px 30px;
+}
+.card-list-introduce{
+
+}
+.card-list-roleName{
+    color: #ffffff;
+    background-color: #00bbd9;
+    padding: 3px 8px;
+    border-radius: 5px;
+    float: right;
+    /*margin-right: 10px;*/
+}
+.card-list-processName{
+    font-size: 20px;
+    font-weight: 600;
+}
+.card-list-category{
+    padding-top: 5px;
+}
+.card-list-categoryName{
+    background-color: #0db8a8;
+    color: #fff;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+.card-list-otherInfo{
+    color: #9ea0a0;
+    font-size: 13px;
+    padding-top: 20px;
+}
+.bottom {
+    line-height: 12px;
+}
+
+.button {
+    padding: 0;
+    float: right;
+}
+.clearfix:before,
+.clearfix:after {
+    display: table;
+    content: "";
+}
+
+.clearfix:after {
+    clear: both
+}
+
+.modal-table-table{
+    color: #772e2e;
+}
+.el-table th div, .el-table--border th:first-child .cell {
+    padding-left: 10px;
+    color: rgba(73, 92, 130, 0.45);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.el-table--fit {
+    border-right: 1;
+    border-bottom: 1;
+}
+
+.el-table {
+    border: 1px solid #dddede;
+    border-radius: 5px;
+}
+
+.modal-content table tr td {
+    font-weight: 400;
+}
+
+.el-table__row .input {
+    width: 130px;
+}
+
+.el-table__row .el-radio {
+    margin-right: 8px;
+}
+
+.el-table__row .el-radio__label {
+    font-size: 12px;
+    padding-left: 4px;
+}
+
+.el-table__row .el-radio__inner {
+    width: 12px;
+    height: 12px;
+}
+
+.process-step-td {
+    padding-top: 10px;
+    padding-bottom: 8px;
+}
+
+.confirm-edit-button{
+    margin-top: 5px;
+    margin-left: 45%;
+}
+
+/**
+老的
+ */
+.class-float-left {
+    float: left;
+}
+
+.stepsTitle {
+    margin: 0px 0px 10px 10px;
+}
+
+.stepsBody {
+    padding-top: 5px;
+    color: #d6dce8;
+    font-size: 14px;
+    background: #DFEBFF;
+    margin: 0px 0px 0px 20px;
+}
+
+.step-row {
+    width: 200px;
+    margin: 8px 0px 8px 0px;
+}
+
+.step-operation {
+    margin: 40px 0px 0px 20px;
+}
+
+.step-operation el-button {
+    margin-right: 20px;
+}
+
+.modal-table {
+    border-collapse: separate;
+    border-spacing: 8px;
+}
+
+.card-item-name {
+    height: 29px;
+    width: 350px;
+    line-height: 29px;
+}
+
+.card-item-download {
+    margin-right: 55px;
+}
+
+.upload-tip {
+    font-size: 10px;
+}
+
+.el-step__title {
+    font-size: 12px;
+}
+.el-step__icon  {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+}
+.el-step.is-vertical .el-step__head{
+    padding-left: 10px;
+}
+.el-step.is-vertical .el-step__line{
+    margin-left: 10px;
+    top: 18px;
+    bottom: -1px;
+    left: 8px;
+}
+.steps-body{
+    background: #dfebff;
+    margin-top: 10px;
+    width: 200px;
+}
+.el-step.is-vertical .el-step__title{
+    padding-bottom: 0px;
+}

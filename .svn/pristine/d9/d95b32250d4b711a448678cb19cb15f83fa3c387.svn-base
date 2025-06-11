@@ -1,0 +1,55 @@
+package org.jit.sose.domain.entity;
+
+import java.util.Date;
+
+public class ArchiveTemProcessCon {
+    private Integer id;
+
+    private Integer processId;
+
+    private Integer archiveTemId;
+
+    private String state;
+
+    private Date stateTime;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getProcessId() {
+        return processId;
+    }
+
+    public void setProcessId(Integer processId) {
+        this.processId = processId;
+    }
+
+    public Integer getArchiveTemId() {
+        return archiveTemId;
+    }
+
+    public void setArchiveTemId(Integer archiveTemId) {
+        this.archiveTemId = archiveTemId;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state == null ? null : state.trim();
+    }
+
+    public Date getStateTime() {
+        return stateTime;
+    }
+
+    public void setStateTime(Date stateTime) {
+        this.stateTime = stateTime;
+    }
+}

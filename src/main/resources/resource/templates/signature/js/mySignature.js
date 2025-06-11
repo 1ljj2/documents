@@ -1,0 +1,421 @@
+var vExcel = new Vue({
+    el: '#mySignature',
+    data: function () {
+        let vm = this;
+        return {
+            nowData: [],
+            column: [
+                {title: '公章/签名名称', key: 'fileName'},
+                {title: '备注', key: 'remark'},
+            ],
+            loading: true, selection: [],
+            totalNum: 0, pageNum: 1, pageSize: 10,  // 分页参数
+            loadingMsg: '',// 加载提示
+            sFileInfo: {
+                fileName: '', roleId: [],
+                id: '', userName: '', accessUrl: '', type: '',
+            },
+            fileInfo: {
+                fileName: '', fileCode: '',
+                id: '', userName: '', accessUrl: '', type: '',
+            },// 公章/签名实体类
+
+            firstPath: '/signature/signature',
+            uploadUrl: METHOD_URL, // 请求地址
+            picFormData: new FormData(), // 图片表单对象
+            picfileList: [],// 图片列表
+            picIdList: [],// 图片id列表
+            maxPixSize: 30,// 最大大小，单位mb(单位可自行调整)
+            signUrl: '',//图片路径
+            dialogImageUrl: '',// 图片预览地址
+            dialogImageAlt: '',// 图片预览提示文字
+            dialogVisible: false,// 是否显示预览
+
+            // ============ 文本上传
+            // 文件相关属性
+            textFormData: new FormData(), // 文本表单对象
+            textFileType: 'T',// 文件类型
+            textFileList: [],// 文件列表
+            textIdList: [],// 图片id列表
+            maxTextSize: 20,// 最大大小，单位mb(单位可自行调整)
+            fileStr: '',// 加密后的文件base64编码
+            aesKey: '',// 对称加密秘钥
+            base64: '',// 文件的base64编码
+
+            addNameModel: false,//新增签名模态框
+            removeSignModal: false,//删除模态框
+            removeSignSelectModal: false,//批量删除模态框
+            picModel: false,//展示图片模态框
+
+            submitFileData: [],//上传签名的列表信息
+            roleList: [],// 角色集合
+            isAdmin: false,//是否是admin管理员，默认不是
+            value: ''
+        }
+    },
+    components: {
+
+        'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+        'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+        'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+    },
+    beforeCreate: function () {
+    },
+    mounted() {
+        if (localStorage.getItem("userId") == 1) {//判断是否是管理员用户
+            this.isAdmin = true;
+        } else {
+            this.isAdmin = false;
+        }
+
+        this.getRoleList();//获取角色列表
+
+
+        this.initPage();//初始化表格表头
+        this.filter();//表格过滤查询
+    },
+    methods: {
+        /**
+         * 初始化表格表头
+         */
+        initPage() {
+            // 添加自定义slot-scope
+            this.column.push(HeadActionSlot());
+            // 添加多选
+            // this.column.unshift(HeadSelection());
+        },
+
+        /**
+         * 过滤查新页面数据
+         */
+        filter() {
+            console.log('当前页：' + this.pageNum);
+            console.log('页面大小：' + this.pageSize);
+            console.log('sFileInfo：' + this.sFileInfo.roleId);
+            let data = {
+                pageNum: this.pageNum,
+                pageSize: this.pageSize,
+                fileName: this.sFileInfo.fileName,
+                roleId: this.sFileInfo.roleId,
+            };
+            console.log('filter', data);
+            let url = this.firstPath + '/listPageInfo';//请求路径
+            CallAjaxPost(url, data, this.filterSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        /**
+         * 过滤查询回调函数
+         * @param data
+         */
+        filterSuc(data) {
+            console.log('filterSuc', data);
+            //取消显示加载
+            this.loading = false;
+            this.nowData = data.obj.list;
+            this.totalNum = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+
+        /**
+         * 清空搜索框信息
+         */
+        clearSFileInfo() {
+            this.sFileInfo.fileName = '';
+            this.sFileInfo.roleId = [];
+        },
+
+        /**
+         * 在多选模式下有效，只要选中项发生变化时就会触发
+         * @param selection 已选项数据
+         */
+        onSelectionChange(selection) {
+            this.selection = selection;
+            console.log(this.selection);
+        },
+
+        /**
+         * 改变页码
+         * @param pageNum 改变后的页码
+         */
+        onPageChange(pageNum) {
+            this.pageNum = pageNum;
+            this.filter();
+        },
+        /**
+         * 切换每页条数
+         * @param pageSize 换后的每页条数
+         */
+        onPageSizeChange(pageSize) {
+            this.pageSize = pageSize;
+            this.filter();//过滤查询
+        },
+
+
+        /**
+         * 打开添加签名模态框
+         */
+        openAddNameModel() {
+            this.addNameModel = true;//打开添加签名模态框
+
+        },
+
+        /**
+         * 获取角色信息列表
+         */
+        getRoleList() {
+            let url = '/account/role' + "/listByUserId";
+            CallAjaxPost(url, window.localStorage.getItem("userId"), this.getRoleListSuc);
+        },
+
+        /**
+         * 获取角色信息列表回调函数
+         * @param data
+         */
+        getRoleListSuc(data) {
+            // console.log(data.obj);
+            this.roleList = data.obj.roleList;
+        },
+
+        /**
+         * 关闭添加签名模态框
+         */
+        closeAddNameModel() {
+            this.addNameModel = false;//关闭模态框
+            this.clearFileInfo();//清空文件信息及文件名
+
+        },
+
+        /**
+         * 清除上传文件信息
+         */
+        clearFileInfo() {
+            this.fileInfo.fileName = '';//重置上传文件文件名
+            this.picFormData = new FormData(); // 创建新的表单
+            this.picfileList = []; // 清空文件列表
+            this.submitFileData = [];//清空上传文件信息
+        },
+
+        /**
+         * 提交照片表单
+         */
+        submitPictureList() {
+            this.loadingMsg = MessageLoading();//打开上传文件加载提示
+            let that = this;
+            // 检查数据格式
+            // if (this.checkName()) {
+            //     return;
+            // }
+            // 文件大小超过最大值
+            // if (this.picfileList[0].size > this.maxPixSize * 1024 * 1024) {
+            //     MessageWarning('图片' + '：' + this.picfileList[0].name + ' 已超过' + this.maxPixSize + 'Mb!');
+            //     this.picFormData = new FormData(); // 创建新的表单
+            //     return;
+            // }
+            //
+            //
+            // 文件大小超过最大值
+            // if (this.picfileList[0].size > this.maxPixSize * 1024 * 1024) {
+            //     MessageWarning('图片' + '：' + this.picfileList[0].name + ' 已超过' + this.maxPixSize + 'Mb!');
+            //     this.picFormData = new FormData(); // 创建新的表单
+            //     return;
+            // }
+
+
+            this.aesKey = GetAesKey();//生成16位对称加密秘钥
+            // console.log("this.picfileList", this.picfileList)
+
+            for (let i = 0; i < this.picfileList.length; i++) {
+                this.picfileList[i].roleId = this.submitFileData[i].roleId;
+                this.picfileList[i].remark = this.submitFileData[i].remark;
+                this.picfileList[i].name = this.submitFileData[i].signatureName;
+                if (!Boolean(this.picfileList[i].name)) {
+                    console.log("this.picfileList[i].name", this.picfileList[i].name)
+                    MessageWarning('公章签名名称不能为空！');
+                    return;
+                }
+            }
+            SubmitFileList(this.picfileList, this.submitPictureListSuc, "E")//上传文件
+        },
+        submitPictureListSuc(data) {
+            console.log("submitFileList", data);
+            CloseMessageLoading(this.loadingMsg)//关闭加载提示
+            this.closeAddNameModel()//关闭新增公章/签名模态框
+            this.filter();
+        },
+
+        /**
+         * 文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+         * @param file 当前文件
+         * @param fileList 文件列表
+         */
+        handleChangePic(file, fileList) {
+            // console.log("上传图片数据：", file);
+            // console.log("fileList：", fileList);
+            // console.log("this.submitFileData：", this.submitFileData);
+            this.picfileList = fileList;
+            this.submitFileData = [];//清空上传文件信息
+            for (let i = 0; i < this.picfileList.length; i++) {
+                this.submitFileData.push({
+                    fileName: this.picfileList[i].name,
+                    signUrl: fileList[i].url,
+                    roleId: [],
+                    remark: '',
+                    signatureName: this.picfileList[i].name
+                });
+            }
+
+        },
+
+        /**
+         * 文件列表移除文件时的钩子
+         * @param file 移除的文件
+         * @param fileList 文件列表
+         */
+        handleRemovePic(file, fileList) {
+            // console.log("fileList", fileList);
+
+            this.picfileList = fileList;
+
+            // console.log("this.picfileList", this.picfileList);
+            this.submitFileData = [];//清空上传文件信息
+            for (let i = 0; i < this.picfileList.length; i++) {
+                this.submitFileData.push({
+                    fileName: this.picfileList[i].name,
+                    signUrl: this.picfileList[i].url,
+                    roleId: [],
+                    remark: '',
+                    signatureName: this.picfileList[i].name
+                });
+
+            }
+        },
+
+        /**
+         * 点击文件列表中已上传的文件时的钩子
+         * @param file 当前文件
+         */
+        handlePreviewPic(file) {
+            console.log(file);
+            this.signUrl = file.raw;
+            this.picModel = true;
+
+        },
+
+
+        /**
+         * 文件超出个数限制
+         */
+        handleExceedPicLimit() {
+            MessageWarning('已超出最大文件个数');
+        },
+
+        /**
+         * 签名信息编辑
+         * @param index
+         * @param row
+         */
+        handleEdit(index, row) {
+            console.log(index, row);
+        },
+
+        /**
+         * 签名删除
+         * @param index
+         * @param row
+         */
+        handleDelete(index, row) {
+            console.log(index, row);
+            this.picfileList.splice(index, 1)
+            this.submitFileData = [];//清空上传文件信息
+            for (let i = 0; i < this.picfileList.length; i++) {
+                this.submitFileData.push({
+                    fileName: this.picfileList[i].name, signUrl: this.picfileList[i].url,
+                    roleId: [],
+                    remark: '',
+                    signatureName: this.picfileList[i].name
+                });
+
+            }
+        },
+
+        /**
+         * 查看签名,文件信息从本地读取
+         * @param index
+         */
+        showSignature(index, row) {
+            this.signUrl = this.submitFileData[index].signUrl;//获取文件预览地址
+            this.picModel = true;
+        },
+
+        /**
+         * 查看签名,文件信息从服务器获取
+         * @param index
+         */
+        showSignaturePicture(index) {
+            this.aesKey = GetAesKey();//生成16位对称加密秘钥
+            console.log(index);
+
+            let url = "/file/file" + "/getFileCodeById"
+            // CallAjaxPost(url, this.nowData[index].id, this.showSignaturePictureSuc)
+            // this.signUrl = this.submitFileData[index].signUrl;//获取文件预览地址
+            // this.picModel = true;
+            GetFileCodeById(this.nowData[index].id,this.aesKey,this.showSignaturePictureSuc)
+            // downloadFileEncrypt(this.nowData[index].id)
+        },
+        /**
+         * 查看签名,文件信息从服务器获取回调函数
+         * @param data
+         */
+        showSignaturePictureSuc(data) {
+            // console.log("showSignaturePictureSuc",data)
+            this.signUrl = AesDecrypt(this.aesKey, data.obj.base64);//AES非对称加密解码
+            console.log("this.signUrl",this.signUrl)
+            // this.signUrl = "data:image/png;base64," + data.obj.fileCode;//获取文件编码
+            this.picModel = true;
+        },
+
+        /**
+         * 关闭展示图片模态框
+         */
+        closePicModel() {
+            this.picModel = false;
+            this.signUrl = '';
+        },
+
+        /**
+         * 打开单个删除模态框
+         */
+        openRemoveSignModal(index) {
+            this.fileInfo.id = this.nowData[index].id;
+            this.removeSignModal = true;
+        },
+
+        /**
+         * 单个公章/签名删除
+         */
+        removeSign() {
+
+            let data = this.fileInfo.id;
+            let url = "/file/file" + '/delete';
+            CallAjaxPost(url, data, this.removeSignSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+            this.removeSignModal = false;
+        },
+        /**
+         * 单个公章/签名删除回调函数
+         */
+        removeSignSuc(data) {
+            console.log("removeSignSuc", data);
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('公章/签名信息删除成功！');
+            // 重新查询数据
+            this.filter();
+        },
+
+
+    }
+})

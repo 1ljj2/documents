@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.CourseInfoMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.CourseInfo">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="course_code" property="courseCode" jdbcType="VARCHAR"/>
+        <result column="course_name" property="courseName" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="created_date" property="createdDate" jdbcType="TIMESTAMP"/>
+        <result column="state_date" property="stateDate" jdbcType="TIMESTAMP"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, course_code, course_name, remark, created_date, state_date, state,parent_id
+  </sql>
+
+    <select id="listCourseByName" resultType="org.jit.sose.domain.vo.ListIdNameVo" parameterType="java.lang.String">
+        SELECT
+        id,
+        course_name AS `name`,
+        state_date AS stateDateString
+        FROM
+        `t_course_info`
+        WHERE
+        state = 'A'
+        and
+        parent_id != 0
+        <if test="name != null">
+            AND course_name LIKE CONCAT('%',#{name,jdbcType=VARCHAR},'%')
+        </if>
+
+    </select>
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select
+        <include refid="Base_Column_List"/>
+        from t_course_info
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_course_info
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.CourseInfo">
+    insert into t_course_info (id, course_code, course_name, 
+      remark, created_date, state_date, 
+      state)
+    values (#{id,jdbcType=INTEGER}, #{courseCode,jdbcType=VARCHAR}, #{courseName,jdbcType=VARCHAR}, 
+      #{remark,jdbcType=VARCHAR}, #{createdDate,jdbcType=TIMESTAMP}, #{stateDate,jdbcType=TIMESTAMP}, 
+      #{state,jdbcType=CHAR})
+  </insert>
+    <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.CourseInfo">
+        insert into t_course_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="courseCode != null">
+                course_code,
+            </if>
+            <if test="courseName != null">
+                course_name,
+            </if>
+            <if test="remark != null">
+                remark,
+            </if>
+            <if test="createdDate != null">
+                created_date,
+            </if>
+            <if test="stateDate != null">
+                state_date,
+            </if>
+            <if test="state != null">
+                state,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="courseCode != null">
+                #{courseCode,jdbcType=VARCHAR},
+            </if>
+            <if test="courseName != null">
+                #{courseName,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="createdDate != null">
+                #{createdDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="stateDate != null">
+                #{stateDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="state != null">
+                #{state,jdbcType=CHAR},
+            </if>
+        </trim>
+    </insert>
+
+
+
+    <update id="updateCourse">
+        update t_course_info
+        <set>
+            <if test="courseCode != null">
+                course_code = #{courseCode,jdbcType=VARCHAR},
+            </if>
+            <if test="courseName != null">
+                course_name = #{courseName,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+<!--            <if test="createdDate != null">-->
+<!--                created_date = #{createdDate,jdbcType=TIMESTAMP},-->
+<!--            </if>-->
+<!--            <if test="stateDate != null">-->
+<!--                state_date = #{stateDate,jdbcType=TIMESTAMP},-->
+<!--            </if>-->
+<!--            <if test="state != null">-->
+<!--                state = #{state,jdbcType=CHAR},-->
+<!--            </if>-->
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.CourseInfo">
+        update t_course_info
+        <set>
+            <if test="courseCode != null">
+                course_code = #{courseCode,jdbcType=VARCHAR},
+            </if>
+            <if test="courseName != null">
+                course_name = #{courseName,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="createdDate != null">
+                created_date = #{createdDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="stateDate != null">
+                state_date = #{stateDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="state != null">
+                state = #{state,jdbcType=CHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.CourseInfo">
+    update t_course_info
+    set course_code = #{courseCode,jdbcType=VARCHAR},
+      course_name = #{courseName,jdbcType=VARCHAR},
+      remark = #{remark,jdbcType=VARCHAR},
+      created_date = #{createdDate,jdbcType=TIMESTAMP},
+      state_date = #{stateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+
+    <select id="listByCourse" resultType="org.jit.sose.domain.entity.CourseInfo">
+       SELECT
+            tci.id,
+            tci.course_code,
+            tci.course_name,
+            tci.remark,
+            tci.state,
+            tci.state_date AS stateDateString,
+            tcuc.user_id as leaderUserId,
+            au.user_name as leaderUserName
+		FROM
+            t_course_info tci
+            LEFT JOIN t_course_user_con tcuc on tci.id = tcuc.course_id  and tcuc.type= 'A' and tcuc.state = 'A'
+            LEFT JOIN a_user au on tcuc.user_id = au.id
+		WHERE
+            tci.state = 'A' and   parent_id != 0
+        <if test="courseCode!=null and courseCode!=''">
+            and tci.course_code like '%${courseCode}%'
+        </if>
+
+        <if test="courseName!=null and courseName!=''">
+            and tci.course_name like '%${courseName}%'
+        </if>
+        ORDER BY
+            tci.state_date desc
+    </select>
+
+    <delete id="deleteOneCourse">
+        delete from t_course_info where id=#{id}
+    </delete>
+
+    <delete id="deleteSelectedCourses">
+        delete  from t_course_info
+         where id in
+        <foreach collection="array" open="(" separator="," close=")" item="courseId">
+            #{courseId}
+        </foreach>
+    </delete>
+
+    <insert id="insertOneCourse" useGeneratedKeys="true" keyProperty="id">
+        insert into t_course_info (course_code,course_name,remark) values
+        (#{courseCode},#{courseName},#{remark})
+    </insert>
+
+    <select id="selectUserId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select count(*) from t_course_user_con where user_id=#{id} and type='A' and state='A'
+    </select>
+
+    <insert id="insertOneCourseLeader" parameterType="org.jit.sose.domain.entity.courseLeader">
+        insert into t_course_user_con (course_id,user_id,type) values (#{courseId},#{userId},#{type})
+    </insert>
+    
+    <insert id="insertCourseTeacher" parameterType="java.util.ArrayList">
+        insert into t_course_user_con (course_id,user_id,type) values
+        <foreach collection="allCourseLead" item="oneCourseTea" separator=",">
+            (#{oneCourseTea.courseId},#{oneCourseTea.userId},#{oneCourseTea.type})
+        </foreach>
+    </insert>
+
+    <select id="selectRoleId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        select role_id from a_user_role where user_id=#{id}
+    </select>
+
+    <insert id="insertCourseList" parameterType="org.jit.sose.domain.entity.CourseInfo" useGeneratedKeys="true" keyProperty="id">
+        insert  into  t_course_info (course_code,course_name,remark,parent_id) values
+        (#{courseCode},#{courseName},#{remark},#{parentId})
+    </insert>
+
+    <update id="updateCourseOfList" parameterType="org.jit.sose.domain.entity.CourseInfo">
+          update t_course_info set parent_id=#{parentId} where id=#{id}
+    </update>
+</mapper>

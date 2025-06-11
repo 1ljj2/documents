@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>信息浏览</title>
+    <script type="text/javascript" src="/public/common.js"></script>
+    <script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+    <link rel='stylesheet' type='text/css' href='/templates/remind/css/myRemind.css'>
+</head>
+<body>
+<div class="layout-body" id="myRemind" v-cloak>
+    <layout-header></layout-header>
+    <div id="wrap">
+        <layout-sider></layout-sider>
+        <div class="layout-main">
+            <!-- **通知公告** -->
+            <el-card class="box-card noti" style=" position:relative;">
+                <div slot="header" class="clearfix">
+                    <i class="el-icon-chat-line-round"></i> <span>通知公告</span>
+                    <div style="float: right;">
+                    <!-- <el-link type="danger" :underline="false">{{ noticeCount }}条 新公告</el-link> -->
+               		</div>
+                </div>
+                <!-- 公告列表 -->
+                <div style="padding-bottom: 30px;">
+                <el-collapse @change="getNotice" accordion style="margin-top:0">
+               		<el-collapse-item v-for="item in noticeList" :key="item.id" :label="item.title" :value="item.id">
+               			<template slot-scope="{ row, index }" slot="title" style="float:left;width: 100%;">
+               				<div style="float:left;width: 100%;padding: 1px 5px 1px 5px">
+               				   <i style="float:left;padding-left: 10px;padding-top:10px" class="el-icon-star-on" v-if="item.seq=='0'"></i>
+               				   <i class="el-icon-s-flag" style="padding-left: 10px"></i>
+               				   <span style="float:left;color:#3C3C3C;">{{item.title}}</span>
+                               <span style="float:right;color:#C3C3C3">{{item.stateTimeString}}</span>
+                        	</div>
+                        </template>
+                        <div style="padding: 0 10px 0 10px;">{{item.content}}</div>
+                        <div style="padding: 0 10px 0 10px;" v-show="item.fileName!=null" @click="downloadNoticeFile(item.fileId)"><a>{{'附件:'+item.fileName}}</a></div>
+                        <div style="float:right;color: #333;margin-right: 10px;padding-left:10px">
+                        	<span>发布人:</span><span>{{' '+item.departmentNameStr+'  '+item.userName}}</span>
+                        	<br>
+                        	<span>发布日期:</span><span>{{' '+item.stateTimeString}}</span>
+                        </div>
+               		</el-collapse-item>
+               	</el-collapse>
+               	</div> 
+                <!--底部分页功能-->
+				<div class="bottom clearfix" style="position:absolute; bottom:1px;right: 0;">
+					<Page :total="totalNum" :page-size="pageSize" 
+					  @on-change="onPageChange" size="small" simple>
+					</Page>
+				</div> 
+            </el-card>
+
+            <!-- **待办事务** -->
+            <el-card class="box-card todoaff">
+                <div slot="header" class="clearfix">
+                    <i class="el-icon-bell"></i> <span>待办事务</span>
+                    <el-button style="float: right; padding: 3px 0;" type="text">待办事务总数：{{backLogTotal}}</el-button>
+                </div>
+                <template>
+                  <!--  <Collapse v-model="openedPanel" accordion @on-change="choosePanel">
+                        <Panel :name="item.processId" v-for="(item, index) in panel" :key="index">
+                            流程信息
+                            <div class="panel-title class-float-left">
+                                <div class="panel-title-name">{{item.processName}}</div>
+                                <div class="panel-title-time">{{item.startTime}} - {{item.endTime}}</div>
+                                <el-badge :value="item.runningStepSize" :max="99" class="item panel-title-quantity">
+                                    <el-button size="mini" type="danger" plain>总数</el-button>
+                                </el-badge>
+                            </div>
+                            该流程的实例化流程运转集合
+                            <div slot="content">
+                                   <Card v-for="(runningStep, i) in item.runningStep" :key="i" style="margin: 3px 0" @click.native="auditRunningStep(index,i)" class="panel-card">
+                                    <div class="panel-card-submitter"><b>{{runningStep.preRunningStep.applicantName}}</b></div>
+                                    <div class="panel-card-submitTime"><i>申请时间：</i>{{runningStep.stateDateString}}</div>
+                                </Card>
+                            </div>
+                        </Panel>
+                    </Collapse>  -->
+                </template>
+            </el-card>
+
+            <!-- **个人消息** -->
+            <el-card class="box-card mess" style="position:relative;">
+                <div slot="header" class="clearfix">
+                    <i class="el-icon-warning-outline"></i> <span>个人消息</span>
+                    <div style="float: right;">
+                    <!-- <el-link :underline="false" type="danger">{{ noAffCount }}条 新消息</el-link> -->
+               		</div>
+                </div>
+                <!-- 消息列表 -->
+                <div style="padding-bottom: 30px;">
+               	<el-collapse @change="getMess" accordion style="margin-top:0">
+               		<el-collapse-item v-for="item in messList" :key="item.id" :label="item.title" :value="item.id">
+                        <template slot="title" style="float:left;width: 100%;">
+               				<div style="float:left;width: 100%;padding: 1px 5px 1px 5px">
+               				   <!-- <span v-if="item.isRead=='1'" style="float:left;color:#999999;">{{item.title}}</span> -->
+                               <span style="float:left;color:#E55552;">{{item.title}}</span> 
+                               <span style="float:right;color: #999">{{item.stateTimeString}}</span>
+                        	</div>
+                        </template>
+                        <div style="padding: 0 10px 0 10px;">{{item.content}}</div>
+                        <div style="padding: 0 10px 0 10px;" v-show="item.fileName!=null"  @click="downloadMessFile(item.fileId)"><a>{{'附件:'+item.fileName}}</a></div>
+                        <div style="float:right;color: #333;margin-right: 10px;padding-left:10px">
+                        	<span>发布人:</span><span>{{' '+item.departmentNameStr+'  '+item.userName}}</span>
+                        	<br>
+                        	<span>发布日期:</span><span>{{' '+item.stateTimeString}}</span>
+                        </div>
+               		</el-collapse-item>
+               	</el-collapse>
+               	</div>
+               	<!--底部分页功能-->
+				<div class="bottom clearfix" style="position:absolute; bottom:1px;right: 0">
+					<Page :total="totalNum1" :page-size="pageSize1" 
+					  @on-change="onPageChange1" size="small" simple>
+					</Page>
+				</div> 
+            </el-card>
+            
+        </div>
+        <div style="clear: both"></div>
+    </div>
+    <layout-footer></layout-footer>
+</div>
+</body>
+<script type="text/javascript" src="/templates/remind/js/myRemind.js"></script>
+</html>

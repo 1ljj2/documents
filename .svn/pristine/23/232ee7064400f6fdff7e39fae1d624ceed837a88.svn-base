@@ -1,0 +1,614 @@
+var varchiveMan = new Vue({
+        el: '#archiveMan',
+        data: function () {
+            return {
+                //---------------------------------接口路径参数-------------------------
+                processPath: '/process/process',
+                processStepsPath: '/process/processSteps',
+                rolePath: '/account/role',
+                categoryPath: '/config/category',
+                userPath: '/account/user',
+                yearTermPath: '/account/yearTerm',
+                fileInfoPath: '/file/file',
+                coursePath: '/account/course',
+                //------------------------------------------------------------------------------------！！公有！！-------------------------
+                categoryList: [], termList: [], courseList: [], userList: [], stateList: [], processList: [],
+                //------------------------------------------------------------------------------------！！文档模板管理参数！！-------------------------
+                temConditions: {fileTemName: '', termId: '', categoryId: ''},//搜索信息
+                temTableData: [],//表格目前的参数
+                componentSize: 'medium',// 组件尺寸
+                temColumn: [
+                    {title: "模板名称", key: "fileName", minWidth: 200},
+                    {title: "学期", key: "termName", minWidth: 110},
+                    {title: "分类", key: "categoryName", minWidth: 150},
+                    {title: "关联课程", key: "courseName", minWidth: 190},
+                    {title: "更新时间", key: "stateTimeString", minWidth: 150},
+                ], // 表头信息
+                temLoading: true, selection: [],
+                loadingMsg: '',// 加载提示
+                temTotalNum: 0, temPageNum: 1, temPageSize: 10,  // 分页参数
+                fileTem: {
+                    fileId: '',
+                    categoryId: '',
+                    categoryName: '',
+                    fileCode: '',
+                    fileName: '',
+                    number: '',
+                    remark: '',
+                    stateTimeString: '',
+                    termId: '',
+                    termName: '',
+                    courseId: '',
+                    courseName: '',
+                },
+                cloneFileTem: {
+                    termId: '',
+                    termName: '',
+                    courseId: '',
+                    courseName: '',
+                    categoryId: '',
+                    categoryName: '',
+                },
+                //---------------------------------------------------模态框---------------------------
+                removeFileTemModal: false,
+                editFileTemModal: false,
+                addFileTemModal: false,
+                //------------------------------------------------------------------------------------！！系统文档监管参数！！-------------------------
+                fileConditions: {fileName: '', termId: '', categoryId: '', state: '', userId: ''},//搜索信息
+                fileTableData: [],//表格目前的参数
+                fileComponentSize: 'medium',// 组件尺寸
+                fileColumn: [
+                    {title: "文档名称", key: "fileName", minWidth: 200},
+                    {title: "学期", key: "termName", minWidth: 110},
+                    {title: "创建者", key: "userName", minWidth: 190},
+                    {title: "更新时间", key: "stateTimeString", minWidth: 150},
+                    {title: "状态", key: "stateName", minWidth: 150},
+                ], // 表头信息
+                fileLoading: true, selection: [],
+                fileTotalNum: 0, filePageNum: 1, filePageSize: 10,  // 分页参数
+                chargingFile: {
+                    fileId: '',
+                    categoryName: '',
+                    fileCode: '',
+                    fileName: '',
+                    remark: '',
+                    stateTimeString: '',
+                    termName: '',
+                    userName: '',
+                    stateName: '',
+                    isEnable: '',
+                },
+                toBeEnableFlag: false,//标志启用、禁用按钮的标志
+
+                fileList: [],// 文件列表
+            }
+        },
+        components: {
+            'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+            'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+            'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+        },
+        beforeCreate: function () {
+            CheckPermissions();
+        },
+        mounted() {
+            //页面初始化
+            this.initPage();
+            //获取分类列表
+            this.geCategoryList();
+        },
+        methods: {
+            /**
+             * 页面初始化加载项 表格表头
+             */
+            initPage() {
+                // 设置文档模板表头
+                this.setFileTemTableTitle();
+                //设置文档监管表头
+                this.setChargingFileTableTitle();
+                //获取文档表格数据
+                this.getFileTemTableData();
+            },
+            //TODO--------------------------------------------------------------------！！公有！！--------------------------------
+            /**
+             * 根据输入的termName获得termList
+             */
+            listTermByName(name) {
+                let data = {
+                    name: name,
+                };
+                let url = this.yearTermPath + '/listTermByName';
+                console.log("listTermByName参数：", data)
+                CallAjaxPost(url, data, this.listTermByNameSuc);
+            },
+            listTermByNameSuc(data) {
+                this.termList = data.obj;
+                console.log("listTermByNameSuc: ", this.termList);
+            },
+            /**
+             * 根据输入的courseName获得courseList
+             */
+            listCourseByName(name) {
+                let data = {
+                    name: name,
+                };
+                let url = this.coursePath + '/listCourseByName';
+                console.log("listTermByName参数：", data)
+                CallAjaxPost(url, data, this.listCourseByNameSuc);
+            },
+            listCourseByNameSuc(data) {
+                this.courseList = data.obj;
+                console.log("listCourseByNameSuc: ", this.courseList);
+            },
+            /**
+             * 获取文档分类列表
+             */
+            geCategoryList() {
+                setTimeout(() => {
+                    let url = this.categoryPath + '/listFileCategory';
+                    CallAjaxGetNoParam(url, this.getCategoryListSuc);
+                }, 200);
+            },
+            getCategoryListSuc(data) {
+                console.log("getCategoryListSuc", data)
+                this.categoryList = data.obj;
+            },
+            /**
+             * 根据用户名查询用户列表
+             */
+            listUserByName(name) {
+                let data = {
+                    userName: name,
+                };
+                let url = this.userPath + '/listUserByName';
+                console.log("listUserByName参数：", data)
+                CallAjaxPost(url, data, this.listUserByNameSuc);
+            },
+            listUserByNameSuc(data) {
+                this.userList = data.obj;
+                console.log("listUserByNameSuc: ", this.courseList);
+            },
+            /**
+             * 根据流程名称查询流程列表
+             */
+            listProcessByName(name) {
+                let data = {
+                    processName: name,
+                };
+                let url = this.processPath + '/listProcessByName';
+                console.log("listProcessByName参数：", data)
+                CallAjaxPost(url, data, this.listProcessByNameSuc);
+            },
+            listProcessByNameSuc(data) {
+                this.processList = data.obj;
+                console.log("listProcessByNameSuc: ", this.courseList);
+            },
+            /**
+             * 清除搜索下拉框数据
+             */
+            clearList() {
+                this.courseList = [];
+                this.termList = [];
+                this.userList = [];
+                this.stateList = [];
+            },
+            //TODO--------------------------------------------------------------------！！文档模板管理！！--------------------------------
+            /**
+             * 改变页码
+             */
+            onTemPageChange(pageNum) {
+                this.temPageNum = pageNum;
+                this.getFileTemTableData();
+            },
+            /**
+             * 切换每页条数
+             */
+            onTemPageSizeChange(pageSize) {
+                this.temPageSize = pageSize;
+                this.getFileTemTableData();
+            },
+            /**
+             * 设置表头
+             */
+            setFileTemTableTitle() {
+                //添加“备注”所在列信息
+                this.temColumn.push(HeadTooltip('remark', '备注'));
+                // 添加自定义slot-scope(操作栏)
+                this.temColumn.push(HeadActionSlot(true, 260));
+                // 添加序号
+                this.temColumn.unshift(HeadIndex(true));
+            },
+            /**
+             * 获取文档模板
+             */
+            getFileTemTableData() {
+                let data = {
+                    fileTemName: this.temConditions.fileTemName,
+                    termId: this.temConditions.termId,
+                    categoryId: this.temConditions.categoryId,
+                    pageNum: this.temPageNum,
+                    pageSize: this.temPageSize,
+                };
+                let url = this.fileInfoPath + '/listFileTemByCondition';
+                console.log("filter参数：", data)
+                CallAjaxPost(url, data, this.getFileTemTableDataSuc);
+                // 显示加载
+                this.temLoading = true;
+            },
+            getFileTemTableDataSuc(data) {
+                console.log("getFileTemTableDataSuc:", data)
+                // 取消显示加载
+                this.temLoading = false;
+                this.temTableData = data.obj.list;
+                console.log("getFileTemTableDataSuc", this.temTableData);
+                this.temTotalNum = data.obj.total;
+                // 再次设置当前页码,若查询记录为空，设为第一页
+                this.temPageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+                //清除历史记录
+                this.clearList();
+            },
+            clearTemConditions() {
+                this.temConditions.fileTemName = null;
+                this.temConditions.termId = null;
+                this.temConditions.categoryId = null;
+                this.getFileTemTableData();
+            },
+            /**
+             * 清除文档模板信息
+             */
+            clearTemInfo() {
+                this.fileTem.fileId = '';
+                this.fileTem.fileName = '';
+                this.fileTem.remark = '';
+                this.fileTem.categoryId = '';
+                this.fileTem.categoryName = '';
+                this.fileTem.termId = '';
+                this.fileTem.termName = '';
+                this.fileTem.courseId = '';
+                this.fileTem.courseName = '';
+            },
+            /**
+             * 打开新增文档模板的模态框
+             */
+            openAddFileTemModal() {
+                //打开模态框
+                this.addFileTemModal = true;
+            },
+            /**
+             * 取消新增文档模板
+             */
+            cancelAddFileTem() {
+                // 关闭模态框
+                this.addFileTemModal = false;
+                // 清除信息
+                this.clearTemInfo()
+                this.clearList();
+            },
+            /**
+             * 新增文档模板
+             */
+            addFileTem() {
+                // 编辑前对数据进行校验
+                if (this.checkFileTem()) {
+                    return;
+                }
+                // let data = {
+                //     id: this.fileTem.fileId,
+                //     fileName: this.fileTem.fileName,
+                //     remark: this.fileTem.remark,
+                //     categoryId: this.fileTem.categoryId,
+                //     termId: this.fileTem.termId,
+                //     courseId: this.fileTem.courseId,
+                // };
+                // console.log("addFileTem参数：", data)
+                // let url = this.fileInfoPath + '/addFileTem';
+                this.fileList[0].name = this.fileTem.fileName;
+                this.fileList[0].remark = this.fileTem.remark;
+                console.log("this.fileList", this.fileList)
+                console.log("this.fileTem.fileName", this.fileTem.fileName)
+                console.log("this.fileTem.remark", this.fileTem.remark)
+                SubmitFileList(this.fileList, this.addFileTemSuc, "A", this.fileTem.categoryId, this.fileTem.termId, this.fileTem.courseId)
+                // CallAjaxPost(url, data, this.addFileTemSuc);
+            },
+            addFileTemSuc(data) {
+                // 关闭模态框
+                this.addFileTemModal = false;
+                MessageSuccess("文档模板新增成功");
+                // 重新查询数据
+                this.getFileTemTableData();
+                // 清除信息
+                this.clearTemInfo()
+                this.clearList();
+            },
+            /**
+             * 打开下载文档模板的模态框
+             */
+            openDownFileTemModal(index) {
+                // console.log(index)
+                // console.log("this.temTableData[index]",this.temTableData[index])
+                downloadFileEncrypt(this.temTableData[index].fileId)
+            },
+            /**
+             * 打开删除文档模板的模态框
+             */
+            openRemoveFileTemModal(index) {
+                //获取索引值
+                this.fileTem.fileId = this.temTableData[index].fileId;
+                //打开模态框
+                this.removeFileTemModal = true;
+            },
+            /**
+             * 删除文档模板
+             */
+            removeFileTem() {
+                //关闭模态框
+                this.removeFileTemModal = false;
+                let data = this.fileTem.fileId;
+                console.log("removeFileTem:", data)
+                let url = this.fileInfoPath + '/delete';
+                CallAjaxPost(url, data, this.removeFileTemSuc, this.removeErr);
+                // 打开加载提示
+                this.loadingMsg = MessageLoading();
+            },
+            removeErr(data) {
+                console.log(data)
+            },
+            removeFileTemSuc() {
+                // 关闭加载提示
+                CloseMessageLoading(this.loadingMsg);
+                MessageSuccess('文档模板删除成功');
+                // 重新查询数据
+                this.getFileTemTableData();
+            },
+            /**
+             * 清除文档模板
+             */
+            clearFileTem() {
+                this.fileTem.fileId = '';
+                this.fileTem.categoryId = '';
+                this.fileTem.categoryName = '';
+                this.fileTem.fileName = '';
+                this.fileTem.remark = '';
+                this.fileTem.termId = '';
+                this.fileTem.termName = '';
+                this.fileTem.courseId = '';
+                this.fileTem.courseName = '';
+                this.fileList = [];
+            },
+            /**
+             * 校验文档模板数据
+             */
+            checkFileTem() {
+                if (CheckEmpty(this.fileTem.fileName, '文档模板名称不能为空') ||
+                    CheckEmpty(this.fileTem.categoryId, '请选择该文档模板的分类') ||
+                    CheckEmpty(this.fileTem.termId, '请选择该文档模板所属的学年学期') ||
+                    CheckEmpty(this.fileTem.courseId, '请选择该文档模板所属的课程') ||
+                    CheckLength(this.fileTem.fileName, '50', '请控制文档模板名称在50字以内')) {
+                    return true;
+                }
+            },
+            /**
+             * 打开编辑文档模板的模态框
+             */
+            openEditFileTemModal(index) {
+                console.log("编辑前数据：", this.temTableData[index])
+                //获取索引值
+                this.fileTem.fileId = this.temTableData[index].fileId;
+                this.cloneFileTem.categoryId = this.temTableData[index].categoryId;
+                this.fileTem.categoryId = this.fileTem.categoryName = this.temTableData[index].categoryName;
+                this.fileTem.fileName = this.temTableData[index].fileName;
+                this.fileTem.remark = this.temTableData[index].remark;
+                this.cloneFileTem.termId = this.temTableData[index].termId;
+                this.fileTem.termId = this.fileTem.termName = this.temTableData[index].termName;
+                this.cloneFileTem.courseId = this.temTableData[index].courseId;
+                this.fileTem.courseId = this.fileTem.courseName = this.temTableData[index].courseName;
+                //打开编辑模态框
+                this.editFileTemModal = true;
+            },
+            /**
+             * 取消编辑文档模板
+             */
+            cancelEditFileTem() {
+                // 关闭模态框
+                this.editFileTemModal = false;
+                //清除信息
+                this.clearFileTem();
+                this.clearList();
+            },
+            /**
+             * 编辑文档模板
+             */
+            editFileTem() {
+                //编辑前对数据进行校验
+                if (this.checkFileTem()) {
+                    return;
+                }
+                let data = {
+                    id: this.fileTem.fileId,
+                    fileName: this.fileTem.fileName,
+                    remark: this.fileTem.remark,
+                };
+                //检验学期
+                if (!(this.cloneFileTem.termId == this.fileTem.termId || typeof (this.fileTem.termId) == "string")) {
+                    data["termId"] = this.fileTem.termId;
+                }
+                //检验分类
+                if (!(this.cloneFileTem.categoryId == this.fileTem.categoryId || typeof (this.fileTem.categoryId) == "string")) {
+                    data["categoryId"] = this.fileTem.categoryId;
+                }
+                //检验课程
+                if (!(this.cloneFileTem.courseId == this.fileTem.courseId || typeof (this.fileTem.courseId) == "string")) {
+                    data["courseId"] = this.fileTem.courseId;
+                }
+                console.log("editFileTem数据:", data)
+                let url = this.fileInfoPath + '/editFileInfo';
+                CallAjaxPost(url, data, this.editFileTemSuc);
+                // 打开加载提示
+                this.loadingMsg = MessageLoading();
+            },
+            editFileTemSuc() {
+                // 关闭加载提示
+                CloseMessageLoading(this.loadingMsg);
+                // 关闭模态框
+                this.editFileTemModal = false;
+                MessageSuccess("修改成功");
+                // 重新查询数据
+                this.getFileTemTableData();
+                //清除信息
+                this.clearTemInfo()
+                this.clearList();
+            },
+
+            /**
+             * TODO--------------------------------------------------------------------！！系统文档监管！！--------------------------------
+             */
+            /**
+             * 改变页码
+             */
+            onFilePageChange(pageNum) {
+                this.filePageNum = pageNum;
+                this.getChargingFileTableData();
+            },
+            /**
+             * 切换每页条数
+             */
+            onTemPageSizeChange(pageSize) {
+                this.filePageSize = pageSize;
+                this.getChargingFileTableData();
+            },
+            /**
+             * 设置表头
+             */
+            setChargingFileTableTitle() {
+                //添加“备注”所在列信息
+                this.fileColumn.push(HeadTooltip('remark', '备注'));
+                // 添加自定义slot-scope(操作栏)
+                this.fileColumn.push(HeadActionSlot(true, 180));
+                // 添加序号
+                this.fileColumn.unshift(HeadIndex(true));
+            },
+            /**
+             * 处理点击tab事件
+             * @param tab
+             * @param event
+             */
+            handleClick(tab, event) {
+                // console.log(tab, event);
+                if (tab.index == 1) {
+                    this.getChargingFileTableData()
+                } else {
+
+                }
+            },
+            /**
+             * 获取文档模板
+             */
+            getChargingFileTableData() {
+                let data = {
+                    fileTemName: this.fileConditions.fileName,
+                    termId: this.fileConditions.termId,
+                    categoryId: this.fileConditions.categoryId,
+                    state: this.fileConditions.state,
+                    userId: this.fileConditions.userId,
+                    pageNum: this.filePageNum,
+                    pageSize: this.filePageSize,
+                };
+                let url = this.fileInfoPath + '/listChargingFileByCondition';
+                console.log("getChargingFileTableData参数：", data)
+                CallAjaxPost(url, data, this.getChargingFileTableDataSuc);
+                // 显示加载
+                this.fileLoading = true;
+            },
+            getChargingFileTableDataSuc(data) {
+                console.log("getChargingFileTableDataSuc:", data)
+                // 取消显示加载
+                this.fileLoading = false;
+                this.fileTableData = data.obj.list;
+                this.fileTotalNum = data.obj.total;
+                this.filePageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+                //清除历史记录
+                this.clearList();
+            },
+            /**
+             * 清除监察文档搜索条件
+             */
+            clearFileConditions() {
+                this.fileConditions.fileName = null;
+                this.fileConditions.termId = null;
+                this.fileConditions.categoryId = null;
+                this.fileConditions.state = null;
+                this.fileConditions.userId = null;
+                this.getChargingFileTableData();
+            },
+            /**
+             * 下载需要监察的文档
+             */
+            openDownChargingFileModal(index) {
+                // console.log(index)
+                // console.log("this.fileTableData",this.fileTableData)
+                downloadFileEncrypt(this.fileTableData[index].fileId)
+            },
+            /**
+             * 改变需要监察的文档启用禁用状态
+             */
+            changeFileEnable(index) {
+                console.log(index)
+                console.log(this.fileTableData)
+                let url = this.fileInfoPath;
+                if (this.fileTableData[index].isEnable) {
+                    url = url + '/disableFile';
+                } else {
+                    url = url + '/enableFile';
+                }
+                CallAjaxPost(url, this.fileTableData[index].fileId, this.changeFileEnableSuc)
+            },
+            /**
+             * 改变需要监察的文档启用禁用状态回调函数
+             * @param data
+             */
+            changeFileEnableSuc(data) {
+                // console.log("changeFileEnableSuc",data)
+                this.getChargingFileTableData()
+            },
+
+            /**
+             * 文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+             * @param file 当前文件
+             * @param fileList 文件列表
+             */
+            handleChange(file, fileList) {
+                this.fileList = fileList;
+                this.fileTem.fileName = this.fileList[0].raw.name;
+                console.log("this.fileList", this.fileList)
+
+            },
+
+            /**
+             * 文件列表移除文件时的钩子
+             * @param file 移除的文件
+             * @param fileList 文件列表
+             */
+            handleRemove(file, fileList) {
+                this.fileList = fileList;
+                this.fileTem.fileName = '';
+            },
+
+            /**
+             * 点击文件列表中已上传的文件时的钩子
+             * @param file 当前文件
+             */
+            handlePreview(file) {
+                console.log(file);
+            },
+
+
+            /**
+             * 文件超出个数限制
+             */
+            handleExceedLimit() {
+                MessageWarning('已超出最大文件个数');
+            },
+
+        }
+    })
+;

@@ -1,0 +1,29 @@
+package org.jit.sose.domain.entity;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.annotations.ApiModel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.util.Date;
+
+@Data
+@ApiModel(value = "ArchiveTemplateEmpFile", description = "分类")
+@TableName(value = "a_category")
+@EqualsAndHashCode(callSuper = false)
+public class ArchiveTemplateEmpFile {
+    private Integer id;
+
+    private Integer archiveTemplateId;
+
+    private String emptyFileName;
+
+    private Integer seq;
+
+    private String remark;
+
+    private String state;
+
+    private Date stateTime;
+
+}

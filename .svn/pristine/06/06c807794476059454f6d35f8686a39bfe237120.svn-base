@@ -1,0 +1,157 @@
+package org.jit.sose.service.impl;
+
+import java.util.List;
+
+import org.jit.sose.domain.entity.Notice;
+import org.jit.sose.domain.entity.NoticeAudit;
+import org.jit.sose.domain.param.AddNoticeAuditParam;
+import org.jit.sose.domain.param.AddNoticeParam;
+import org.jit.sose.domain.param.ListNoticeParam;
+import org.jit.sose.domain.vo.ListMessVo;
+import org.jit.sose.domain.vo.ListNoticeVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.ConfigurationMapper;
+import org.jit.sose.mapper.NoticeAuditMapper;
+import org.jit.sose.mapper.NoticeCategoryConMapper;
+import org.jit.sose.mapper.NoticeFileConMapper;
+import org.jit.sose.mapper.NoticeMapper;
+import org.jit.sose.mapper.NoticeUserConMapper;
+import org.jit.sose.service.NoticeService;
+import org.jit.sose.util.StringUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+
+/** 
+* @author jinyu: 
+* @Date 2020年9月24日 下午2:52:28 
+*  
+*/
+@Service
+public class NoticeServiceImpl implements NoticeService {
+	
+	@Autowired
+	private NoticeMapper noticeMapper;
+	
+	@Autowired
+	private NoticeUserConMapper noticeUserConMapper;
+	
+	@Autowired
+	private NoticeCategoryConMapper noticeCategoryConMapper;
+	
+	@Autowired
+	private ConfigurationMapper configurationMapper;
+	
+	@Autowired
+	private NoticeAuditMapper noticeAuditMapper;
+	
+	@Autowired
+	private NoticeFileConMapper noticeFileConMapper;
+
+	@Transactional
+	@Override
+	public PageInfoVo<ListNoticeVo> listNotice(ListNoticeParam param) {
+		// 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        //【标题、发布部门、发布用户、分页参数】
+        List<ListNoticeVo> voList = noticeMapper.listNotice(param);
+        PageInfo<ListNoticeVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+	}
+	
+	@Override
+	public void removeNoticeSelect(List<Integer> idList) {
+		noticeMapper.removeNoticeSelect(idList);
+	}
+	
+	@Override
+	public void removeNotice(Integer id) {
+		noticeMapper.removeNotice(id);
+	}
+
+	
+	@Override
+	public void addNotice(AddNoticeParam param) {
+		System.out.println("====NoticeServiceImpl:addNotice===="+param);
+		// 创建Notice对象并赋值
+		Notice notice = new Notice();
+		notice.setTitle(param.getTitle());
+		notice.setContent(param.getContent());
+        // 新增公告
+		noticeMapper.addNotice(notice);
+		int noticeId = notice.getId();
+		param.setNoticeId(noticeId);
+		//绑定公告和用户相关，加入到t_notice_user_con表中
+		noticeUserConMapper.addNoticeUserCon(param);
+		//绑定公告和分类相关，加入到t_notice_category_con表中
+		noticeCategoryConMapper.addNoticeCategoryCon(param);
+		//增加绑定消息和文件相关，加入到t_mess_file_con表中
+		noticeFileConMapper.addNoticeFileCon(param);
+	}
+
+	@Transactional
+	@Override
+	public void editNotice(AddNoticeParam param) {
+		System.out.println("====NoticeServiceImpl:editNotice===="+param);
+		// 创建Notice对象并赋值
+		Notice notice = new Notice();
+		notice.setId(param.getId());
+		notice.setTitle(param.getTitle());
+		notice.setContent(param.getContent());
+        // 编辑公告
+		noticeMapper.editNotice(notice);
+		int noticeId = param.getId();
+		param.setNoticeId(noticeId);
+		//修改绑定公告和用户相关，加入到t_notice_user_con表中
+		noticeUserConMapper.editNoticeUserCon(param);
+		//修改绑定公告和分类相关，加入到t_notice_category_con表中
+		noticeCategoryConMapper.editNoticeCategoryCon(param);
+	}
+
+	@Override
+	public void disableNotice(Integer id) {
+		noticeMapper.disableNotice(id);
+	}
+
+	@Override
+	public void setTopNotice(Integer id) {
+		noticeMapper.setTopNotice(id);
+	}
+
+	@Override
+	public void addAuditNoticeCon(AddNoticeAuditParam addNoticeAuditParam) {
+		noticeAuditMapper.addAuditNoticeCon(addNoticeAuditParam);
+		noticeMapper.setNoticeInAudit(addNoticeAuditParam.getNoticeId());
+	}
+
+	@Override
+	public PageInfoVo<ListNoticeVo> listNoticeMyRemind(ListNoticeParam param) {
+		// 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        //【分页参数】
+        List<ListNoticeVo> voList = noticeMapper.listNoticeMyRemind(param);
+        PageInfo<ListNoticeVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+	}
+
+	@Override
+	public void checkAuditTrue(Integer id) {
+		noticeMapper.checkAuditTrue(id);
+	}
+
+	@Transactional
+	@Override
+	public PageInfoVo<ListNoticeVo> listAuditNotice(ListNoticeParam param) {
+		// 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        //【标题、发布部门、发布用户、分页参数】
+        List<ListNoticeVo> voList = noticeMapper.listAuditNotice(param);
+        PageInfo<ListNoticeVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+	}
+
+}
+ 

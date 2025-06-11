@@ -1,0 +1,36 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.domain.vo.ListDepartmentVo;
+import org.jit.sose.mapper.DepartmentMapper;
+import org.jit.sose.service.DepartmentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ *    @author    金钰
+ *    @Date 2020-07-05 19:40:55    
+ *
+ */
+@Service
+public class DepartmentServiceImpl implements DepartmentService{
+	@Autowired
+    private DepartmentMapper departmentMapper;
+	
+	@Override
+	public List<Integer> translateNameToId(List<String> departmentNameList) {
+		return departmentMapper.translateNameToId(departmentNameList);
+	}
+
+	@Override
+	public List<String> showDepartmentSelected(List<Integer> departmentIdList) {
+		return departmentMapper.showDepartmentSelected(departmentIdList);
+	}
+
+    @Override
+    public List<ListDepartmentVo> listDepartmentByName(String departmentName) {
+        return departmentMapper.listDepartmentByName(departmentName);
+    }
+
+}

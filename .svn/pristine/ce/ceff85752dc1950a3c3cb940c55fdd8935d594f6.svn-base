@@ -1,0 +1,83 @@
+spring:
+  # mysql数据库配置
+  datasource:
+    #    url: jdbc:mysql://localhost:3307/document?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    #    username: root
+    #    password: 123456
+
+    url: jdbc:mysql://112.80.133.142:3306/documents?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    username: root
+    password: P@ssw0rdjkgs
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 配置druid数据源
+    type: com.alibaba.druid.pool.DruidDataSource
+
+    # 配置drui相关属性
+    #    initialSize: 5
+    #    minIdle: 5
+    #    maxActive: 20
+    #    maxWait: 60000
+    #    timeBetweenEvictionRunsMillis: 60000
+    #    minEvictableIdleTimeMillis: 300000
+    #    validationQuery: SELECT 1 FROM DUAL
+    #    testWhileIdle: true
+    #    testOnBorrow: false
+    #    testOnReturn: false
+    #    poolPreparedStatements: true
+    # 配置监控统计拦截的filters,去掉监控界面sql无法统计，‘wall’用于防火墙 ,log4j
+    #    filters: stat,wall,slf4j
+    #    maxPoolPreparedStatementPerConnectionSize: 20
+    #    userGlobalDataSourceStat: true
+    #    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
+
+    # 扫描sql文件
+  #    schema:
+  #      - classpath:sql/department.sql
+  #      - classpath:sql/employee.sql
+
+  # redis数据库配置
+  redis:
+    host: 112.86.129.73
+    port: 50000
+    #redis密码,若没有设置密码，则不需要设置(直接注释)，否则会报错ERR Client sent AUTH, but no password is set
+    password: P@ssw0rdJit1230
+#    host: 127.0.0.1
+#    port: 6379
+#    #redis密码,若没有设置密码，则不需要设置(直接注释)，否则会报错ERR Client sent AUTH, but no password is set
+#    password: 12345
+    database: 1
+    #redis超时时间（毫秒），如果不设置，取默认值2000
+    timeout: 10000
+    #最大空闲数
+    jedis:
+      #    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+
+### mybatis-plus配置
+mybatis-plus:
+  # mapper.xml路径
+  mapper-locations:
+    - classpath*:/mapper/*Mapper.xml
+  global-config:
+    db-config:
+      #自动递增全局主键策略
+      id-type: AUTO
+
+      #NOT_NULL:默认，当实体类字段为null时，不引入到where
+      #IGNORED:当实体类字段为null时，仍然引入到where，即where field=null
+      #NOT_EMPTY：当实体类字段为null或为空串时，不引入到where
+      insert-strategy: NOT_NULL
+      update-strategy: NOT_NULL
+      select-strategy: NOT_NULL
+
+      #表前缀+实体类名(驼峰转下划线) = 要操作的表
+      table-prefix: t_
+
+      logic-delete-field: state  #全局逻辑删除字段值 3.3.0开始支持，详情看下面。
+      logic-delete-value: 'X' # 逻辑已删除值(默认为 1)
+      logic-not-delete-value: 'A' # 逻辑未删除值(默认为 0)
+      

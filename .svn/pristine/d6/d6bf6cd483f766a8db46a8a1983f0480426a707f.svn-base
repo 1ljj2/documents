@@ -1,0 +1,249 @@
+package org.jit.sose.web.config;
+
+import lombok.extern.slf4j.Slf4j;
+import org.jit.sose.enums.PermissionTypeEnum;
+import org.jit.sose.mapper.PermissionsMapper;
+import org.jit.sose.web.filter.BaseFilter;
+import org.jit.sose.web.filter.JwtAuthorizationFilter;
+import org.jit.sose.web.handler.*;
+import org.jit.sose.web.provider.MyAuthenticationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
+
+import java.util.Arrays;
+
+@Slf4j
+@Configuration
+@EnableWebSecurity // 这个注解必须加，开启Security
+@EnableGlobalMethodSecurity(prePostEnabled = true) // 启用方法级别的权限认证,即保证post之前的注解可以使用
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Value("${security.enable}")
+    private Boolean SECURITY_ENABLE;
+
+    @Value("${file.staticAccessPath}")
+    private String staticAccessPath; // 虚拟目录
+
+    @Autowired
+    private PermissionsMapper permissionsMapper;
+
+    @Autowired
+    private SmsCodeAuthenticationSecurityConfig smsCodeAuthenticationSecurityConfig;
+
+    @Autowired
+    GoAuthenticationEntryPoint authenticationEntryPoint; // 未登陆时返回 JSON 格式的数据给前端（否则为 html）
+
+    @Autowired
+    GoAuthenticationSuccessHandler authenticationSuccessHandler; // 登录成功返回的 JSON 格式数据给前端（否则为 html）
+
+    @Autowired
+    GoAuthenticationFailureHandler authenticationFailureHandler; // 登录失败返回的 JSON 格式数据给前端（否则为 html）
+
+    @Autowired
+    GoLogoutSuccessHandler logoutSuccessHandler; // 注销成功返回的 JSON 格式数据给前端（否则为 登录时的 html）
+
+    @Autowired
+    GoAccessDeniedHandler accessDeniedHandler; // 无权访问返回的 JSON 格式数据给前端（否则为 403 html 页面）
+
+    @Autowired
+    MyAuthenticationProvider myAuthenticationProvider; // 身份认证
+
+    /**
+     * 认证管理器,使用自定义的方法
+     *
+     * @param auth
+     * @throws Exception
+     */
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(myAuthenticationProvider);
+    }
+
+    /**
+     * 获取匿名可访问路径
+     *
+     * @return 路径数组
+     */
+    protected String[] getAnonymousUrl() {
+//		String[] anonymousUrl = { "/test/permissionD" };
+        String[] anonymousUrl = permissionsMapper.listUrlByType(PermissionTypeEnum.Anonymous);
+        log.info("anonymousUrl:{}", Arrays.toString(anonymousUrl));
+        return anonymousUrl;
+    }
+
+    /**
+     * 获取用户登录后可访问的路径数组
+     *
+     * @return 路径数组
+     */
+    protected String[] getAuthenticatedUrl() {
+//		String[] authenticatedUrl = { "/account/user/getCurrentUser", "/account/user/getSecurityUser", "/detail.htm",
+//				"/account/menuback/listMenu" };
+        String[] authenticatedUrl = permissionsMapper.listUrlByType(PermissionTypeEnum.Authenticated);
+        log.info("authenticatedUrl:{}", Arrays.toString(authenticatedUrl));
+        return authenticatedUrl;
+    }
+
+    /**
+     * 获取所有用户可访问的路径数组
+     *
+     * @return 路径数组
+     */
+    protected String[] getPermitAllUrl() {
+//		String[] permitAllUrl = { "/test/hello", "/test/hello2", "/goods/listGoods" };
+
+        String[] permitAllUrl = permissionsMapper.listUrlByType(PermissionTypeEnum.PermitAll);
+        log.info("permitAllUrl:{}", Arrays.toString(permitAllUrl));
+        return permitAllUrl;
+    }
+
+    /**
+     * 权限配置
+     *
+     * @param http
+     * @throws Exception
+     */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        log.info("================security:" + SECURITY_ENABLE + "====================");
+        if (SECURITY_ENABLE) {
+            this.configureTest(http);
+        } else {
+            this.configureDev(http);
+        }
+    }
+
+    /**
+     * 正常运行时配置
+     */
+    private void configureTest(HttpSecurity http) throws Exception {
+        http.cors() // 跨域
+                // 关闭跨站拦截
+                .and().csrf().disable()
+                // 使用jwt托管安全信息，所以把Session禁止掉
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+        // 添加短信认证配置
+        http.apply(smsCodeAuthenticationSecurityConfig);
+
+        // 请求拦截配置
+        http.authorizeRequests()
+                // 不拦截任意OPTIONS请求
+                .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // 匿名可访问路径
+                .antMatchers(this.getAnonymousUrl()).anonymous()
+                // 用户登录后可访问
+                .antMatchers(this.getAuthenticatedUrl()).authenticated()
+                // 所有用户可访问
+                .antMatchers("/**.docx","/**.pdf","/**.xlsx","/**.doc","/**.txt","/**.pptx").permitAll()
+                .antMatchers(this.getPermitAllUrl()).permitAll()
+                // 剩余的路径由 rbacauthorityservice类 根据用户的角色进行判断
+                .anyRequest().access("@rbacauthorityservice.hasPermission(request,authentication)")
+                // 用户登录
+                .and().formLogin()// 使用formLogin方式进行登录（认证）,默认方式
+                .loginPage("/login")// 且自定义登录请求，跳转自定义登录页面
+                // "/account/member/accountLogin" 不要再设置权限，不然会进入原本的方法
+                .loginProcessingUrl("/account/member/accountLogin").permitAll() // 登录请求处理，告诉security处理该登录请求
+                .usernameParameter("account")// 请求验证参数
+                .passwordParameter("password")// 请求验证参数
+                // 认证成功
+                .successHandler(authenticationSuccessHandler)
+                // 认证失败
+                .failureHandler(authenticationFailureHandler).permitAll()
+                // 已经认证的用户访问自己没有权限的资源处理
+                .and().exceptionHandling().accessDeniedHandler(accessDeniedHandler)
+                // 未认证的用户访问自己没有权限的资源处理
+                .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
+                // 登出处理
+                .and().logout().logoutSuccessHandler(logoutSuccessHandler);
+
+        // 向security过滤器链中添加自定义的过滤器
+        http.addFilter(new JwtAuthorizationFilter(authenticationManager()))// 通过JWT授权(访问控制)
+//				.addFilterBefore(jwtAuthorizationTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                // 自定义过滤器，在security过滤器链首先执行
+                .addFilterBefore(new BaseFilter(), SecurityContextPersistenceFilter.class);
+    }
+
+    /**
+     * 关闭security放行所有请求<br>
+     * 用户名：user<br>
+     * 密码：项目启动时会打印在日志中<br>
+     */
+    private void configureDev(HttpSecurity http) throws Exception {
+        http.cors().and().csrf().disable().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().authorizeRequests()
+                // 放行所有请求
+                .anyRequest().permitAll();
+    }
+
+    /**
+     * 获取所有忽略校验的路径数组
+     */
+    protected String[] getIgnoringUrl() {
+        String[] ignoringUrl = {"/public/**", "/templates/**", "/**/**/**.js", "/**/**.css", "/static/**", "/druid/**",
+                "/error", "/error/*", "/5**", "/4**", "/3**", "/favicon.ico"};
+        return ignoringUrl;
+    }
+
+    /**
+     * 获取所有忽略校验的请求路径数组
+     */
+    public String[] getIgnoringRequestUrl() {
+//		String[] ignoringUrl = { "/login*", "/index.html","/", "/account/member/*/getVerifyCode", "/detail", "/config/eec",
+//				"/account/member/*/comparePicCode" };
+        String[] ignoringUrl = permissionsMapper.listUrlByType(PermissionTypeEnum.Ignoring);
+        log.info("ignoringUrl:{}", Arrays.toString(ignoringUrl));
+        return ignoringUrl;
+    }
+
+    /**
+     * 虚拟目录
+     */
+    public String[] getStaticAccessPath() {
+        String[] path = {staticAccessPath};
+        return path;
+    }
+
+    /**
+     * 获取Swagger路径数组
+     */
+    protected String[] getSwaggerUrl() {
+        String[] swaggerUrl = {"/v2/api-docs", "/configuration/ui", "/swagger-resources", "/configuration/security",
+                "/swagger-ui.html", "/webjars/**", "/swagger-resources/configuration/**", "/swagge‌​r-ui.html",
+                "/doc.html", "/doc.html/**", "/api-docs-ext", "/service-worker.js", "/v2/api-docs-ext",
+                "/precache-manifest.eea302037a9c2783bdf341d6c2dd2ca2.js", "/manifest.json", "/robots.txt"};
+        return swaggerUrl;
+    }
+
+    /**
+     * Web层面的配置，一般用来配置无需权限校验的路径，也可以在HttpSecurity中配置，但是在web.ignoring()中配置效率更高。
+     * web.ignoring()是一个忽略的过滤器，而HttpSecurity中定义了一个过滤器链，即使permitAll()放行还是会走所有的过滤器，
+     * 直到最后一个过滤器FilterSecurityInterceptor认定是可以放行的，才能访问。
+     * 若当前请求不需要从SecurityContextHolder中获取信息时，可以使用web进行配置
+     */
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        if (SECURITY_ENABLE) {
+            web.ignoring()
+                    // 忽略拦截路径
+                    .antMatchers(this.getIgnoringUrl())
+                    // 忽略配置的请求路径
+                    .antMatchers(this.getIgnoringRequestUrl())
+                    // 忽略虚拟目录
+                    .antMatchers(this.getStaticAccessPath())
+                    // 不拦截swagger和knife4j相关请求
+                    .antMatchers(this.getSwaggerUrl());
+        }
+    }
+
+}

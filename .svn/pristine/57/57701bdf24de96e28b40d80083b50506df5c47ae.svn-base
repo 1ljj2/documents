@@ -1,0 +1,93 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.Department;
+import org.jit.sose.domain.entity.Role;
+import org.jit.sose.domain.vo.ListDepartmentVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.DepartmentMapper;
+import org.jit.sose.service.DepartmentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ *    @author    金钰
+ *    @Date 2020-07-05 19:40:55    
+ *
+ */
+@Service
+public class DepartmentServiceImpl implements DepartmentService{
+	@Autowired
+    private DepartmentMapper departmentMapper;
+
+	@Override
+	public List<Department> getParIdList(Integer id) {
+		return departmentMapper.getParIdList(id);
+	}
+
+	@Override
+	public List<Integer> translateNameToId(List<String> departmentNameList) {
+		return departmentMapper.translateNameToId(departmentNameList);
+	}
+
+	@Override
+	public List<String> showDepartmentSelected(List<Integer> departmentIdList) {
+		return departmentMapper.showDepartmentSelected(departmentIdList);
+	}
+
+    @Override
+    public List<ListDepartmentVo> listDepartmentByName(String departmentName) {
+        return departmentMapper.listDepartmentByName(departmentName);
+    }
+
+	@Override
+	public List<Department> listPage() {
+		return departmentMapper.listPage();
+	}
+
+	@Override
+	public PageInfoVo<Role> listPageInfo(Department department, Integer pageNum, Integer pageSize) {
+		return null;
+	}
+
+	@Override
+	public Integer insert(Department department) {
+		return departmentMapper.insertOneDepartment(department);
+	}
+
+
+	@Override
+	public Integer deleteList(int [] idList) {
+       return departmentMapper.delete(idList);
+	}
+
+	@Override
+	public Integer deleteOneDepartment(Integer id) {
+	   return departmentMapper.deleteOneDepartment(id);
+	}
+
+	@Override
+	public Integer edit(Department department) {
+		return departmentMapper.edit(department);
+	}
+
+	@Override
+	public PageInfoVo<Department> selectPageInfo(Department department, Integer pageNum, Integer pageSize) {
+		// 设置分页参数
+		PageHelper.startPage(pageNum, pageSize);
+		// 查询集合
+		List<Department> DepartmentList = departmentMapper.listByDepartment(department);
+		PageInfo<Department> pageInfo = new PageInfo<Department>(DepartmentList);
+		// 封装集合
+		return new PageInfoVo<Department>(pageInfo);
+	}
+
+	@Override
+	public Integer selectLevelById(int id) {
+		return departmentMapper.selectLevelById(id);
+	}
+
+}

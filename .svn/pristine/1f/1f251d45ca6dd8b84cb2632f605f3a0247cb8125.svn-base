@@ -1,0 +1,71 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.CourseInfo;
+import org.jit.sose.domain.vo.ListIdNameVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.CourseInfoMapper;
+import org.jit.sose.service.CourseInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-09-30 11:09:43
+ */
+@Service
+public class CourseInfoServiceImpl implements CourseInfoService {
+
+    @Autowired
+    private CourseInfoMapper courseInfoMapper;
+
+    @Override
+    public List<ListIdNameVo> listCourseByName(String name) {
+        return courseInfoMapper.listCourseByName(name);
+    }
+
+
+
+    @Override
+    public Integer updateCourse(CourseInfo courseInfo) {
+        return courseInfoMapper.updateCourse(courseInfo);
+    }
+
+    @Override
+    public Integer deleteOneCourse(Integer id) {
+        return courseInfoMapper.deleteOneCourse(id);
+    }
+
+    @Override
+    public Integer deleteSelectedCourses(int[] idList) {
+        return courseInfoMapper.deleteSelectedCourses(idList);
+    }
+
+    @Override
+    public Integer insertOneCourse(CourseInfo courseInfo) {
+        return courseInfoMapper.insertOneCourse(courseInfo);
+    }
+
+    @Override
+    public PageInfoVo<CourseInfo> selectPageInfo(CourseInfo one, Integer pageNum, Integer pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        // 查询集合
+        List<CourseInfo> CoursrList = courseInfoMapper.listByCourse(one);
+        PageInfo<CourseInfo> pageInfo = new PageInfo<CourseInfo>(CoursrList);
+        // 封装集合
+        return new PageInfoVo<CourseInfo>(pageInfo);
+    }
+
+//    @Override
+//    public PageInfoVo<CourseInfo> selectPageInfo(CourseInfo one, Integer pageNum, Integer pageSize) {
+//        PageHelper.startPage(pageNum, pageSize);
+//        // 查询集合
+//        List<CourseInfo> CoursrList = courseInfoMapper.listByEecstate(one);
+//        PageInfo<CourseInfo> pageInfo = new PageInfo<CourseInfo>(CoursrList);
+//        // 封装集合
+//        return new PageInfoVo<Eecstate>(pageInfo);
+//    }
+}

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.ArchiveTemplateMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.ArchiveTemplate">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="number" property="number" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="term_id" property="termId" jdbcType="INTEGER"/>
+        <result column="course_id" property="courseId" jdbcType="INTEGER"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="state_time" property="stateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, number, name, term_id, course_id, remark, state, create_time, state_time
+  </sql>
+
+    <insert id="addArchiveTem" parameterType="org.jit.sose.domain.entity.ArchiveTemplate" useGeneratedKeys="true"
+            keyColumn="id" keyProperty="id">
+        insert into t_archive_template
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="number != null">
+                number,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="termId != null">
+                term_id,
+            </if>
+            <if test="courseId != null">
+                course_id,
+            </if>
+            <if test="remark != null">
+                remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="number != null">
+                #{number,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="termId != null">
+                #{termId,jdbcType=INTEGER},
+            </if>
+            <if test="courseId != null">
+                #{courseId,jdbcType=INTEGER},
+            </if>
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="editArchiveTem" parameterType="org.jit.sose.domain.entity.ArchiveTemplate">
+        update t_archive_template
+        <set>
+            <if test="number != null">
+                number = #{number,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="termId != null">
+                term_id = #{termId,jdbcType=INTEGER},
+            </if>
+            <if test="courseId != null">
+                course_id = #{courseId,jdbcType=INTEGER},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="state != null">
+                state = #{state,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="stateTime == true">
+                state_time = #{stateTime,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <select id="listArchiveTemByCondition" resultType="org.jit.sose.domain.vo.ListArchiveTemVo"
+            parameterType="org.jit.sose.domain.param.ListArchiveTemParam">
+        SELECT
+        art.id,
+        art.number,
+        art.`name`,
+        art.term_id AS termId,
+        yt.term_name AS termName,
+        art.course_id AS courseId,
+        ci.course_name AS courseName,
+        atcc.category_id AS categoryId,
+        c.`name` AS categoryName,
+        atpc.process_id AS processId,
+        p.process_name AS processName,
+        art.remark,
+        art.state_time AS stateTimeString
+        FROM
+        `t_archive_template` art
+        LEFT JOIN t_year_term yt ON (
+        yt.state = 'A'
+        AND yt.id = art.term_id
+        )
+        LEFT JOIN t_course_info ci ON (
+        ci.state = 'A'
+        AND ci.id = art.course_id
+        )
+        LEFT JOIN t_archive_tem_category_con atcc ON (
+        atcc.state = 'A'
+        AND atcc.archive_tem_id = art.id
+        )
+        LEFT JOIN a_category c ON (
+        c.state = 'A'
+        AND c.id = atcc.category_id
+        )
+        LEFT JOIN t_archive_tem_process_con atpc ON (
+        atpc.state = 'A'
+        AND atpc.archive_tem_id = art.id
+        )
+        LEFT JOIN t_process p ON (
+        p.state = 'A'
+        AND p.id = atpc.process_id
+        )
+        WHERE
+        art.state = 'A'
+        <if test="archiveTemName != null and archiveTemName != ''">
+            AND art.`name` LIKE CONCAT('%', #{archiveTemName,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="termId != null and termId != ''">
+            AND art.term_id = #{termId,jdbcType=INTEGER}
+        </if>
+        <if test="categoryId != null and categoryId != ''">
+            AND atcc.category_id = #{categoryId,jdbcType=INTEGER}
+        </if>
+        <if test="courseId != null and courseId!=''">
+            AND art.course_id = #{courseId,jdbcType=INTEGER}
+        </if>
+        ORDER BY
+        <if test="courseId != null and courseId!=''">
+            yt.term_name,
+        </if>
+
+        art.state_time DESC
+    </select>
+
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select
+        <include refid="Base_Column_List"/>
+        from t_archive_template
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_archive_template
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.ArchiveTemplate">
+    insert into t_archive_template (id, number, name, 
+      term_id, course_id, remark, 
+      state, create_time, state_time
+      )
+    values (#{id,jdbcType=INTEGER}, #{number,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, 
+      #{termId,jdbcType=INTEGER}, #{courseId,jdbcType=INTEGER}, #{remark,jdbcType=VARCHAR}, 
+      #{state,jdbcType=CHAR}, #{createTime,jdbcType=TIMESTAMP}, #{stateTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.ArchiveTemplate">
+    update t_archive_template
+    set number = #{number,jdbcType=VARCHAR},
+      name = #{name,jdbcType=VARCHAR},
+      term_id = #{termId,jdbcType=INTEGER},
+      course_id = #{courseId,jdbcType=INTEGER},
+      remark = #{remark,jdbcType=VARCHAR},
+      state = #{state,jdbcType=CHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

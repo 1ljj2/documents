@@ -1,0 +1,13 @@
+package org.jit.sose.service;
+
+/**
+ * @author wufang
+ * @Date 2020-10-16 10:44:15
+ */
+public interface FileAuditService {
+
+    /**
+     * 根据【流程步骤、审核人、文档标识】进行流程运转-送审
+     */
+    void myFileForReview(Integer processId, Integer stepId, Integer userId, Integer fileId);
+}

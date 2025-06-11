@@ -1,0 +1,21 @@
+@CHARSET "UTF-8";
+
+.layout-main {
+    float: right;
+    width: 87%;
+    height: 100%;
+    border: 24px solid #FFF5EE;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    background: #FFF5EE;
+}
+.class-float-left {
+    float: left;
+}
+.upload-tip {
+    font-size: 10px;
+}
+.modal-table {
+    border-collapse: separate;
+    border-spacing: 8px;
+}

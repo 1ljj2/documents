@@ -1,0 +1,17 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ArchiveExampleProcess;
+
+public interface ArchiveExampleProcessMapper {
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ArchiveExampleProcess record);
+
+    int insertSelective(ArchiveExampleProcess record);
+
+    ArchiveExampleProcess selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ArchiveExampleProcess record);
+
+    int updateByPrimaryKey(ArchiveExampleProcess record);
+}

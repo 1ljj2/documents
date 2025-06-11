@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.NoticeMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.Notice" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="title" property="title" jdbcType="VARCHAR" />
+    <result column="content" property="content" jdbcType="VARCHAR" />
+    <result column="seq" property="seq" jdbcType="INTEGER" />
+    <result column="audit_state" property="auditState" jdbcType="CHAR" />
+    <result column="is_enable" property="isEnable" jdbcType="CHAR" />
+    <result column="state" property="state" jdbcType="CHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="state_time" property="stateTime" jdbcType="TIMESTAMP" />
+    <result column="keep_new_time" property="keepNewTime" jdbcType="TIMESTAMP" />
+    <result column="count" property="count" jdbcType="INTEGER" />
+    <result column="notice_audit_Count" property="noticeAuditCount" jdbcType="INTEGER" />
+  </resultMap>
+  
+  <resultMap id="ListNoticeResultMap" type="org.jit.sose.domain.vo.ListNoticeVo">
+        <!--根据部门标识查询部门及其父部门-->
+        <association property="department" column="departmentId"
+                     select="org.jit.sose.mapper.DepartmentMapper.selectDepartmentById"></association>
+   </resultMap>
+  
+  <sql id="Base_Column_List" >
+    id, title, content, seq, audit_state, is_enable, state, create_time, state_time
+  </sql>
+  
+  <!-- 设置过期的公告seq为1 -->
+  <update id="setOutTimeSeq">
+	  UPDATE `t_notice` n
+		LEFT JOIN a_configuration co ON ( co.NAME = 'NoticeIsNewTime' ) 
+	  SET n.seq = '1' 
+		WHERE n.state_time &lt; DATE_SUB( NOW( ), INTERVAL co.`value` DAY ) 
+  </update>
+  
+  <!-- 查询待审核的公告个数 -->
+  <select id="newNoticeToAuditCount" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+    SELECT DISTINCT
+		COUNT( n.id ) AS noticeAuditCount 
+	FROM
+		t_notice n
+		LEFT JOIN a_configuration co ON ( co.`name` = 'NoticeIsNewTime' ) 
+		LEFT JOIN t_notice_audit na ON ( na.state = 'A' AND na.notice_id = n.id ) 
+	WHERE
+		n.state = 'A' 
+		AND n.audit_state = 'B' 
+		AND n.is_enable = 1 
+		AND na.user_id = #{auditId,jdbcType=INTEGER}
+  </select>
+  
+  <!-- 公告审核人查看需要审核的公告 -->
+    <select id="listAuditNoticeMyRemind" resultMap="ListNoticeResultMap" parameterType="org.jit.sose.domain.param.ListNoticeParam">
+        SELECT DISTINCT
+        n.id,
+        n.title,
+        n.content,
+        n.state,
+		n.audit_state AS auditState,
+		n.is_enable AS isEnable,
+		n.seq,
+        n.create_time AS createTimeString,
+        n.state_time AS stateTimeString,
+        nuc.user_id AS userId,
+        u.user_name AS userName,
+        nfc.file_id AS fileId,
+        fi.file_name AS fileName,
+        udc.department_id AS departmentId,
+        ncc.category_id AS categoryId,
+        c.`name` AS categoryName,
+        na.user_id AS auditId
+        FROM
+        `t_notice` n
+        LEFT JOIN t_notice_user_con nuc ON (
+        nuc.state = 'A'
+        AND nuc.notice_id = n.id
+        )
+        LEFT JOIN t_notice_file_con nfc ON (
+        nfc.state = 'A'
+        AND nfc.notice_id = n.id
+        )
+        LEFT JOIN t_notice_category_con ncc ON (
+        ncc.state = 'A'
+        AND ncc.notice_id = n.id
+        )
+        LEFT JOIN t_user_department_con udc ON (
+        udc.state = 'A'
+        AND udc.user_id = nuc.user_id
+        )
+        LEFT JOIN a_category c ON (
+        c.state = 'A'
+        AND c.id = ncc.category_id
+        )
+        LEFT JOIN t_department d ON (
+        d.state = 'A'
+        AND d.id = udc.department_id
+        )
+        LEFT JOIN a_user u ON (
+        u.state = 'A'
+        AND u.id = nuc.user_id
+        )
+        LEFT JOIN a_file_info fi ON (
+        fi.state = 'A'
+        AND fi.id = nfc.file_id
+        )
+        LEFT JOIN t_notice_audit na ON(
+        na.state = 'A'
+        AND na.notice_id = n.id)
+        WHERE
+        n.state = 'A'
+        AND na.user_id = #{auditId,jdbcType=INTEGER}
+        AND n.audit_state = 'B'
+        ORDER BY
+        n.seq ASC, n.state_time DESC
+    </select>
+  
+  <select id="newNoticeCount" resultType="java.lang.Integer">
+    SELECT DISTINCT
+		COUNT( n.id ) AS count 
+	FROM
+		t_notice n
+		LEFT JOIN a_configuration co ON ( co.`name` = 'NoticeIsNewTime' ) 
+	WHERE
+		n.state = 'A' 
+		AND n.audit_state = 'C' 
+		AND n.is_enable = 1 
+		AND DATE_SUB( NOW( ), INTERVAL co.`value` DAY ) &lt; n.state_time
+  </select>
+  
+  <!-- 设置公告待审核 -->
+  	<update id="setNoticeInAudit" parameterType="java.lang.Integer">
+		UPDATE t_notice
+		SET audit_state = 'B'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+  
+    <!-- 公告审核人查看需要审核的公告 -->
+    <select id="listAuditNotice" resultMap="ListNoticeResultMap" parameterType="org.jit.sose.domain.param.ListNoticeParam">
+        SELECT DISTINCT
+        n.id,
+        n.title,
+        n.content,
+        n.state,
+		n.audit_state AS auditState,
+		n.is_enable AS isEnable,
+		n.seq,
+        n.create_time AS createTimeString,
+        n.state_time AS stateTimeString,
+        nuc.user_id AS userId,
+        u.user_name AS userName,
+        nfc.file_id AS fileId,
+        fi.file_name AS fileName,
+        udc.department_id AS departmentId,
+        ncc.category_id AS categoryId,
+        c.`name` AS categoryName,
+        na.user_id AS auditId
+        FROM
+        `t_notice` n
+        LEFT JOIN t_notice_user_con nuc ON (
+        nuc.state = 'A'
+        AND nuc.notice_id = n.id
+        )
+        LEFT JOIN t_notice_file_con nfc ON (
+        nfc.state = 'A'
+        AND nfc.notice_id = n.id
+        )
+        LEFT JOIN t_notice_category_con ncc ON (
+        ncc.state = 'A'
+        AND ncc.notice_id = n.id
+        )
+        LEFT JOIN t_user_department_con udc ON (
+        udc.state = 'A'
+        AND udc.user_id = nuc.user_id
+        )
+        LEFT JOIN a_category c ON (
+        c.state = 'A'
+        AND c.id = ncc.category_id
+        )
+        LEFT JOIN t_department d ON (
+        d.state = 'A'
+        AND d.id = udc.department_id
+        )
+        LEFT JOIN a_user u ON (
+        u.state = 'A'
+        AND u.id = nuc.user_id
+        )
+        LEFT JOIN a_file_info fi ON (
+        fi.state = 'A'
+        AND fi.id = nfc.file_id
+        )
+        LEFT JOIN t_notice_audit na ON(
+        na.state = 'A'
+        AND na.notice_id = n.id)
+        WHERE
+        n.state = 'A'
+        AND na.user_id = #{auditId,jdbcType=INTEGER}
+        <if test="title != null">
+            AND n.title LIKE CONCAT('%', #{title,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="userId != null">
+            AND nuc.user_id = #{userId,jdbcType=INTEGER}
+        </if>
+        <if test="departmentId != null">
+            AND udc.department_id = #{departmentId,jdbcType=INTEGER}
+        </if>
+        <if test="categoryId != null">
+            AND ncc.category_id = #{categoryId,jdbcType=INTEGER}
+        </if>
+        ORDER BY
+        n.seq ASC, n.state_time DESC
+    </select>
+  
+    <!-- 通过公告 -->
+  	<update id="checkAuditTrue" parameterType="java.lang.Integer">
+		UPDATE t_notice
+		SET audit_state = 'C'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+  
+    <!-- 查看已发布公告 -->
+    <select id="listNoticeMyRemind" resultMap="ListNoticeResultMap" parameterType="org.jit.sose.domain.param.ListNoticeParam">
+        SELECT DISTINCT
+			n.id,
+			n.title,
+			n.content,
+			n.state,
+			n.audit_state AS auditState,
+			n.is_enable AS isEnable,
+			n.seq,
+			n.create_time AS createTimeString,
+			n.state_time AS stateTimeString,
+			nuc.user_id AS userId,
+			u.user_name AS userName,
+			nfc.file_id AS fileId,
+			fi.file_name AS fileName,
+			udc.department_id AS departmentId,
+			ncc.category_id AS categoryId,
+			c.`name` AS categoryName,
+			na.user_id AS auditId,
+			DATE_SUB(NOW(),INTERVAL co.`value` DAY ) AS keepNewTime 
+		FROM
+			`t_notice` n
+			LEFT JOIN t_notice_user_con nuc ON ( nuc.state = 'A' AND nuc.notice_id = n.id )
+			LEFT JOIN t_notice_file_con nfc ON ( nfc.state = 'A' AND nfc.notice_id = n.id )
+			LEFT JOIN t_notice_category_con ncc ON ( ncc.state = 'A' AND ncc.notice_id = n.id )
+			LEFT JOIN t_user_department_con udc ON ( udc.state = 'A' AND udc.user_id = nuc.user_id )
+			LEFT JOIN a_category c ON ( c.state = 'A' AND c.id = ncc.category_id )
+			LEFT JOIN t_department d ON ( d.state = 'A' AND d.id = udc.department_id )
+			LEFT JOIN a_user u ON ( u.state = 'A' AND u.id = nuc.user_id )
+			LEFT JOIN a_file_info fi ON ( fi.state = 'A' AND fi.id = nfc.file_id )
+			LEFT JOIN t_notice_audit na ON ( na.state = 'A' AND na.notice_id = n.id ) 
+			LEFT JOIN a_configuration co ON ( co.name = 'NoticeIsNewTime' )
+		WHERE
+			n.state = 'A' 
+			AND n.audit_state = 'C' 
+			AND n.is_enable = 1
+        <if test="title != null || title != ''">
+            AND n.title LIKE CONCAT('%', #{title,jdbcType=VARCHAR}, '%')
+        </if>
+		ORDER BY
+			n.seq ASC,
+			n.state_time DESC
+    </select>
+  
+  <!-- 置顶公告 -->
+  	<update id="setTopNotice" parameterType="java.lang.Integer">
+		UPDATE t_notice
+		SET seq
+		= '0'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+  
+  	<!-- 禁用公告 -->
+  	<update id="disableNotice" parameterType="java.lang.Integer">
+		UPDATE t_notice
+		SET is_enable = '0' , audit_state = 'D'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+  
+  	<!-- 编辑公告 -->
+  	<update id="editNotice" parameterType="org.jit.sose.domain.entity.Notice">
+        update t_notice
+        <set>
+            <if test="title != null">
+                title = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="content != null">
+                content = #{content,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+  
+	<!-- 新增公告 -->
+	<insert id="addNotice" parameterType="org.jit.sose.domain.entity.Notice" useGeneratedKeys="true" keyProperty="id">
+        insert into t_notice
+	      <trim prefix="(" suffix=")" suffixOverrides=",">
+            title,content
+        </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	        #{title,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}
+        </trim>
+    </insert>
+  
+  	<!-- 删除单个公告 -->
+  	<update id="removeNotice" parameterType="java.lang.Integer">
+		UPDATE t_notice
+		SET state
+		= 'X'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+		AND audit_state != 'C'
+	</update>
+	
+	<!-- 删除多个公告 -->
+	<update id="removeNoticeSelect" parameterType="java.util.List">
+		UPDATE t_notice
+		SET state = 'X'
+		WHERE audit_state != 'C' AND
+		id IN
+		<foreach collection="list" item="id" index="index"
+			separator="," open="(" close=")">
+			#{id,jdbcType=INTEGER}
+		</foreach>
+	</update>
+  
+    <!-- 查看全部公告 -->
+    <select id="listNotice" resultMap="ListNoticeResultMap" parameterType="org.jit.sose.domain.param.ListNoticeParam">
+        SELECT DISTINCT
+			n.id,
+			n.title,
+			n.content,
+			n.state,
+			n.audit_state AS auditState,
+			n.is_enable AS isEnable,
+			n.seq,
+			n.create_time AS createTimeString,
+			n.state_time AS stateTimeString,
+			nuc.user_id AS userId,
+			u.user_name AS userName,
+			nfc.file_id AS fileId,
+			fi.file_name AS fileName,
+			udc.department_id AS departmentId,
+			ncc.category_id AS categoryId,
+			c.`name` AS categoryName,
+			na.user_id AS auditId,
+			( SELECT co1.is_enable FROM a_configuration co1 WHERE co1.state = 'A' AND co1.`name` = 'NoticeAudit' ) AS noticeAudit,
+			( SELECT co2.is_enable FROM a_configuration co2 WHERE co2.state = 'A' AND co2.`name` = 'Message4Audit' ) AS message4Audit 
+		FROM
+			`t_notice` n
+			LEFT JOIN t_notice_user_con nuc ON ( nuc.state = 'A' AND nuc.notice_id = n.id )
+			LEFT JOIN t_notice_file_con nfc ON ( nfc.state = 'A' AND nfc.notice_id = n.id )
+			LEFT JOIN t_notice_category_con ncc ON ( ncc.state = 'A' AND ncc.notice_id = n.id )
+			LEFT JOIN t_user_department_con udc ON ( udc.state = 'A' AND udc.user_id = nuc.user_id )
+			LEFT JOIN a_category c ON ( c.state = 'A' AND c.id = ncc.category_id )
+			LEFT JOIN t_department d ON ( d.state = 'A' AND d.id = udc.department_id )
+			LEFT JOIN a_user u ON ( u.state = 'A' AND u.id = nuc.user_id )
+			LEFT JOIN a_file_info fi ON ( fi.state = 'A' AND fi.id = nfc.file_id )
+			LEFT JOIN t_notice_audit na ON ( na.state = 'A' AND na.notice_id = n.id )
+        WHERE
+        n.state = 'A'
+        <if test="title != null">
+            AND n.title LIKE CONCAT('%', #{title,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="userId != null">
+            AND nuc.user_id = #{userId,jdbcType=INTEGER}
+        </if>
+        <if test="departmentId != null">
+            AND udc.department_id = #{departmentId,jdbcType=INTEGER}
+        </if>
+        <if test="categoryId != null">
+            AND ncc.category_id = #{categoryId,jdbcType=INTEGER}
+        </if>
+        ORDER BY
+        n.seq ASC, n.state_time DESC
+    </select>
+  
+  
+  <!-- 以下部分是逆向工程生成的 -->
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from t_notice
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from t_notice
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.Notice" >
+    insert into t_notice (id, title, content, 
+      seq, audit_state, is_enable, 
+      state, create_time, state_time
+      )
+    values (#{id,jdbcType=INTEGER}, #{title,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}, 
+      #{seq,jdbcType=INTEGER}, #{auditState,jdbcType=CHAR}, #{isEnable,jdbcType=CHAR}, 
+      #{state,jdbcType=CHAR}, #{createTime,jdbcType=TIMESTAMP}, #{stateTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.Notice" >
+    insert into t_notice
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="title != null" >
+        title,
+      </if>
+      <if test="content != null" >
+        content,
+      </if>
+      <if test="seq != null" >
+        seq,
+      </if>
+      <if test="auditState != null" >
+        audit_state,
+      </if>
+      <if test="isEnable != null" >
+        is_enable,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+      <if test="createTime != null" >
+        create_time,
+      </if>
+      <if test="stateTime != null" >
+        state_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="title != null" >
+        #{title,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null" >
+        #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="seq != null" >
+        #{seq,jdbcType=INTEGER},
+      </if>
+      <if test="auditState != null" >
+        #{auditState,jdbcType=CHAR},
+      </if>
+      <if test="isEnable != null" >
+        #{isEnable,jdbcType=CHAR},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stateTime != null" >
+        #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.Notice" >
+    update t_notice
+    <set >
+      <if test="title != null" >
+        title = #{title,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null" >
+        content = #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="seq != null" >
+        seq = #{seq,jdbcType=INTEGER},
+      </if>
+      <if test="auditState != null" >
+        audit_state = #{auditState,jdbcType=CHAR},
+      </if>
+      <if test="isEnable != null" >
+        is_enable = #{isEnable,jdbcType=CHAR},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null" >
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stateTime != null" >
+        state_time = #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.Notice" >
+    update t_notice
+    set title = #{title,jdbcType=VARCHAR},
+      content = #{content,jdbcType=VARCHAR},
+      seq = #{seq,jdbcType=INTEGER},
+      audit_state = #{auditState,jdbcType=CHAR},
+      is_enable = #{isEnable,jdbcType=CHAR},
+      state = #{state,jdbcType=CHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

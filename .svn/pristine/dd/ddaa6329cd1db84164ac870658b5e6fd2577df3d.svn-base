@@ -1,0 +1,24 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.Configuration;
+
+public interface ConfigurationMapper {
+	/**
+	 * 根据名字查询是否enable
+	 * @param name
+	 * @return
+	 */
+	int ListEnableByName(Configuration record);
+	
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(Configuration record);
+
+    int insertSelective(Configuration record);
+
+    Configuration selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(Configuration record);
+
+    int updateByPrimaryKey(Configuration record);
+}

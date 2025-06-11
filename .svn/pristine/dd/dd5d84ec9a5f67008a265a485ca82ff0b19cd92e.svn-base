@@ -1,0 +1,25 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.domain.vo.ListIdNameVo;
+import org.jit.sose.mapper.CourseInfoMapper;
+import org.jit.sose.service.CourseInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-09-30 11:09:43
+ */
+@Service
+public class CourseInfoServiceImpl implements CourseInfoService {
+
+    @Autowired
+    private CourseInfoMapper courseInfoMapper;
+
+    @Override
+    public List<ListIdNameVo> listCourseByName(String name) {
+        return courseInfoMapper.listCourseByName(name);
+    }
+}

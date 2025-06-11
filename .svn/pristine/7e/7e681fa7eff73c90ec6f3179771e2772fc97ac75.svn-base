@@ -1,0 +1,33 @@
+@CHARSET "UTF-8";
+body {
+    height: 100%;
+    overflow: auto;
+}
+
+.layout-main {
+    float: right;
+    width: 87%;
+    height: 100%;
+    border: 24px solid #FFF5EE;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    background: #FFF5EE;
+}
+
+.ivu-tabs-nav .ivu-tabs-tab {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.file-charge-css .input {
+    width: 180px;
+}
+
+.file-charge-search-button {
+    padding: 8px 0;
+}
+
+.el-tabs__item {
+    font-size: 16px;
+    font-weight: 600;
+}

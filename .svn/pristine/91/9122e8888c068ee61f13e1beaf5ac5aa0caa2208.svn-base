@@ -1,0 +1,1342 @@
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/templates/pdfh5/js/build/pdf.worker.js';//自己的路径,加载核心库
+var vmyRemind = new Vue({
+    el: '#myRemind',
+    data: function () {
+        return {
+            componentSize: 'medium',// 组件尺寸
+            loading: true, selection: [],// 表格参数
+            loadingMsg: '',// 加载提示
+            notice: '',// 提醒对象
+            firstPath:'/myRemind',
+            NP:'1',//公告审核权限
+            FP:'1',//文档审核权限
+            AP:'1',//档案审核权限
+            //-------------------------------公告浏览部分-------------------------
+            noticePath: '/noticeMan',
+            totalNum: 0, pageNum: 1, pageSize: 4,  // 公告分页参数
+            noticeData: [],
+            sNotice: {
+                id: '', title: '', content: '',
+                categoryName: '', categoryId: '',
+                seq: '', state: '', auditState: '', isEnable: '',
+                createTime: '', createTimeString: '', stateTime: '', stateTimeString: '',
+                departmentId: [], departmentName: '', departmentParName: '', departmentNameStr: '',
+                userId: [], userName: '',
+                roleId: [], roleName: '',
+                fileId: '', fileName: '', accessUrl: '',
+                auditId: '', count: '', noticeAuditCount: ''
+            },// 公告信息
+            noticeList: [],
+            //-------------------------------个人消息部分-------------------------
+            messPath: '/messageMan',
+            totalNum1: 0, pageNum1: 1, pageSize1: 4,  // 个人消息分页参数
+            messData: [],
+            sMess: {
+                id: '', title: '', content: '',
+                categoryName: '', categoryId: '',
+                state: '', createTime: '', createTimeString: '', stateTime: '', stateTimeString: '',
+                departmentId: [], departmentName: '', departmentParName: '', departmentNameStr: '',
+                userId: '', userName: '',
+                readUserId: [], readUserName: '', readUser: [],
+                roleId: [], roleName: '', role: [],
+                fileId: '', fileName: '', accessUrl: '',
+                isRead: '', count: '', keepNewTime: ''
+            },// 消息信息
+            messList: [],
+            // --------------------------------------公告审核待办事宜部分-------------------------
+            noticeAuditData: [],
+            noticeAuditList: [],
+            totalNum2: 0, pageNum2: 1, pageSize2: 5,  // 待审核公告分页参数
+            // ---------------------TODO------------------文档审核待办部分----------------------------
+            //新
+            totalNum3: 0, pageNum3: 1, pageSize3: 5,
+            fileAuditPath: '/file/fileAudit',
+            fileExampleProcessPath: '/file/fileExampleProcess',
+            departmentPath: '/account/department',
+            userPath: '/account/user',
+            departmentList: [],
+            fileAuditList: [],//当前用户需要审核的文档信息集合
+            auditFileModal: false,//审核文档的模态框
+            auditFileInfo: {
+                exampleId: '',
+                fileAuditId: '',
+                processId: '',
+                fileId: '',
+                isSign: '',
+                nowStepId: '',
+                nowStepName: '',
+                fileName: ''
+            },
+            fileAuditStepList: [],//步骤条信息
+            nextStep: {nextStepId: '', roleId: '', roleName: ''},
+            audit: {auditStateString: '', auditState: '', opinion: ''},
+            fileToDoCount: '0',//需要审核的文档个数
+
+            //----------------------------文档审核模态框中数据-----------
+            userConditions: {userName: '', phone: '', departmentId: ''},//审批人搜索信息
+            userColumn: [
+                {title: "姓名", key: "userName", minWidth: 100},
+                {title: "电话号码", key: "phone", minWidth: 150},
+                {title: "Email地址", key: "email", minWidth: 200},
+            ], // 表头信息
+            nowUserData: [],
+            userTotalNum: 0, userPageNum: 1, userPageSize: 4,  // 分页参数
+            user: {
+                id: '', schoolId: '', departmentId: '', userName: '', phone: '', email: '',
+            },
+            auditArchiveInfo: {
+                exampleId: '',
+                archiveAuditId: '',
+                processId: '',
+                nowStepId: '',
+                nowStepName: ''
+            },
+            auditArchiveModal: false,
+            stepDoing: 0,//正在处理的流程
+
+            aesKey: '',//对称加密密钥
+            numPages: 0,//pdf文件的页数,从1开始计数的页数
+            pdfModal: false,//预览文档模态框
+            signatureModal: false,//公章/签名模列表态框
+            signatureNowData: [],//公章签名对象信息集合
+            signaturePicModel: false,//公章签名查看模态框
+            signatureColumn: [
+                {title: '公章/签名', key: 'fileName', width: 150},
+                {title: '备注', key: 'remark', width: 150},
+            ],//公章签名列表表头
+            signUrl: '',//图片路径
+            signatureSize: 100,//签章大小
+            base64: '',// 文件的base64编码
+            isFileSignature:false,//文件是否签署
+            doc: '',//pdf文件输出对象
+
+            // ----------------TODO---档案审核待办部分---------------------------------------------
+            totalNum4: 0, pageNum4: 1, pageSize4: 5,
+            archiveToDoCount: '0',//需要审核的档案个数
+            archiveAuditPath: '/archive/archiveAudit',
+            archiveAuditList: [],//当前用户需要审核的档案信息集合
+            archiveAuditStepList: [],//步骤条信息
+            nextStepArc: {nextStepId: '', roleId: '', roleName: ''},
+            auditArc: {auditStateString: '', auditState: '', opinion: ''},
+            messNeeded: {phone: '', userName: ''},
+            auditArchiveInfoData:[],//档案列表信息
+            archiveFilePooInfo:{archiveFilePoolTitle:'',},//档案文件池
+            archiveFilePool:false,//档案文件池抽屉
+
+            // --------------------------------------TODO      待办事宜部分-------------------------
+            userStepConPath: '/process/userStepCon',
+            openedPanel: '1111',//默认打开的面板name值
+            runningStepList: [],//每个流程
+            backLogList: [],//根据用户和信息状态查询出的待办信息
+            processIdList: [],//待办事宜所属的流程标识集合
+            panel: [],//面板数据
+            panelItem: {
+                processName: '',
+                startTime: '',
+                endTime: '',
+                runningStepSize: '',
+                runningStep: [],
+            },//面板中card的数据
+            backLogTotal: 0,//待办事宜总条数
+        }
+    },
+    components: {
+        'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+        'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+        'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+    },
+    beforeCreate: function () {
+        CheckPermissions();
+    },
+    mounted() {
+    	this.checkNPermission();
+    	this.checkFPermission();
+    	this.checkAPermission();
+    	this.initPage();
+    },
+    methods: {
+    	checkNPermission(){
+    		let url = this.firstPath + '/checkAuditNoticePermission';
+    		CallAjaxGetNoParam(url, this.checkNPermissionSuc,null,null,false);
+    	},
+    	checkNPermissionSuc(data) {
+            console.log("/checkNPermissionSuc返回值", data.obj)
+            this.NP = data.obj;
+        },
+        checkFPermission(){
+    		let url = this.firstPath + '/checkAuditFilePermission';
+    		CallAjaxGetNoParam(url, this.checkFPermissionSuc,null,null,false);
+    	},
+    	checkFPermissionSuc(data) {
+            console.log("/checkFPermissionSuc返回值", data.obj)
+            this.FP = data.obj;
+        },
+        checkAPermission(){
+    		let url = this.firstPath + '/checkAuditArcPermission';
+    		CallAjaxGetNoParam(url, this.checkAPermissionSuc,null,null,false);
+    	},
+    	checkAPermissionSuc(data) {
+            console.log("/checkAPermissionSuc返回值", data.obj)
+            this.AP = data.obj;
+        },
+        //-------------------------------页面初始化加载项-------------------------
+        initPage() {
+            this.signatureColumn.push(HeadActionSlot());// 签名列表添加slot-scope操作栏
+            
+            //公告
+            this.getNotice();//初始先加载公告浏览
+            setInterval(() =>
+                this.getNotice(), 3600000)//每1h调用一次listAllNotice方法，进行数据更新
+            this.newNoticeCount();//初始化加载新公告个数
+            setInterval(() =>
+                this.newNoticeCount(), 3600000)//每1h调用一次newNoticeCount方法，进行数据更新
+            
+            //个人消息
+            this.getMess();//初始先加载个人消息
+            setInterval(() =>
+                this.getMess(), 3600000)//每1h调用一次listPersonalAffair方法，进行数据更新
+            this.newMessCount();//初始化加载新消息个数
+            setInterval(() =>
+                this.newMessCount(), 3600000)//每1h调用一次newMessCount方法，进行数据更新
+            
+            //公告审核
+            if(this.NP == '1'){
+            	this.getNoticeToAudit();//初始先加载公告审核待办
+                setInterval(() =>
+                    this.getNoticeToAudit(), 3600000)//每1h调用一次listAuditNotice方法，进行数据更新
+                this.newNoticeToAuditCount();//初始化加载待审公告个数
+                setInterval(() =>
+                    this.newNoticeToAuditCount(), 3600000)//每1h调用一次newNoticeToAuditCount方法，进行数据更新
+            }
+            
+            //文件审核
+            if(this.FP == '1'){
+            	this.getFileToAudit();//初始化加载需要审核文档审核待办
+                setInterval(() =>
+                    this.getFileToAudit(), 3600000)//每1h调用一次getFileToAudit方法，进行数据更新
+            }
+           
+            //档案审核
+            if(this.AP == '1'){
+                this.getDepartmentList();//获取部门信息
+                this.setUserTableTitle();//审核人表格的表头
+            	this.getArchiveToAudit();//初始化加载需要审核档案审核待办
+                setInterval(() =>
+                    this.getArchiveToAudit(), 3600000)
+            }
+            
+        },
+        //--------------------------------公告浏览部分-------------------------
+        /**
+         * 改变页码
+         *
+         * @param pageNum
+         *            改变后的页码
+         */
+        onPageChange(pageNum) {
+            this.pageNum = pageNum;
+            this.getNotice();
+        },
+        getNotice() {
+            let data = {
+                pageNum: this.pageNum,
+                pageSize: this.pageSize,
+            };
+            let url = this.noticePath + '/listNoticeMyRemind';
+            CallAjaxPost(url, data, this.getNoticeSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        getNoticeSuc(data) {
+            console.log("listNoticeMyRemind请求返回值：", data.obj)
+            // 取消显示加载
+            this.loading = false;
+            //部门一二级展示
+            for (let i = 0; i < data.obj.list.length; i++) {
+                data.obj.list[i].departmentNameStr = data.obj.list[i].department.departmentParName + '  ' + data.obj.list[i].department.departmentName;
+            }
+            this.noticeList = data.obj.list;
+            this.totalNum = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        downloadNoticeFile(id) {
+            console.log('fileId' + id)
+            downloadFileEncrypt(id);
+        },
+        //获取新公告个数
+        newNoticeCount() {
+            let url = this.noticePath + '/newNoticeCount';
+            CallAjaxGetNoParam(url, this.newNoticeCountSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        newNoticeCountSuc(data) {
+            console.log("/newNoticeCount返回值", data.obj)
+            this.sNotice.count = data.obj;
+            // 取消显示加载
+            this.loading = false;
+        },
+        //-------------------------------个人消息部分-------------------------
+        /**
+         * 改变页码
+         *
+         * @param pageNum
+         *            改变后的页码
+         */
+        onPageChange1(pageNum1) {
+            this.pageNum1 = pageNum1;
+            this.getMess();
+        },
+        getMess() {
+            let data = {
+                pageNum: this.pageNum1,
+                pageSize: this.pageSize1,
+            };
+            let url = this.messPath + '/listMessMyRemind';
+            console.log("/listMessMyRemind参数", data)
+            CallAjaxPost(url, data, this.getMessSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        getMessSuc(data) {
+            console.log("/listMessMyRemind返回值", data.obj)
+            // 取消显示加载
+            this.loading = false;
+            //部门一二级展示
+            for (let i = 0; i < data.obj.list.length; i++) {
+                data.obj.list[i].departmentNameStr = data.obj.list[i].department.departmentParName + '  ' + data.obj.list[i].department.departmentName;
+            }
+            this.messList = data.obj.list;
+            this.totalNum1 = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum1 = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        //下载
+        downloadMessFile(id) {
+            console.log('fileId' + id)
+            downloadFileEncrypt(id);
+        },
+        //已读
+        isRead(id) {
+            console.log("messId" + id)
+            let data = {
+                messId: id,
+            };
+            let url = this.messPath + '/isRead';
+            console.log("/isRead参数", data)
+            CallAjaxPost(url, data, this.isReadSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        isReadSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('消息已经阅读');
+            // 重新查询数据
+            this.getMess();
+            this.newMessCount();
+        },
+        //获取新消息个数
+        newMessCount() {
+            let url = this.messPath + '/newMessCount';
+            CallAjaxGetNoParam(url, this.newMessCountSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        newMessCountSuc(data) {
+            console.log("/newMessCount返回值", data.obj)
+            this.sMess.count = data.obj;
+            // 取消显示加载
+            this.loading = false;
+        },
+        //------------------------------公告审核待办-----------------------------
+        /**
+         * 改变页码
+         *
+         * @param pageNum2
+         *            改变后的页码
+         */
+        onPageChange2(pageNum2) {
+            this.pageNum2 = pageNum2;
+            this.getNoticeToAudit();
+        },
+        getNoticeToAudit() {
+            let data = {
+                pageNum: this.pageNum2,
+                pageSize: this.pageSize2,
+            };
+            let url = this.noticePath + '/listAuditNoticeMyRemind';
+            console.log("/listAuditNoticeMyRemind参数", data)
+            CallAjaxPost(url, data, this.getNoticeToAuditSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        getNoticeToAuditSuc(data) {
+            console.log("/listAuditNoticeMyRemind返回值", data.obj)
+            // 取消显示加载
+            this.loading = false;
+            //部门一二级展示
+            for (let i = 0; i < data.obj.list.length; i++) {
+                data.obj.list[i].departmentNameStr = data.obj.list[i].department.departmentParName + '  ' + data.obj.list[i].department.departmentName;
+            }
+            this.noticeAuditList = data.obj.list;
+            this.totalNum2 = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum2 = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        //通过
+        checkAuditTrue(id) {
+            this.sNotice.id = id;
+            let data = this.sNotice.id;
+            let url = this.noticePath + '/checkAuditTrue';
+            console.log("checkAuditTrue参数:", data)
+            CallAjaxPost(url, data, this.checkAuditTrueSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        checkAuditTrueSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('公告通过审核');
+            // 重新查询数据
+            this.getNoticeToAudit();
+            this.getNotice();
+        },
+        //不通过
+        checkDisabled(id) {
+            this.sNotice.id = id;
+            let data = this.sNotice.id;
+            let url = this.noticePath + '/disableNotice';
+            console.log("disableNotice参数:", data)
+            CallAjaxPost(url, data, this.disableNoticeSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        disableNoticeSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('公告不通过，已禁用');
+            // 重新查询数据
+            this.getNoticeToAudit();
+            this.getNotice();
+        },
+        //获取待审核公告个数
+        newNoticeToAuditCount() {
+            let url = this.noticePath + '/newNoticeToAuditCount';
+            CallAjaxGetNoParam(url, this.newNoticeToAuditCountSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        newNoticeToAuditCountSuc(data) {
+            console.log("/newNoticeToAuditCount返回值", data.obj)
+            this.sNotice.noticeAuditCount = data.obj;
+            // 取消显示加载
+            this.loading = false;
+        },
+        //-------------------------------文档审核待办--------------------------------
+        /**
+         * 改变页码
+         */
+        onPageChange3(pageNum3) {
+            this.pageNum3 = pageNum3;
+            this.getFileToAudit();
+        },
+        /**
+         * 获取文档审核的数据
+         */
+        getFileToAudit() {
+            let data = {
+                pageNum: this.pageNum3,
+                pageSize: this.pageSize3,
+            };
+            let url = this.fileAuditPath + '/listAuditFileMyRemind';
+            CallAjaxPost(url, data, this.getFileToAuditSuc);
+        },
+        getFileToAuditSuc(data) {
+            console.log("getFileToAuditSuc:", data)
+            this.fileAuditList = data.obj.list;
+            this.fileToDoCount = data.obj.total;
+            this.totalNum3 = data.obj.total;
+            this.pageNum3 = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        /**
+         * 打开审核当前文档的模态框
+         */
+        openAuditFileModal(item) {
+            console.log("审核当前文档信息：", item)
+            this.auditFileInfo.exampleId = item.exampleId;
+            this.auditFileInfo.processId = item.processId;
+            this.auditFileInfo.fileAuditId = item.fileAuditId;
+            this.auditFileInfo.fileId = item.fileId;
+            this.auditFileInfo.isSign = item.isSign;
+            this.auditFileInfo.nowStepId = item.nowStepId;
+            this.auditFileInfo.nowStepName = item.nowStepName;
+            this.auditFileInfo.fileName = item.fileName;
+            //发请求获取模态框信息
+            this.getAuditFileModalInfo();
+            //打开模态框
+            this.auditFileModal = true;
+        },
+        /**
+         * 获取审核文档模态框展示信息
+         */
+        getAuditFileModalInfo() {
+            //下一个步骤的表示，名称，关联审核的角色，流程步骤条
+            let data = {
+                exampleId: this.auditFileInfo.exampleId,
+                processId: this.auditFileInfo.processId,
+                nowStepId: this.auditFileInfo.nowStepId,
+            };
+            let url = this.fileExampleProcessPath + '/getAuditFileModalInfo';
+            console.log("getAuditFileModalInfo参数", data)
+            CallAjaxPost(url, data, this.getAuditFileModalInfoSuc);
+        },
+        getAuditFileModalInfoSuc(data) {
+            console.log("getAuditFileModalInfoSuc:", data)
+            this.fileAuditStepList = data.obj.userStepVos;
+            //转化审核状态
+            this.stepDoing= 0;
+            for (let i = 0; i < this.fileAuditStepList.length; i++) {
+                switch (this.fileAuditStepList[i].auditState) {
+                    //A:未审核；B:审核中；C:审核通过；D:审核不通过
+                    case 'C':
+                        this.fileAuditStepList[i].auditState = "审核通过";
+                        this.stepDoing = this.stepDoing + 1;//设置stepDoing
+                        break;
+                    case 'B':
+                        this.fileAuditStepList[i].auditState = "审核中";
+                        this.stepDoing = this.stepDoing + 1;//设置stepDoing
+                        break;
+                    case 'D':
+                        this.fileAuditStepList[i].auditState = "审核不通过";
+                        this.stepDoing = this.stepDoing + 1;//设置stepDoing
+                        break;
+                    case 'A':
+                        this.fileAuditStepList[i].auditState = "未审核";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            this.nextStep.nextStepId = data.obj.nextStepVo.nextStepId;
+            this.roleId = this.nextStep.roleId = data.obj.nextStepVo.roleId;
+            this.nextStep.roleName = data.obj.nextStepVo.roleName;
+            this.listAuditUser();
+        },
+        /**
+         * 获取文档分类列表
+         */
+        getDepartmentList() {
+            let url = this.departmentPath + '/getDepartmentList';
+            CallAjaxGetNoParam(url, this.getDepartmentListSuc);
+        },
+        getDepartmentListSuc(data) {
+            this.departmentList = data.obj;
+        },
+        /**
+         * 设置表头
+         */
+        setUserTableTitle() {
+            // 添加自定义slot-scope(操作栏)#f78989
+            this.userColumn.push(HeadActionSlot(true, 100));
+            // 添加序号
+            this.userColumn.unshift(HeadIndex(true));
+        },
+        /**
+         * 根据条件搜索用户-用于审核
+         */
+        listAuditUser() {
+            let data = {
+                roleId: this.roleId,
+                userName: this.userConditions.userName,
+                phone: this.userConditions.phone,
+                departmentId: this.userConditions.departmentId,
+                pageNum: this.userPageNum,
+                pageSize: this.userPageSize,
+            };
+            let url = this.userPath + '/listAuditUser';
+            console.log("listAuditUser参数：", data)
+            CallAjaxPost(url, data, this.listAuditUserSuc);
+        },
+        listAuditUserSuc(data) {
+            console.log("listAuditUserSuc", data)
+            this.nowUserData = data.obj.list;
+            this.userTotalNum = data.obj.total;
+            this.userPageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        /**
+         * 清除用户搜索条件
+         */
+        clearUserConditions() {
+            this.userConditions.userName = '';
+            this.userConditions.phone = '';
+            this.userConditions.departmentId = '';
+            this.listAuditUser();
+        },
+        /**
+         * 选择审核人----改变页码
+         */
+        onUserPageChange(pageNum) {
+            this.userPageNum = pageNum;
+            this.listAuditUser();
+        },
+        selectAuditUser(index) {
+            //根据索引，获取当前选择的用户的标识
+            this.user.id = this.nowUserData[index].id;
+            this.messNeeded.phone = this.nowUserData[index].phone;
+            //将所有的都改为“未选中”
+            for (let i = 0; i < this.nowUserData.length; i++) {
+                this.nowUserData[i].isSelected = false;
+            }
+            //将此索引所对应行的按钮变为“已选择”
+            this.nowUserData[index].isSelected = true;
+        },
+        /**
+         * 预览并签署文件
+         */
+        previewAndSignFile() {
+            if(this.numPages<1){
+                // console.log("previewAndSignFile",this.auditFileInfo)
+                let data = {
+                    fileId: this.auditFileInfo.fileId,
+                };
+                console.log("previewAndSignFile参数：", data)
+                this.loadingMsg = MessageLoading();//打开加载提示
+                this.aesKey = GetAesKey();//生成16位对称加密秘钥
+
+                let url = "/file/file" + "/getFileCodeById"
+                GetFileCodeById(this.auditFileInfo.fileId, this.aesKey, this.previewAndSignFileSuc)
+            }else{
+                this.pdfModal = true;
+            }
+
+        },
+        previewAndSignFileSuc(data){
+            console.log("previewMyAuditFilePdfSuc", data)
+            var that = this;
+            // console.log("showSignaturePictureSuc",data)
+            let base64 = AesDecrypt(this.aesKey, data.obj.base64);//AES非对称加密解码
+            that.base64 = base64;
+            console.log("base64", base64)
+            var loadingTask = pdfjsLib.getDocument({data: atob(base64.split(",")[1]),});
+            loadingTask.promise.then(function (pdf) {
+                that.numPages = pdf.numPages;//pdf的页数
+                console.log("that.numPages", that.numPages);//pdf的页数
+                for (let i = 1; i <= that.numPages; i++) {//循环设置所有pdf页
+                    pdf.getPage(i).then(function (page) {
+                        var canvasList = document.getElementById('canvas_list');
+                        let canvas = document.createElement('canvas');
+                        canvas.id = "page" + i;//设置canvas的id
+                        canvasList.appendChild(canvas);
+                        // canvasList.appendChild(document.createElement('hr'));//横线
+                        canvasList.appendChild(document.createElement('br'));//横线
+
+                        var ctx = canvas.getContext('2d');
+                        // var viewport = page.getViewport({scale: 1.5,});//设置缩放比例
+                        var viewport = page.getViewport({scale: 1,});//设置缩放比例
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        // Render PDF page into canvas context
+                        var renderContext = {
+                            canvasContext: ctx,
+                            viewport: viewport
+                        };
+                        var renderTask = page.render(renderContext);
+                    });
+                }
+            });
+            // CloseMessageLoading(this.loadingMsg);// 关闭加载提示
+            //延时1000ms
+            // setTimeout(function () {
+            //要延迟执行的代码块
+            CloseMessageLoading(this.loadingMsg);
+            this.pdfModal = true;
+            // }, 1000);
+        },
+        /**
+         * 下载pdf文件
+         */
+        exportPdfFile() {
+            var that = this;
+            // that.doc = new jsPDF("", "pt", "a5");//new一个jsPDF对象，用于pdf文件操作
+            that.doc = new jsPDF("", "pt", "a4");//new一个jsPDF对象，用于pdf文件操作
+            var width = that.doc.internal.pageSize.width;//获取pdf宽度
+            var height = that.doc.internal.pageSize.height;//获取pdf高度
+            console.log("this.numPages", that.numPages);
+            for (let i = 1; i <= that.numPages; i++) {
+                let canvas = document.getElementById("page" + i);
+                let ctx = canvas.getContext("2d");
+                // 将图片转化为dataUrl
+                let imgData = canvas.toDataURL('image / jpeg');
+                // 添加图片
+                // 第3，4参数：距离左上角x和y轴偏移的位置
+                // 第5，6参数：生成图片的宽高
+                that.doc.addImage(imgData, 'PNG', 0, 0, width, height);//添加图片并是图片大小适应pdf大小
+                if (i != that.numPages) {
+                    that.doc.addPage();
+                }
+            }
+            console.log("this.doc",that.doc)
+            // 保存
+            // that.doc.save('a4.pdf');
+            // that.doc.save("Test.pdf");
+            // this.closePdfModal()
+        },
+        /**
+         * 关闭预览pdf文件模态框
+         */
+        closePdfModal() {
+            this.pdfModal = false;
+        },
+        /**
+         * 预览文件
+         */
+        previewFile() {
+            if(this.numPages<1){
+                let data = {
+                    fileId: this.auditFileInfo.fileId,
+                };
+                console.log("previewAndSignFile参数：", data)
+
+                this.loadingMsg = MessageLoading();//打开加载提示
+                this.aesKey = GetAesKey();//生成16位对称加密秘钥
+
+                let url = "/file/file" + "/getFileCodeById"
+                GetFileCodeById(this.auditFileInfo.fileId, this.aesKey, this.previewFileSuc)
+            }else{
+                this.pdfModal = true;
+            }
+        },
+        previewFileSuc(data){
+            console.log("previewFileSuc", data)
+            var that = this;
+            // console.log("showSignaturePictureSuc",data)
+            let base64 = AesDecrypt(this.aesKey, data.obj.base64);//AES非对称加密解码
+            that.base64 = base64;
+            console.log("base64", base64)
+            var loadingTask = pdfjsLib.getDocument({data: atob(base64.split(",")[1]),});
+            loadingTask.promise.then(function (pdf) {
+                that.numPages = pdf.numPages;//pdf的页数
+                console.log("that.numPages", that.numPages);//pdf的页数
+                for (let i = 1; i <= that.numPages; i++) {//循环设置所有pdf页
+                    pdf.getPage(i).then(function (page) {
+                        var canvasList = document.getElementById('canvas_list');
+                        let canvas = document.createElement('canvas');
+                        canvas.id = "page" + i;//设置canvas的id
+                        canvasList.appendChild(canvas);
+                        // canvasList.appendChild(document.createElement('hr'));//横线
+                        canvasList.appendChild(document.createElement('br'));//横线
+
+                        var ctx = canvas.getContext('2d');
+                        // var viewport = page.getViewport({scale: 1.5,});//设置缩放比例
+                        var viewport = page.getViewport({scale: 1,});//设置缩放比例
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        // Render PDF page into canvas context
+                        var renderContext = {
+                            canvasContext: ctx,
+                            viewport: viewport
+                        };
+                        var renderTask = page.render(renderContext);
+                    });
+                }
+            });
+            // CloseMessageLoading(this.loadingMsg);// 关闭加载提示
+            //延时1000ms
+            // setTimeout(function () {
+            //要延迟执行的代码块
+            CloseMessageLoading(this.loadingMsg);
+            this.pdfModal = true;
+            // }, 1000);
+        },
+        /**
+         * 打开公章签名列表模态框
+         */
+        openSignatureModal() {
+            let data = {
+                pageNum: 1,
+                pageSize: 10,
+                fileName: '',
+                roleId: [],
+            };
+            // console.log('filter', data);
+            let url = "/signature/signature/listPageInfo";//请求路径
+            CallAjaxPost(url, data, this.selectSignatureSuc);
+            this.signatureModal = true;
+        },
+        /**
+         * 关闭公章签名列表模态框
+         */
+        closeSignatureModal() {
+            // console.log("closeSignatureModal");
+            this.signatureModal = false;
+        },
+        /**
+         * 查找签名
+         */
+        selectSignature() {
+            let data = {
+                pageNum: 1,
+                pageSize: 10,
+                fileName: '',
+                roleId: null,
+            };
+            // console.log('filter', data);
+            let url = "/signature/signature/listPageInfo";//请求路径
+            CallAjaxPost(url, data, this.selectSignatureSuc);
+            // // 显示加载
+            // this.loading = true;
+        },
+
+        /**
+         * 查找签名回调函数
+         * @param data
+         */
+        selectSignatureSuc(data) {
+            console.log("selectSignatureSuc", data);
+            // this.signatureNowData = data.obj;//将返回的公章签名集合信息放到nowData
+            // console.log("this.signatureNowData", this.signatureNowData);
+            this.signatureNowData = data.obj.list;
+            this.signatureModal = true;
+
+        },
+        /**
+         * 查看签名并选择签署方式,文件信息从服务器获取
+         * @param index
+         */
+        showSignaturePicture(index) {
+            this.aesKey = GetAesKey();//生成16位对称加密秘钥
+            console.log(index);
+
+            let url = "/file/file" + "/getFileCodeById"
+            // CallAjaxPost(url, this.nowData[index].id, this.showSignaturePictureSuc)
+            // this.signUrl = this.submitFileData[index].signUrl;//获取文件预览地址
+            // this.picModel = true;
+            GetFileCodeById(this.signatureNowData[index].id,this.aesKey,this.showSignaturePictureSuc)
+            // downloadFileEncrypt(this.nowData[index].id)
+        },
+        /**
+         * 查看签名,文件信息从服务器获取回调函数
+         * @param data
+         */
+        showSignaturePictureSuc(data) {
+            // console.log("showSignaturePictureSuc",data)
+            this.signUrl = AesDecrypt(this.aesKey, data.obj.base64);//AES非对称加密解码
+            console.log("this.signUrl",this.signUrl)
+            // this.signUrl = "data:image/png;base64," + data.obj.fileCode;//获取文件编码
+            this.signaturePicModel = true;
+        },
+        /**
+         * 关闭公章签名查看模态框
+         */
+        closeSignaturePicModel(){
+            this.signaturePicModel = false;
+        },
+        /**
+         * 在pdf上生成普通签名/公章
+         */
+        normalSignature() {
+            this.closeSignaturePicModel();
+            this.closeSignatureModal();
+            // this.signatureModal = false;
+            //cnavs添加签名
+            var that = this;
+            let canvas = document.getElementById("page" + this.numPages);
+            let ctx = canvas.getContext("2d");
+            let img = new Image();
+            img.src = this.signUrl;//公章签名图片地址
+            img.onload = function () {
+                ctx.drawImage(img, 50, 50, that.signatureSize, that.signatureSize);   //在画布X轴 50  Y轴坐标50 处添加签名
+            };
+
+            //在事件外声明需要用到的变量
+            let ax, ay, x, y;
+            //添加鼠标按下事件
+            canvas.onmousedown = function (e) {
+                // console.log("onmousedown e", e);
+                //按下后可移动
+                canvas.onmousemove = function (e) {
+                    //x、y为鼠标位置
+                    x = e.layerX;
+                    y = e.layerY;
+                    //先清除之前的然后重新绘制
+                    if (navigator.userAgent.indexOf("Firefox") > 0) {//修复火狐Firefox浏览器layerY值不一样的问题
+                        y = y - canvas.height * (that.numPages - 1);
+                    }
+                    ctx.drawImage(img, x - 0.5 * that.signatureSize, y - 0.5 * that.signatureSize, that.signatureSize, that.signatureSize);//重画签章
+                };
+                //鼠标抬起清除绑定事件
+                canvas.onmouseup = function () {
+                    //先清除之前的然后重新绘制
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    var loadingTask = pdfjsLib.getDocument({data: atob(that.base64.split(",")[1]),});
+                    loadingTask.promise.then(function (pdf) {
+                        //重画被签名的pdf页面
+                        pdf.getPage(that.numPages).then(function (page) {
+                            // var canvasList = document.getElementById('canvas_list');
+                            let canvas = document.createElement('canvas');
+                            var viewport = page.getViewport({scale: 1,});//设置缩放比例
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            // Render PDF page into canvas context
+                            var renderContext = {
+                                canvasContext: ctx,
+                                viewport: viewport
+                            };
+                            var renderTask = page.render(renderContext);
+                        });
+                    });
+                    canvas.onmousemove = null;
+                    canvas.onmouseup = null;
+                    //盖章延时900ms
+                    setTimeout(function () {
+                        //要延迟执行的代码块
+                        ctx.drawImage(img, x - 0.5 * that.signatureSize, y - 0.5 * that.signatureSize, that.signatureSize, that.signatureSize);//重画签章
+                    }, 900);
+                };
+            };
+            this.isFileSignature = true;//签名完成
+        },
+
+        /**
+         * 在pdf上生成骑缝章
+         */
+        pagingSeal() {
+            this.closeSignaturePicModel();
+            this.closeSignatureModal();
+            //cnavs添加签名
+            var that = this;
+            // console.log("this.numPages", that.numPages);
+            for (let i = 1; i <= that.numPages; i++) {
+                let canvas = document.getElementById("page" + i);
+                let ctx = canvas.getContext("2d");
+                let img = new Image();
+                img.src = this.signUrl;//公章签名图片地址
+                // console.log("img", img);
+                // console.log("img.height", img.height);
+                // console.log("img.width", img.width);
+                // console.log("canvas.width", canvas.width);
+                // console.log("canvas.width", canvas.);
+                img.onload = function () {
+                    // ctx.drawImage(img, 300, 400, that.signatureSize, that.signatureSize);   //在画布X轴 50  Y轴坐标50 处添加签名
+                    // ctx.drawImage(img, canvas.width-20, 400, that.signatureSize, that.signatureSize);   //在画布X轴 50  Y轴坐标50 处添加签名
+                    //第二三个此参数是原始图片切割起点
+                    //第四五个参数是切割部分的长宽
+                    //第六七个参数是切割后的图片在canvas画布中的拜访位置
+                    //第八九个参数是切割后的图片在canvas画布中的大小
+                    ctx.drawImage(img, 0 + (i - 1) * img.width / that.numPages, 0, img.width / that.numPages, img.height, canvas.width - that.signatureSize / that.numPages, 300, that.signatureSize / that.numPages, that.signatureSize);   //添加骑缝章
+                };
+            }
+            this.isFileSignature = true;//签名完成
+        },
+
+        /**
+         * 选择 【通过、不通过】
+         */
+        selectAuditState() {
+            if (this.audit.auditStateString === "通过") {
+                this.audit.auditState = "C";
+                this.audit.opinion = "同意";
+            } else {
+                this.audit.auditState = "D";
+                this.audit.opinion = "不同意";
+            }
+        },
+        /**
+         * 校验是否为空以及长度限制
+         */
+        checkForReview() {
+            if (CheckEmpty(this.user.id, '请选择下一个审核用户') ||
+                CheckEmpty(this.audit.auditState, '请选择审核结果')) {
+                return true;
+            }
+        },
+        /**
+         * 送审给下一个用户
+         */
+        forReviewToNext() {
+            debugger
+            var that = this;
+
+            if( this.nowUserData!=''){
+                //校验
+                if (this.checkForReview()) {
+                    return;
+                }
+            }
+
+
+            if ((!this.isFileSignature)&&(this.auditFileInfo.isSign === 1)) {
+                MessageWarning("文件尚未签署!")
+                return;
+            }else if((this.isFileSignature)&&(this.auditFileInfo.isSign === 1)){
+                // that.doc = new jsPDF("", "pt", "a5");//new一个jsPDF对象，用于pdf文件操作
+                that.doc = new jsPDF("", "pt", "a4");//new一个jsPDF对象，用于pdf文件操作
+                let width = that.doc.internal.pageSize.width;//获取pdf宽度
+                let height = that.doc.internal.pageSize.height;//获取pdf高度
+                // console.log("this.numPages", that.numPages);
+                for (let i = 1; i <= that.numPages; i++) {
+                    let canvas = document.getElementById("page" + i);
+                    let ctx = canvas.getContext("2d");
+                    // 将图片转化为dataUrl
+                    let imgData = canvas.toDataURL('image / jpeg');
+                    // 添加图片
+                    // 第3，4参数：距离左上角x和y轴偏移的位置
+                    // 第5，6参数：生成图片的宽高
+                    that.doc.addImage(imgData, 'PNG', 0, 0, width, height);//添加图片并是图片大小适应pdf大小
+                    if (i != that.numPages) {
+                        that.doc.addPage();
+                    }
+                }
+                debugger
+                let aesKey = GetAesKey();//生成16位对称加密秘钥
+                console.log(that.doc.output('datauristring'))
+                let fileCodeStr = AesEncrypt(aesKey, that.doc.output('datauristring'));//对称加密文件base64编码
+                console.log("fileCodeStr",fileCodeStr)
+                let aesKeyEncrypt = RsaEncrypt(aesKey, localStorage.getItem("rsaPublicKey"));//对对称加密秘钥进行非对称加密
+                let suffix = this.auditFileInfo.fileName.split(".")[1];
+                let data = {
+                    exampleId: this.auditFileInfo.exampleId,
+                    fileAuditId: this.auditFileInfo.fileAuditId,
+                    userId: this.user.id,
+                    stepId: this.nextStep.nextStepId,
+                    auditState: this.audit.auditState,
+                    opinion: this.audit.opinion,
+                    fileCodeStr: fileCodeStr,//文件编码
+                    fileName: this.auditFileInfo.fileName,//文件名称
+                    aesKeyEncrypt: aesKeyEncrypt,//非对称加密后的对称加密秘钥
+                    suffix:suffix,//文件名后缀
+                    isSign:true,//文件名后缀
+                };
+                let url = this.fileAuditPath + '/forReviewToNext';
+                console.log("forReviewToNext参数：", data)
+                CallAjaxPost(url, data, this.forReviewToNextSuc);
+            }else{
+                let data = {
+                    exampleId: this.auditFileInfo.exampleId,
+                    fileAuditId: this.auditFileInfo.fileAuditId,
+                    userId: this.user.id,
+                    stepId: this.nextStep.nextStepId,
+                    auditState: this.audit.auditState,
+                    opinion: this.audit.opinion,
+                    fileCodeStr: this.doc.output('dataurlstring'),//文件编码
+                    fileName: this.auditFileInfo.fileName,//文件名称
+                };
+                let url = this.fileAuditPath + '/forReviewToNext';
+                console.log("forReviewToNext参数：", data)
+                CallAjaxPost(url, data, this.forReviewToNextSuc);
+            }
+
+
+
+            // let data = {
+            //     exampleId: this.auditFileInfo.exampleId,
+            //     fileAuditId: this.auditFileInfo.fileAuditId,
+            //     userId: this.user.id,
+            //     stepId: this.nextStep.nextStepId,
+            //     auditState: this.audit.auditState,
+            //     opinion: this.audit.opinion,
+            //     fileCodeStr: that.doc.output('dataurlstring'),//文件编码
+            //     fileName: fileName,//文件名称
+            // };
+            // let url = this.fileAuditPath + '/forReviewToNext';
+            // console.log("forReviewToNext参数：", data)
+            // CallAjaxPost(url, data, this.forReviewToNextSuc);
+        },
+        forReviewToNextSuc() {
+            //关闭模态框
+            this.auditFileModal = false;
+            this.getFileToAudit();
+            //检验是否发送短信
+            let url = '/config/configuration/checkMessage4Audit';
+            CallAjaxGetNoParam(url, this.checkMessage4AuditSuc);
+        },
+        checkMessage4AuditSuc(data) {
+            console.log("checkMessage4AuditSuc:", data.obj)
+            console.log("准备发短信**************************************")
+            //需要发短信
+            if (data.obj == true) {
+                let messData = {
+                    phone: this.messNeeded.phone,
+                };
+                console.log(messData,"准备发短信****")
+                let url = '/message/myFileSendMessage';
+                CallAjaxPost(url, messData, this.myFileSendMessageSuc);
+            }
+        },
+        myFileSendMessageSuc() {
+            console.log("已发送短信至审核人*****************************************")
+           if(this.nowUserData!='')
+            MessageSuccess("已发送短信至审核人");
+        },
+        /**
+         * 取消审核改文档
+         */
+        cancelAuditFile() {
+            //关闭模态框
+            this.auditFileModal = false;
+        },
+        /**
+         * 预览要审核的文档
+         */
+        previewFileToAudit(fileId) {
+            console.log("要审核的文档的标识：", fileId)
+        },
+        //-------------------------------档案审核待办--------------------------------
+        /**
+         * 改变页码
+         */
+        onPageChange4(pageNum4) {
+            this.pageNum4 = pageNum4;
+            this.getArchiveToAudit();
+        },
+        /**
+         * 获取档案审核的数据
+         */
+        getArchiveToAudit() {
+            let data = {
+                pageNum: this.pageNum4,
+                pageSize: this.pageSize4,
+            };
+            let url = this.archiveAuditPath + '/listAuditArchiveMyRemind';
+            CallAjaxPost(url, data, this.getArchiveToAuditSuc);
+        },
+        getArchiveToAuditSuc(data) {
+            console.log("getArchiveToAuditSuc:", data)
+            this.archiveAuditList = data.obj.list;
+            this.archiveToDoCount = data.obj.total;
+            this.totalNum4 = data.obj.total;
+            this.pageNum4 = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        /**
+         * 打开审核当前文档的模态框
+         */
+        openAuditArchiveModal(item) {
+            console.log("审核当前文档信息：", item)
+            this.auditArchiveInfo.exampleId = item.exampleId;
+            this.auditArchiveInfo.processId = item.processId;
+            this.auditArchiveInfo.archiveAuditId = item.archiveAuditId;
+            this.auditArchiveInfo.nowStepId = item.nowStepId;
+            this.auditArchiveInfo.nowStepName = item.nowStepName;
+            //发请求获取模态框信息
+            this.getAuditArchiveModalInfo();
+            //打开模态框
+            this.auditArchiveModal = true;
+        },
+        getAuditArchiveModalInfo() {
+            //下一个步骤的表示，名称，关联审核的角色，流程步骤条
+            let data = {
+                exampleId: this.auditArchiveInfo.exampleId,
+                processId: this.auditArchiveInfo.processId,
+                nowStepId: this.auditArchiveInfo.nowStepId,
+            };
+            let url = this.archiveAuditPath + '/getAuditArchiveModalInfo';
+            console.log("getAuditArchiveModalInfo参数", data)
+            CallAjaxPost(url, data, this.getAuditArchiveModalInfoSuc);
+        },
+        getAuditArchiveModalInfoSuc(data) {
+            console.log("getAuditArchiveModalInfoSuc:", data)
+            this.archiveAuditStepList = data.obj.userStepVos;
+            //转化审核状态
+            this.stepDoing= 0;
+            for (let i = 0; i < this.archiveAuditStepList.length; i++) {
+                switch (this.archiveAuditStepList[i].auditState) {
+                    //A:未审核；B:审核中；C:审核通过；D:审核不通过
+                    case 'C':
+                        this.archiveAuditStepList[i].auditState = "审核通过";
+                        this.stepDoing = this.stepDoing + 1;//设置stepDoing
+                        break;
+                    case 'B':
+                        this.archiveAuditStepList[i].auditState = "审核中";
+                        this.stepDoing = this.stepDoing + 1;//设置stepDoing
+                        break;
+                    case 'D':
+                        this.archiveAuditStepList[i].auditState = "审核不通过";
+                        this.stepDoing = this.stepDoing + 1;//设置stepDoing
+                        break;
+                    case 'A':
+                        this.archiveAuditStepList[i].auditState = "未审核";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            this.nextStepArc.nextStepId = data.obj.nextStepVo.nextStepId;
+            this.roleId = this.nextStepArc.roleId = data.obj.nextStepVo.roleId;
+            this.nextStepArc.roleName = data.obj.nextStepVo.roleName;
+            this.listAuditUser();
+        },
+        checkArcForReview() {
+            if (CheckEmpty(this.user.id, '请选择下一个审核用户') ||
+                CheckEmpty(this.audit.auditState, '请选择审核结果')) {
+                return true;
+            }
+        },
+        /**
+         * 送审档案给下一个用户
+         */
+        forReviewArcToNext() {
+            if(this.nowUserData!=""){
+                if (this.checkArcForReview()) {
+                    return;
+                }
+            }
+            //校验
+
+
+
+
+            let data = {
+                exampleId: this.auditArchiveInfo.exampleId,
+                arcAuditId: this.auditArchiveInfo.archiveAuditId,
+                userId: this.user.id,
+                stepId: this.nextStepArc.nextStepId,
+                auditState: this.audit.auditState,
+                opinion: this.audit.opinion,
+            };
+            let url = this.archiveAuditPath + '/forReviewArcToNext';
+            console.log("forReviewArcToNext参数：", data)
+            CallAjaxPost(url, data, this.forReviewArcToNextSuc);
+        },
+        forReviewArcToNextSuc() {
+            //关闭模态框
+            this.auditArchiveModal = false;
+            this.getArchiveToAudit();
+            //检验是否发送短信
+            let url = '/config/configuration/checkMessage4Audit';
+            CallAjaxGetNoParam(url, this.checkMessage4AuditSuc);
+        },
+        /**
+         * 预览档案
+         */
+        previewArchive() {
+            let data = {
+                exampleId: this.auditArchiveInfo.exampleId,
+            };
+            console.log("previewArchive参数-档案实例标识：", data)
+
+            let url = "/archive/archiveExampleFile"+"/listArchiveFile";
+            CallAjaxPost(url,this.auditArchiveInfo.exampleId,this.previewArchiveSuc)
+
+        },
+        previewArchiveSuc(data){
+            console.log("previewArchiveSuc",data)
+            this.auditArchiveInfoData = data.obj;
+            this.archiveFilePool = true;
+        },
+        /**
+         * 下载模板文件
+         * @param index
+         * @param row
+         */
+        downloadArchiveFileTem(index,row){
+            downloadFileEncrypt(row.exampleFileId)
+        },
+        /**
+         * 下载用户文件
+         * @param index
+         * @param row
+         */
+        downloadUserFile(index,row){
+            downloadFileEncrypt(row.fileId)
+        },
+        /**
+         * 关闭抽屉文件池调用该方法
+         * @param done
+         */
+        handleClose(done) {
+            console.log(done)
+            this.archiveFilePool = false;
+            // this.$confirm('还有未保存的工作哦确定关闭吗？')
+            //     .then(_ => {
+            //         done();
+            //     })
+            //     .catch(_ => {});
+        },
+        /**
+         * 取消审核该档案
+         */
+        cancelAuditArchive() {
+            //关闭模态框
+            this.auditArchiveModal = false;
+        },
+        //-------------------------------TODO            待办事宜部分-------------------------
+//        /**
+//         * 根据当前用户标识和状态获取流程运转的信息
+//         */
+//
+//        listBacklogByUser() {
+//            //查询状态为C的待办用户流程步骤，C是发起者建立流程时默认设置的
+//            let data = {
+//                state: 'C'
+//            };
+//            let url = this.userStepConPath + '/listBacklogByUser';
+//            console.log("listBacklogByUser参数：", data)
+//            CallAjaxPost(url, data, this.listBacklogByUserSuc, null, null, false);
+//        },
+//        listBacklogByUserSuc(data) {
+//            this.backLogList = data.obj;
+//            console.log("backLogList:", this.backLogList)
+//            //获取所有的key值（即processIdList）
+//            let processIdList = Object.keys(this.backLogList)
+//            console.log("processIdList:", processIdList)
+//            let panel = [];
+//            let backLogTotal = 0;
+//            //打印出所有的待办事宜信息
+//            for (let processId in this.backLogList) {
+//                if (this.backLogList.hasOwnProperty(processId)) {
+//                    let panelItem = {
+//                        processId: '',
+//                        processName: '',
+//                        startTime: '',
+//                        endTime: '',
+//                        runningStepSize: '',
+//                        runningStep: [],
+//                    };
+//                    let a = processId;
+//                    console.log("processId:", a, "backLogList:", this.backLogList[a])
+//                    for (let i = 0; i < this.backLogList[a].length; i++) {
+//                        panelItem.runningStep.push(this.backLogList[a][i].runningStep)
+//                    }
+//                    panelItem.processId = a;
+//                    panelItem.startTime = this.backLogList[a][0].startTime;
+//                    panelItem.endTime = this.backLogList[a][0].endTime;
+//                    panelItem.processName = this.backLogList[a][0].processName;
+//                    panelItem.runningStepSize = this.backLogList[a].length;
+//                    console.log("panelItem:", panelItem)
+//                    panel.push(panelItem);
+//                    backLogTotal = backLogTotal + this.backLogList[a].length;
+//                    console.log("循环过程面板数据：", panel)
+//                }
+//            }
+//            this.panel = panel;
+//            this.backLogTotal = backLogTotal;
+//            console.log("整合后的面板所有数据：", this.panel)
+//        },
+//        /**
+//         * 选择面板，获取name值（processId）
+//         * @param name
+//         */
+//        choosePanel(name) {
+//            console.log("选择的面板的name值：", name);
+//            console.log("选择的面板对应的数据：", this.backLogList[name])
+//        },
+//        /**
+//         * 进入某流程的某个实例化运转步骤
+//         * @param index
+//         * @param i
+//         */
+//        auditRunningStep(index, i) {
+//            // console.log("panel的索引:", index, "runningStep的索引:", i);
+//            let userStepId = this.panel[index].runningStep[i].userStepId;
+//            let stepId = this.panel[index].runningStep[i].stepId;
+//            let processId = this.panel[index].processId;
+//            console.log("userStepId：", this.panel[index].runningStep[i].userStepId, "stepId：", this.panel[index].runningStep[i].stepId, "processId：", this.panel[index].processId)
+//            let proOperationUrl = "/process/proOperation?processId=" + processId + "&stepId=" + stepId + "&userStepId=" + userStepId + "&flag=false&uploadedFileFlag=false";
+//            window.open(proOperationUrl);
+//        }
+    }
+});

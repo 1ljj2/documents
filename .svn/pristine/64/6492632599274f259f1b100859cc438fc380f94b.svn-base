@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.PermissionsModuleMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.PermissionsModule" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="module_name" property="moduleName" jdbcType="VARCHAR" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="seq" property="seq" jdbcType="INTEGER" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+    <result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="update_date" property="updateDate" jdbcType="TIMESTAMP" />
+    <result column="state" property="state" jdbcType="CHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, module_name, description, seq, remark, create_date, update_date, state
+  </sql>
+
+  <select id="listModuleByName" parameterType="java.lang.String" resultMap="BaseResultMap">
+      SELECT
+          id,
+          module_name,
+          description
+      FROM
+          `a_permissions_module`
+      WHERE
+          state = 'A'
+      AND module_name LIKE CONCAT('%', #{query}, '%')
+  </select>
+
+  <select id="getModuleName" resultType="java.lang.String" >
+    SELECT DISTINCT
+        module_name
+    FROM
+        `a_permissions_module`
+    WHERE
+        state = 'A'
+  </select>
+
+  <select id="countByModuleName" resultType="java.lang.Integer" parameterType="java.lang.String" >
+    SELECT
+        COUNT(*)
+    FROM
+        `a_permissions_module`
+    WHERE
+        state = 'A'
+    AND module_name = #{moduleName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="viewModuleByPermissionId" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    SELECT
+        mdu.id,
+        mdu.module_name,
+        mdu.description,
+        mdu.remark
+    FROM
+        `a_permissions` p
+    LEFT JOIN a_permissions_module mdu ON (
+        p.permissions_module_id = mdu.id
+        AND mdu.state = 'A'
+    )
+    WHERE
+        p.state = 'A'
+    AND p.id = #{permissionId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectIdBymoduleName" resultType="java.lang.Integer" parameterType="java.lang.String" >
+    SELECT
+        id
+    FROM
+        `a_permissions_module`
+    where state = 'A'
+    and module_name = #{moduleName,jdbcType=VARCHAR}
+  </select>
+
+
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from a_permissions_module
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from a_permissions_module
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.PermissionsModule" >
+    insert into a_permissions_module (id, module_name, description, 
+      seq, remark, create_date, 
+      update_date, state)
+    values (#{id,jdbcType=INTEGER}, #{moduleName,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, 
+      #{seq,jdbcType=INTEGER}, #{remark,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP}, 
+      #{updateDate,jdbcType=TIMESTAMP}, #{state,jdbcType=CHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.PermissionsModule" >
+    insert into a_permissions_module
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="moduleName != null" >
+        module_name,
+      </if>
+      <if test="description != null" >
+        description,
+      </if>
+      <if test="seq != null" >
+        seq,
+      </if>
+      <if test="remark != null" >
+        remark,
+      </if>
+      <if test="createDate != null" >
+        create_date,
+      </if>
+      <if test="updateDate != null" >
+        update_date,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="moduleName != null" >
+        #{moduleName,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="seq != null" >
+        #{seq,jdbcType=INTEGER},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.PermissionsModule" >
+    update a_permissions_module
+    <set >
+      <if test="moduleName != null" >
+        module_name = #{moduleName,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="seq != null" >
+        seq = #{seq,jdbcType=INTEGER},
+      </if>
+      <if test="remark != null" >
+        remark = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        update_date = #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.PermissionsModule" >
+    update a_permissions_module
+    set module_name = #{moduleName,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      seq = #{seq,jdbcType=INTEGER},
+      remark = #{remark,jdbcType=VARCHAR},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      update_date = #{updateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

@@ -1,0 +1,20 @@
+package org.jit.sose.view;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+/**
+ * 【我的文档】请求跳转
+ */
+@Controller
+@RequestMapping("/myFile")
+public class MyFileView {
+
+    /**
+     * 我的文档
+     */
+    public String myFileView() {
+        return "file/myFile";
+    }
+
+}

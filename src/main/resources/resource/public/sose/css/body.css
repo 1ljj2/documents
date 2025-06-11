@@ -1,0 +1,158 @@
+.ivu-table-body {
+    overflow: auto;
+    height: auto;
+}
+/* 模态框样式 */
+.ivu-modal-header{
+    background-color: #2d8cf0;
+    text-align: center;
+}
+.modal-title-class{
+    color: #fff;
+    font-size: 18px;
+}
+.ivu-modal-header-inner{
+    color: #fff;
+    font-size: 18px;
+}
+.ivu-modal-close .ivu-icon-ios-close {
+    color: #fff;
+}
+
+
+/* table表格分页 */
+.page {
+    margin: 10px;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+}
+
+/* 输入框长度 */
+.input {
+    width: 200px;
+}
+
+.input-radio {
+    padding-top: 8px;
+    height: 30px;
+}
+
+/* 添加按钮  */
+.div-inline-left {
+    float: left;
+    width: 150px;
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+/* 搜索按钮，分页 */
+.div-inline-right {
+    float: right;
+    margin-top: 10px;
+}
+
+/* 提示信息 */
+.red {
+    color: red;
+}
+
+.white {
+    height: 5px;
+    background-color: #FFF5EE;
+}
+
+.ivu-table .myRowClassName td {
+    background-color: #dbebf9;
+    height: 10;
+}
+
+.ivu-table .table td {
+    background-color: red;
+    height: 10;
+}
+
+.bodyColor {
+    width: 100%;
+    background-color: #c4e1ff;
+}
+
+/* 搜索框div */
+.qry {
+    /* height: 100px; */
+    position: relative;
+    background-color: #FFF5EE;
+}
+
+/* 条件查询第一行样式 */
+.first {
+    width: 100%;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.first:after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
+/* 选择框和输入框总体样式 */
+.juinline {
+    padding-left: 20px;
+    padding-right: 0;
+    padding-bottom: 5px;
+    float: left;
+}
+
+/* 选择框样式 */
+.chk {
+    float: left;
+    width: 100px;
+}
+
+/* 输入框总体样式 */
+.select_input {
+    width: 150px;
+}
+
+/* 搜索按钮样式 */
+.butLeft {
+    text-align: left;
+    padding-bottom: 10px;
+}
+
+.butRight {
+    float: left;
+    padding-bottom: 10px;
+    margin-left: 20px;
+}
+
+.table a {
+    color: #02a1e9;
+}
+
+.table-a {
+    margin-right: 5px;
+}
+
+/*提示框样式*/
+.ivu-poptip-body-message {
+    display: inline-block;
+}
+
+/*模态框文件上传*/
+.upload-text {
+    width: 200px;
+}
+
+
+.modal-content {
+    margin: 0 auto;
+}
+
+.modal-content-table {
+    margin: 0 auto;
+}

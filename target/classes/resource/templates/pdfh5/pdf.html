@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <title>PDFH5</title>
+    <script type="text/javascript" src="/public/common.js"></script>
+    <script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+
+
+    <style>
+        /*html,*/
+        /*body {*/
+        /*    width: 100%;*/
+        /*    height: 100%;*/
+        /*}*/
+
+        #demo {
+        }
+
+    </style>
+</head>
+<body style="overflow:auto">
+<div class="layout-body" id="pdf" v-cloak>
+    <el-button type="warning" @click="exportPdfFile">下载文件</el-button>
+    <!--    <el-button type="warning" @click="signature">签名/盖章</el-button>-->
+    <el-button type="warning" @click="openSignatureModal">签名/盖章</el-button>
+    <el-button type="warning" @click="openPdfModal">查看文件</el-button>
+
+    <!--    <div id="demo" class="layout-body" style="height: 2800px">-->
+    <!--        <div id="canvas_list">-->
+    <!--        </div>-->
+    <!--    </div>-->
+
+    <!-- 查看pdf文件模态框 -->
+    <Modal v-model="pdfModal" :mask-closable="false"
+           @on-cancel="closePdfModal" width="1100px" class-name="vertical-center-modal">
+        <p slot="header">
+            <span>文件签署</span>
+        </p>
+
+        <div style="text-align: center;">
+            <div id="demo" class="layout-body">
+                <div id="canvas_list">
+                </div>
+            </div>
+        </div>
+        <div slot="footer">
+            <el-button type="warning" @click="exportPdfFile">下载文件</el-button>
+            <!--    <el-button type="warning" @click="signature">签名/盖章</el-button>-->
+            <el-button type="warning" @click="openSignatureModal">签名/盖章</el-button>
+        </div>
+    </Modal>
+
+    <!-- 公章签名模态框 -->
+    <Modal v-model="signatureModal" :mask-closable="false"
+           @on-cancel="closeSignatureModal">
+        <p slot="header">
+            <span>公章/签名列表</span>
+        </p>
+        <div style="text-align: center;">
+            <!-- 表格 -->
+            <i-table class="table" border height="auto" width="auto" size='small' :columns="signatureColumn" :data="signatureNowData">
+                <template slot-scope="{ row, index }" slot="action">
+                    <a class="table-a" @click="showSignature(index)">查看签名 </a>
+                </template>
+            </i-table>
+        </div>
+        <div slot="footer">
+        </div>
+    </Modal>
+
+    <!-- 查看签名模态框 -->
+    <Modal v-model="picModel" :mask-closable="false"
+           @on-cancel="closePicModel">
+        <p slot="header">
+            <span>公章签名</span>
+        </p>
+        <div style="text-align: center;">
+            <div>
+                <img :src="signUrl" style="width: 400px;height: 400px">
+            </div>
+        </div>
+        <div slot="footer">
+            <i-button type="text" size="large" @click="closePicModel">取消</i-button>
+            <i-button type="primary" size="large" @click="signature">确定</i-button>
+        </div>
+    </Modal>
+
+
+</div>
+
+<script src="/templates/pdfh5/js/build/pdf.js"></script>
+<script type="text/javascript" charset="utf-8" src="/templates/pdfh5/js/html2canvas.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="/templates/pdfh5/js/jspdf.debug.js"></script>
+<script type="text/javascript" charset="utf-8" src="/templates/pdfh5/js/canvas2image.js"></script>
+<script type="text/javascript" src="/templates/pdfh5/js/pdfSignature.js"></script>
+
+</body>
+</html>

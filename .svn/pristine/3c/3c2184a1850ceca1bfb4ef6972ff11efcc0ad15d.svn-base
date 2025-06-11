@@ -1,0 +1,62 @@
+/**
+ * 项目名
+ * 若项目名称为空，需要在server.xml中配置以下目录
+ * <Context debug="0" docBase="/house" path="/" reloadable="true"/>
+ */
+const PROJECT_NAME = '';
+// const PROJECT_NAME = '/document';
+
+/**
+ * 方法请求路径:主机地址+项目名
+ */
+const METHOD_URL = 'http://127.0.0.1:8000' + PROJECT_NAME;
+// const METHOD_URL = 'http://112.80.133.142:2000' + PROJECT_NAME;
+// const METHOD_URL = 'http://106.55.37.222:2000' + PROJECT_NAME;
+// const METHOD_URL = 'https://www.njxjrj.com'+ PROJECT_NAME;
+
+/**
+ * 文件上传地址
+ */
+//const UPLOAD_URL = METHOD_URL + '/config/fileInfo/upload';
+
+
+// vue/iview相关/layout相关
+document.write("<script type='text/javascript' src='" + PROJECT_NAME + "/public/jquery/jQuery-2.1.4.min.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/vue/vue-2.6.10.min.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/vue/http-vue-loader.js'></script>"
+    + "<link rel='stylesheet' type='text/css' href='" + PROJECT_NAME + "/public/iview-4.2.0/css/iview.css'>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/iview-4.2.0/iview.min.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/jitsoseVue.js'></script>"
+    + "<link rel='stylesheet' type='text/css' href='" + PROJECT_NAME + "/public/sose/css/vue.css'>"
+    + "<link rel='stylesheet' type='text/css' href='" + PROJECT_NAME + "/templates/layout/css/layout.css'>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/vue/vue-resource-1.5.1.js'></script>"
+);
+
+// 引入element-ui组件库
+document.write("<link rel='stylesheet' href='" + PROJECT_NAME + "/public/element-ui-2.10.0/lib/theme-chalk/index.css'>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/element-ui-2.10.0/lib/index.js'></script>"
+);
+
+//document.write("<link rel='stylesheet' href='https://unpkg.com/element-ui/lib/theme-chalk/index.css'>"
+//    + "<script async src='https://unpkg.com/element-ui/lib/index.js'></script>"
+//);
+
+// 自定义
+document.write("<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/cookieUtil.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/callBackAjax.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/jitsoseUtil.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/tableTitleUtil.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/dataFormatUtil.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/verifyConstant.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/sose/js/encryptionUtil.js'></script>"
+    + "<link rel='stylesheet' type='text/css' href='" + PROJECT_NAME + "/public/sose/css/body.css'>"
+    + "<link rel='stylesheet' type='text/css' href='" + PROJECT_NAME + "/public/sose/css/pop.css'>"
+);
+
+// //对称加密、非对称加密加密相关组件
+// document.write("<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/jsencrypt.js'></script>"
+//     + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/cipher-core.js'></script>"
+//     + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/crypto-js.js'></script>"
+//     + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/Base64.js'></script>")
+
+

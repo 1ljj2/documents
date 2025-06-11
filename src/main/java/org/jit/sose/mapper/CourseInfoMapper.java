@@ -1,0 +1,54 @@
+package org.jit.sose.mapper;
+
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.CourseInfo;
+import org.jit.sose.domain.entity.courseLeader;
+import org.jit.sose.domain.vo.ListIdNameVo;
+
+import java.util.List;
+
+public interface CourseInfoMapper {
+
+    /**
+     * 根据输入的courseName获得courseList
+     */
+    List<ListIdNameVo> listCourseByName(@Param("name") String name);
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(CourseInfo record);
+
+    int insertSelective(CourseInfo record);
+
+    CourseInfo selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(CourseInfo record);
+
+    int updateByPrimaryKey(CourseInfo record);
+
+
+
+    Integer updateCourse(CourseInfo courseInfo);
+
+    Integer deleteOneCourse(Integer id);
+
+    Integer deleteSelectedCourses(int[] idList);
+
+    void insertOneCourse(CourseInfo courseInfo);
+
+    List<CourseInfo> listByCourse(CourseInfo one);
+
+    Integer selectUserId(Integer id);
+
+    void insertOneCourseLeader(courseLeader courseLeader);
+
+    void insertCourseTeacher(@Param("allCourseLead") List<courseLeader> allCourseLead);
+
+    int[] selectRoleId(Integer id);
+
+    void insertCourseList(CourseInfo courseInfo);
+
+    void updateCourseOfList(CourseInfo courseInfo);
+
+    List<ListIdNameVo> listCoursesByName(@Param("name") String name);
+}

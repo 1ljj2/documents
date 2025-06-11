@@ -1,0 +1,98 @@
+package org.jit.sose.view;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+/**
+ * 【系统配置】请求跳转
+ *
+ * @author wangyue
+ * @date 2020-05-06 15:35:44
+ */
+@Controller
+@RequestMapping("/config")
+public class ConfigView {
+
+    /**
+     * 部门管理
+     */
+    @GetMapping("/department")
+    public String departmentView() {
+        return "config/department";
+    }
+
+    /**
+     * 用户管理
+     */
+    @GetMapping("/user")
+    public String userView() {
+        return "config/user";
+    }
+
+    /**
+     * 角色管理
+     */
+    @GetMapping("/role")
+    public String roleView() {
+        return "config/role";
+    }
+
+    /**
+     * 权限管理
+     */
+    @GetMapping("/permissions")
+    public String permissionView() {
+        return "config/permissions";
+    }
+
+    /**
+     * 菜单管理
+     */
+    @GetMapping("/menu")
+    public String menuView() {
+        return "config/menu";
+    }
+
+    /**
+     * 域表管理
+     */
+    @GetMapping("/eec")
+    public String eecView() {
+        return "config/eecstate";
+    }
+
+    /**
+     * 配置管理
+     */
+    @GetMapping("/configuration")
+    public String conView() {
+        return "config/configuration";
+    }
+
+    /**
+     * 系统备份
+     */
+    @GetMapping("/backup")
+    public String backupView() {
+        return "config/backup";
+    }
+
+    /**
+     * 课程
+     */
+    @GetMapping("/courseInfo")
+    public String courseInfoView() {
+        return "config/courseInfo";
+    }
+
+    /**
+     * 分类
+     * @return
+     */
+    @GetMapping("/category")
+    public String categoryView() {
+        return "config/category";
+    }
+
+}

@@ -1,0 +1,171 @@
+package org.jit.sose.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import org.jit.sose.domain.entity.FileInfo;
+import org.jit.sose.domain.param.*;
+import org.jit.sose.domain.vo.*;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-09-22 11:17:32
+ */
+public interface FileInfoService extends IService<FileInfo> {
+
+    /**
+     * 课程和学期都选好时，获取匹配文档模板给档案模板参考
+     *
+     * @param termId
+     * @param courseId
+     * @return
+     */
+    PageInfoVo<ListMatchFileTemVo> listMatchFile(Integer termId, Integer courseId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 编辑文档信息
+     *
+     * @param param
+     */
+    void editFileInfo(FileInfoParam param);
+
+    /**
+     * 根据【流程模板名称、学期、分类、分页参数】筛选文档模板列表对象
+     *
+     * @param param
+     * @return
+     */
+    PageInfoVo<ListFileTemVo> listFileTemByCondition(ListFileTemParam param);
+
+    /**
+     * 根据【流程文档名称、学期、分类、创建者、分页参数】筛选我审核的文档列表对象
+     *
+     * @param param
+     * @return
+     */
+    PageInfoVo<listMyAuditFileVo> listMyAuditFile(listMyAuditFileParam param);
+
+    /**
+     * 根据【名称、学期、分类、分页参数】筛选我的文档
+     *
+     * @param param
+     * @return
+     */
+    PageInfoVo<ListMyFileVo> listMyFile(ListMyFileParam param);
+
+    /**
+     * 根据【流程模板名称、学期、分类、课程、分页参数】筛选文档监管列表对象
+     *
+     * @param param
+     * @return
+     */
+    PageInfoVo<ListChargingFileVo> listChargingFileByCondition(ListChargingFileParam param);
+
+
+    /**
+     * 存入文件
+     *
+     * @param record
+     * @return
+     */
+    int insertFileTem(FileInfo record) throws IOException;
+
+    /**
+     * 存入个人文件（原始文件，未归档）
+     *
+     * @param record
+     * @return
+     */
+    int insertMyFile(FileInfo record) throws IOException;
+
+    /**
+     * 存入个人文件（原始文件，归档）
+     *
+     * @param record
+     * @return
+     */
+    int insertMyArchivFile(FileInfo record) throws IOException, InterruptedException;
+
+    /**
+     * 存入文件
+     *
+     * @param record
+     * @return
+     */
+    int insertSelective(FileInfo record) throws IOException;
+
+    /**
+     * 存入签名文件
+     *
+     * @param record
+     * @return
+     */
+    int insertSignature(FileInfo record) throws IOException;
+
+    /**
+     * 过滤查询
+     *
+     * @param fileInfo 查询参数
+     * @param pageNum  当前页索引
+     * @param pageSize 当前页大小
+     * @return 签名分页列表
+     */
+    PageInfoVo<FileInfo> signatureListPageInfo(FileInfo fileInfo, Integer pageNum, Integer pageSize);
+
+    /**
+     * 根据id查询文件信息【全部信息】
+     *
+     * @param id
+     * @return
+     */
+    FileInfo selectByPrimaryKey(Integer id);
+
+    /**
+     * 根据id查询文件信息【文件编码获取】
+     *
+     * @param id
+     * @return
+     */
+    FileInfo getFileCodeById(Integer id);
+
+    /**
+     * 逻辑删除文件
+     *
+     * @param id
+     * @return
+     */
+    int updateStateToX(Integer id);
+
+    /**
+     * 批量逻辑删除文件
+     *
+     * @param idList
+     * @return
+     */
+    int updateSelectedStateToX(List<Integer> idList);
+
+    /**
+     * 查询数据库中是否有相同的文件记录
+     *
+     * @param hashCode
+     * @return
+     */
+    int fileVerification(String hashCode);
+
+    /**
+     * 添加消息绑定的文件
+     *
+     * @param fileInfo
+     * @return
+     */
+    int insertMessFile(FileInfo fileInfo);
+
+    /**
+     * 添加公告绑定的文件
+     *
+     * @param fileInfo
+     * @return
+     */
+    int insertNoticeFile(FileInfo fileInfo);
+}

@@ -1,0 +1,67 @@
+@CHARSET "UTF-8";
+body {
+    height: 100%;
+    overflow: auto;
+}
+
+.class-float-left {
+    float: left;
+}
+
+.modal-content {
+    min-height: 300px;
+}
+
+.upload-class {
+    padding-left: 10px;
+}
+
+.layout-main {
+    float: right;
+    width: 87%;
+    height: 100%;
+    border: 24px solid #FFF5EE;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    background: #FFF5EE;
+}
+
+.ivu-tabs-nav .ivu-tabs-tab {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.file-charge-css .input {
+    width: 180px;
+}
+
+.file-charge-search-button {
+    padding: 8px 0;
+}
+
+.el-tabs__item {
+    font-size: 16px;
+    font-weight: 600;
+}
+.audit-user .input {
+    width: 130px;
+}
+.null-process-class {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f78989;
+    height: 100px;
+    line-height: 100px;
+    text-align: center;
+}
+.audit-user{
+    width: 70%;
+    padding-right: 20px;
+}
+.process-steps{}
+.audit-role-tip {
+    background-color: #2d8cf0;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 10px;
+}

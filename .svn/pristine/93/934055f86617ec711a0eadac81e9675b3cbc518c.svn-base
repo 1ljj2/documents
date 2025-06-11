@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>信息浏览</title>
+    <script type="text/javascript" src="/public/common.js"></script>
+    <script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+    <link rel='stylesheet' type='text/css' href='/templates/remind/css/myRemind.css'>
+</head>
+<body>
+<div class="layout-body" id="myRemind" v-cloak>
+    <layout-header></layout-header>
+    <div id="wrap">
+        <layout-sider></layout-sider>
+        <div class="layout-main">
+        <el-row :gutter="0">
+          <el-col :span="16">
+            <!-- **通知公告** -->
+            <el-card class="box-card noti" style=" position:relative;">
+                <div slot="header" class="clearfix">
+                    <i class="el-icon-chat-line-round"></i> <span>通知公告</span>
+                    <div style="float: right;">
+                    <span style="color:red">{{ sNotice.count }}条 新消息</span>  
+               		</div>
+                </div>
+                <!-- 公告列表 -->
+                <div style="padding-bottom: 30px;">
+                <el-collapse @change="getNotice" accordion style="margin-top:0">
+               		<el-collapse-item v-for="item in noticeList" :key="item.id" :label="item.title" :value="item.id">
+               			<template slot-scope="{ row, index }" slot="title" style="float:left;width: 100%;">
+               				<div style="float:left;width: 100%;padding: 1px 5px 1px 5px">
+               				   <i style="float:left;padding-left: 10px;padding-top:10px" class="el-icon-star-on" v-if="item.seq=='0'&&item.keepNewTime < item.stateTimeString"></i>
+               				   <i class="el-icon-s-flag" style="padding-left: 10px" v-if="item.keepNewTime < item.stateTimeString"></i>
+               				   <span style="float:left;color:#3C3C3C;">{{item.title}}</span>
+                               <span style="float:right;color:#C3C3C3">{{item.stateTimeString}}</span>
+                        	</div>
+                        </template>
+                        <div style="padding: 0 10px 0 10px;">{{item.content}}</div>
+                        <div style="padding: 0 10px 0 10px;" v-show="item.fileName!=null" @click="downloadNoticeFile(item.fileId)"><a>{{'附件:'+item.fileName}}</a></div>
+                        <div style="float:right;color: #333;margin-right: 10px;padding-left:10px">
+                        	<span>发布人:</span><span>{{' '+item.departmentNameStr+'  '+item.userName}}</span>
+                        	<br>
+                        	<span>发布日期:</span><span>{{' '+item.stateTimeString}}</span>
+                        </div>
+               		</el-collapse-item>
+               	</el-collapse>
+               	</div> 
+                <!--底部分页功能-->
+				<div class="bottom clearfix" style="position:absolute; bottom:1px;right: 0;">
+					<Page :total="totalNum" :page-size="pageSize" 
+					  @on-change="onPageChange" size="small" simple>
+					</Page>
+				</div> 
+            </el-card>
+            </el-col>
+            <el-col :span="8">
+            <!-- **个人消息** -->
+            <el-card class="box-card mess">
+                <div slot="header" class="clearfix">
+                    <i class="el-icon-warning-outline"></i> <span>个人消息</span>
+                    <div style="float: right;">
+                    <span style="color:red">{{ sMess.count }}条 新消息</span> 
+               		</div>
+                </div>
+                <!-- 消息列表 -->
+                <div style="padding-bottom: 30px;">
+               	<el-collapse @change="getMess" accordion style="margin-top:0">
+               		<el-collapse-item v-for="item in messList" :key="item.id" :label="item.title" :value="item.id">
+                        <template slot="title" style="float:left;width: 100%;">
+               				<div style="float:left;width: 100%;padding: 1px 5px 1px 5px" v-if="item.isRead=='1'">
+               				   <span style="float:left;color:#999999;">{{item.title}}</span> 
+                               <span style="float:right;color: #999">{{item.stateTimeString}}</span>
+                        	</div>
+                        	<div style="float:left;width: 100%;padding: 1px 5px 1px 5px" v-if="item.isRead=='0'" @click="isRead(item.id)">
+                               <span style="float:left;color:#E55552;">{{item.title}}</span> 
+                               <span style="float:right;color: #999">{{item.stateTimeString}}</span>
+                        	</div>
+                        </template>
+                        <div style="padding: 0 10px 0 10px;">{{item.content}}</div>
+                        <div style="padding: 0 10px 0 10px;" v-show="item.fileName!=null"  @click="downloadMessFile(item.fileId)"><a>{{'附件:'+item.fileName}}</a></div>
+                        <div style="float:right;color: #333;margin-right: 10px;padding-left:10px">
+                        	<span>发布人:</span><span>{{' '+item.departmentNameStr+'  '+item.userName}}</span>
+                        	<br>
+                        	<span>发布日期:</span><span>{{' '+item.stateTimeString}}</span>
+                        </div>
+               		</el-collapse-item>
+               	</el-collapse>
+               	</div>
+               	<!--底部分页功能-->
+				<div class="bottom clearfix" style="position:absolute; bottom:1px;right: 0">
+					<Page :total="totalNum1" :page-size="pageSize1" 
+					  @on-change="onPageChange1" size="small" simple>
+					</Page>
+				</div> 
+            </el-card>
+          </el-col>
+        </el-row>
+
+		<el-row :span="0">	
+		  <el-col :span="8">
+	            <!-- **公告审核待办** -->
+	            <el-card class="box-card noticeAudit" style=" position:relative;">
+	                <div slot="header" class="clearfix">
+	                    <i class="el-icon-bell"></i> <span>公告审核</span>
+	                    <el-button style="float: right; padding: 3px 0;" type="text">待办总数：{{sNotice.noticeAuditCount}}</el-button>
+	                </div>
+	                <div style="padding-bottom: 30px;">
+		                <el-collapse @change="getNoticeToAudit" accordion style="margin-top:0">
+		               		<el-collapse-item v-for="item in noticeAuditList" :key="item.id" :label="item.title" :value="item.id">
+		               			<template slot-scope="{ row, index }" slot="title" style="float:left;width: 100%;">
+		               				<div style="float:left;width: 100%;padding: 1px 5px 1px 5px">
+		               				   <span style="float:left;color:#3C3C3C;">{{item.userName}}</span>
+		                               <span style="float:right;color:#C3C3C3">{{item.stateTimeString}}</span>
+		                        	</div>
+		                        </template>
+		                        <div style="padding: 0 10px 0 10px;text-align-last: center;color:#999;">{{"&lt;&lt;"+item.title+"&gt;&gt;"}}</div>
+		                        <div style="padding: 0 10px 0 10px;">{{item.content}}</div>
+		                        <div style="padding: 0 10px 0 10px;" v-show="item.fileName!=null" @click="downloadNoticeFile(item.fileId)"><a>{{'附件:'+item.fileName}}</a></div>
+		                        <div style="float:right;margin-right: 10px;padding-left:10px">
+		                        	<span><el-link type="success" @click="checkAuditTrue(item.id)">通过</el-link></span>
+		                        	<span><el-link type="warning" @click="checkDisabled(item.id)">不通过</el-link></span>
+		                        </div>
+		               		</el-collapse-item>
+		               	</el-collapse>
+	               	</div>
+	               	<!--底部分页功能-->
+					<div class="bottom clearfix" style="position:absolute; bottom:1px;right: 0;">
+						<Page :total="totalNum2" :page-size="pageSize2" 
+						  @on-change="onPageChange2" size="small" simple>
+						</Page>
+					</div> 
+	            </el-card> 
+            </el-col>
+            
+            <el-col :span="8">
+				<!-- **文档审核待办** -->
+	            <el-card class="box-card fileAudit" style=" position:relative;">
+	                <div slot="header" class="clearfix">
+	                    <i class="el-icon-bell"></i> <span>文档审核</span>
+	                    <el-button style="float: right; padding: 3px 0;" type="text">待办总数：{{fileToDoCount}}</el-button>
+	                </div>
+	                <template>
+	                	<Collapse v-model="openFilePanel" accordion @on-change="chooseFilePanel">
+	                	    <Panel name="1">
+						            	史蒂夫·乔布斯
+						            <p slot="content">史蒂夫·乔布斯（Steve Jobs），1955年2月24日生于美国加利福尼亚州旧金山，美国发明家、企业家、美国苹果公司联合创办人。</p>
+						    </Panel>
+	                        <Panel :name="item.processId" v-for="(item, index) in filePanel" :key="index">
+	                            <!--流程信息-->
+	                            <div class="panel-title class-float-left">
+	                                <div class="panel-title-name">{{item.processName}}</div>
+	                                <div class="panel-title-time">{{item.stateTime}}</div>
+	                                <el-badge :value="item.runningStepSize" :max="99" class="item panel-title-quantity">
+									  <el-button size="mini" type="danger" plain>总数</el-button>
+									</el-badge>
+	                            </div>
+	                            <!--该流程的实例化流程运转集合-->
+	                            <div slot="content">
+	                                   <Card v-for="(runningStep, i) in item.runningStep" :key="i" style="margin: 3px 0" @click.native="auditRunningStep(index,i)" class="panel-card">
+	                                    <div class="panel-card-submitter"><b>{{runningStep.preRunningStep.applicantName}}</b></div>
+	                                    <div class="panel-card-submitTime"><i>申请时间：</i>{{runningStep.stateDateString}}</div>
+	                                </Card>
+	                            </div>
+	                        </Panel>
+	                    </Collapse>
+	                </template>
+	            </el-card>
+	        </el-col>
+	            
+	        <el-col :span="8">
+	            <!-- **档案审核待办** -->
+	            <el-card class="box-card archiveAudit" style=" position:relative;">
+	                <div slot="header" class="clearfix">
+	                    <i class="el-icon-bell"></i> <span>档案审核</span>
+	                    <el-button style="float: right; padding: 3px 0;" type="text">待办总数：{{archiveToDoCount}}</el-button>
+	                </div>
+	                <template>
+	                	<Collapse v-model="openArchivePanel" accordion @on-change="chooseArchivePanel">
+	                	    <Panel name="1">
+						            	史蒂夫·乔布斯
+						            <p slot="content">史蒂夫·乔布斯（Steve Jobs），1955年2月24日生于美国加利福尼亚州旧金山，美国发明家、企业家、美国苹果公司联合创办人。</p>
+						    </Panel>
+	                        <Panel :name="item.processId" v-for="(item, index) in archivePanel" :key="index">
+	                            <!--流程信息-->
+	                            <div class="panel-title class-float-left">
+	                                <div class="panel-title-name">{{item.processName}}</div>
+	                                <div class="panel-title-time">{{item.stateTime}}</div>
+	                                <el-badge :value="item.runningStepSize" :max="99" class="item panel-title-quantity">
+									  <el-button size="mini" type="danger" plain>总数</el-button>
+									</el-badge>
+	                            </div>
+	                            <!--该流程的实例化流程运转集合-->
+	                            <div slot="content">
+	                                   <Card v-for="(runningStep, i) in item.runningStep" :key="i" style="margin: 3px 0" @click.native="auditRunningStep(index,i)" class="panel-card">
+	                                    <div class="panel-card-submitter"><b>{{runningStep.preRunningStep.applicantName}}</b></div>
+	                                    <div class="panel-card-submitTime"><i>申请时间：</i>{{runningStep.stateDateString}}</div>
+	                                </Card>
+	                            </div>
+	                        </Panel>
+	                    </Collapse>
+	                </template>
+	            </el-card> 
+            </el-col>
+          </el-row>
+            
+        </div>
+        <div style="clear: both"></div>
+    </div>
+    <layout-footer></layout-footer>
+</div>
+</body>
+<script type="text/javascript" src="/templates/remind/js/myRemind.js"></script>
+</html>

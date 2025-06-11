@@ -1,0 +1,38 @@
+package org.jit.sose.domain.entity;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.util.Date;
+
+@Data
+@ApiModel(value = "ArchiveTemplate", description = "档案模板")
+@TableName(value = "t_archive_template")
+@EqualsAndHashCode(callSuper = false)
+public class ArchiveTemplate {
+
+    @ApiModelProperty(value = "主键")
+    private Integer id;
+
+    @ApiModelProperty(value = "档案模板名称")
+    private String name;
+
+    @ApiModelProperty(value = "学期标识")
+    private Integer termId;
+
+    @ApiModelProperty(value = "备注")
+    private String remark;
+
+    @ApiModelProperty(value = "状态")
+    private String state;
+
+    @ApiModelProperty(value = "创建时间")
+    private Date createTime;
+
+    @ApiModelProperty(value = "状态日期")
+    private Date stateTime;
+
+}

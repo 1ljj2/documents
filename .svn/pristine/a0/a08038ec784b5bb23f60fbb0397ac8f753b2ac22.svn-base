@@ -1,0 +1,17 @@
+### 如果要使用默认配置，将此文件中的相关配置注释即可
+
+#spring:
+#  ## mysql数据库配置
+#  datasource:
+#    url: jdbc:mysql://127.0.0.1:3306/documents?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+#    username: root
+#    password: 123789
+#    password: 123456
+
+    # redis数据库配置
+    #若没有设置密码，则不需要设置(直接注释，并且需要把application.yml里的也注释)，否则会报错ERR Client sent AUTH, but no password is set
+#  redis:
+#    host: 127.0.0.1
+#    port: 6379
+#    password: 12345
+#    database: 0

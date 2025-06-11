@@ -1,0 +1,53 @@
+package org.jit.sose.web.security;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import lombok.extern.slf4j.Slf4j;
+import org.jit.sose.domain.entity.SecurityUser;
+import org.jit.sose.domain.entity.User;
+import org.jit.sose.mapper.UserMapper;
+import org.jit.sose.util.ValidatorUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Service;
+
+/**
+ * 配置自定义认证信息,提供自己的获取用户信息的服务<br>
+ * 
+ * @author wangyue
+ * @date 2020-01-05 15:50:07
+ */
+@Slf4j
+@Service("myUserDetailsService")
+public class MyUserDetailsService implements UserDetailsService {
+
+	@Autowired
+	private UserMapper userMapper;
+
+	@Override
+	public UserDetails loadUserByUsername(String account) {
+		log.debug("当前登录account:" + account);
+		System.out.println("执行到loadUserByUsername");
+		boolean isPhone = ValidatorUtil.isMobile(account);
+		boolean isMail = ValidatorUtil.isEmail(account);
+		boolean isUserName = !(isPhone || isMail);
+
+		// 用户名、手机号、邮箱
+		LambdaQueryWrapper<User> wrapper = Wrappers.lambdaQuery(User.class).eq(isUserName, User::getUserName, account)
+				.or().eq(isPhone, User::getPhone, account).or().eq(isMail, User::getMail, account);
+		User user = userMapper.selectOne(wrapper);
+
+		// 没有当前用户，直接返回
+		if (user == null) {
+			return null;
+		}
+
+//		SecurityUser securityUser = new SecurityUser(user.getId(), account, user.getPassword(), null, null, null);
+
+		SecurityUser securityUser = new SecurityUser(user);
+
+		return securityUser;
+	}
+
+}

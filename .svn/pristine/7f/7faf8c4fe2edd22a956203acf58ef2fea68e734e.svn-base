@@ -1,0 +1,37 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.vo.ListDepartmentVo;
+
+import java.util.List;
+
+/**
+ *    @author    jinyu
+ *    @Date 2020-07-05 19:37:46    
+ *
+ */
+public interface DepartmentService {
+	
+	/**
+     * 根据nameList获取部门idList
+     *
+     * @param departmentNameList
+     * @return
+     */
+    List<Integer> translateNameToId(List<String> departmentNameList);
+
+    /**
+     * 根据idList获取部门名称List
+     *
+     * @param departmentIdList
+     * @return
+     */
+    List<String> showDepartmentSelected(List<Integer> departmentIdList);
+	
+	/**
+     * 根据部门名称模糊查询部门对象集合
+     *
+     * @param departmentName
+     * @return
+     */
+    List<ListDepartmentVo> listDepartmentByName(String departmentName);
+}

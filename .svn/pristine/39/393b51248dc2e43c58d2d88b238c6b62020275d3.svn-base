@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>公告审核</title>
+<script type="text/javascript" src="/public/common.js"></script>
+<script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+<link rel='stylesheet' type='text/css' href='/templates/remind/css/noticeAudited.css'>
+</head>
+<body>
+	<div class="layout-body" id="noticeAudited" v-cloak>
+		<layout-header></layout-header>
+		<div id="wrap">
+			<layout-sider></layout-sider>
+			<div class="layout-main">
+				<div class="content">
+					<!-- 多条件查询 管理者-->
+					<div class="qry">
+						<div class="first">
+							<!-- 根据【标题、发布部门、发布人、分类、分页参数】筛选公告列表对象 -->
+							<div class="juinline">
+								标题:
+								<el-input class="select_input" v-model="sConditions.title"
+									type="text" placeholder="请搜索"></el-input>
+								发布部门:
+								<el-select class="input" v-model="sConditions.departmentId"
+									placeholder="请搜索" :size="componentSize" :loading="loading"
+									filterable remote :remote-method="getDepartmentList"
+									@change="getDepartmentId" clearable> <el-option
+									v-for="item in departmentList" :key="item.id"
+									:label="item.departmentName" :value="item.id"> <span
+									style="float: left">{{ item.departmentName }}</span> </el-option> </el-select>
+								发布人:
+								<el-select class="input" v-model="sConditions.userId"
+									placeholder="请搜索" :size="componentSize" :loading="loading"
+									filterable remote :remote-method="getUserList"
+									@change="getUserId" clearable> <el-option
+									v-for="item in userList" :key="item.id" :label="item.userName"
+									:value="item.id"> <span style="float: left">{{
+									item.userName }}</span> </el-option> </el-select>
+								分类:
+								<el-select class="input" v-model="sConditions.categoryId"
+									placeholder="请选择" :size="componentSize">
+								<el-option v-for="item in categoryList" :key="item.id"
+									:label="item.categoryName" :value="item.id"> <span
+									style="float: left">{{ item.categoryName }}</span> </el-option> </el-select>
+							</div>
+							<div class="butRight">
+								<i-button type="primary" @click="filter">搜索</i-button>
+								<i-button @click="clearSConditions">清空</i-button>
+							</div>
+						</div>
+					</div>
+
+					<!-- 表格  -->
+					<div>
+						<!--表格主体-->
+						<i-table row-key="id" class="table" border height="auto"
+							highlight-row="true" size='small' :columns="column"
+							:data="nowData" :loading="loading"
+							@on-selection-change="onSelectionChange"> 
+							<template slot-scope="{ row, index }" slot="action" class="inlineblock">
+							<div style="margin-left:10px;display:flex;">
+							<el-checkbox label="通过" size="mini" @change="checkAuditTrue(index)" :disabled="row.isEnable!='1'||row.auditState=='C'||row.auditState=='D'" :checked="row.auditState=='C'"></el-checkbox> 
+						    <el-checkbox label="置顶" size="mini" @change="checkTop(index)" :disabled="row.isEnable!='1'||row.seq==0||row.auditState=='D'" :checked="row.seq==0"></el-checkbox>
+						    <el-checkbox label="禁用" size="mini" @change="checkDisabled(index)" :disabled="row.isEnable!='1'||row.auditState=='D'||row.auditState=='C'" :checked="row.isEnable!='1'||row.auditState=='D'"></el-checkbox>
+						    </div>
+						</template> </i-table>
+						<!--左侧勾选功能-->
+						<div class="div-inline-left">
+							<span v-show="selection.length >0">已勾选
+								{{selection.length}} 条</span>
+						</div>
+						<!--底部分页功能-->
+						<div class="div-inline-right">
+							<Page :current="pageNum" :total="totalNum" :page-size="pageSize"
+								@on-change="onPageChange" @on-page-size-change="onPageSizeChange" show-total show-elevator>
+							</Page>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<div style="clear: both"></div>
+		</div>
+		<layout-footer></layout-footer>
+	</div>
+</body>
+<script type="text/javascript" src="/templates/remind/js/noticeAudited.js"></script>
+</html>

@@ -1,0 +1,27 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.param.AddNoticeParam;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+/** 
+* @author jinyu: 
+* @Date 2020年9月24日 下午5:38:56 
+*  
+*/
+public class NoticeServiceTest {
+//	@Autowired
+//	private NoticeService noticeServie;
+//	
+//	@Test
+//	public void test() {
+//		AddNoticeParam param = new AddNoticeParam();
+//		param.setTitle("新学期新风向");
+//		param.setContent("新学期新风向请大家务必要做好自己的防护工作，努力为了抗疫战斗做贡献!");
+//		param.setUserId(1);
+//		param.setCategoryId(6);
+//		noticeServie.addNotice(param);
+//	}
+
+}
+ 

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.MenuBackMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.MenuBack">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="INTEGER"/>
+        <result column="type" property="type" jdbcType="VARCHAR"/>
+        <result column="level" property="level" jdbcType="INTEGER"/>
+        <result column="seq" property="seq" jdbcType="INTEGER"/>
+        <result column="is_enable" property="enable" jdbcType="BIT"/>
+        <result column="icon" property="icon" jdbcType="VARCHAR"/>
+        <result column="create_date" property="createDate" jdbcType="TIMESTAMP"/>
+        <result column="update_date" property="updateDate" jdbcType="TIMESTAMP"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+    </resultMap>
+
+    <!-- 菜单根据自己的id和用户id递归 -->
+    <resultMap id="MenuListByUserIdResultMap" type="org.jit.sose.domain.entity.MenuBack"
+               extends="BaseResultMap">
+        <collection property="menuList" ofType="org.jit.sose.domain.entity.MenuBack"
+                    select="listMenuByDirIdAndUserId" column="{dirId=id,userId=userId}"></collection>
+    </resultMap>
+
+    <!-- 菜单根据自己的id和角色id递归 -->
+    <resultMap id="MenuResultMapByRoleId" type="org.jit.sose.domain.entity.MenuBack"
+               extends="BaseResultMap">
+        <collection property="menuList" ofType="org.jit.sose.domain.entity.MenuBack"
+                    select="listMenuByParentIdAndRoleId" column="{dirId=id,roleId=roleId,level=level}"></collection>
+    </resultMap>
+
+    <!-- 菜单根据自己的id递归 -->
+    <resultMap id="MenuResultMap" type="org.jit.sose.domain.entity.MenuBack"
+               extends="BaseResultMap">
+        <collection property="menuList" ofType="org.jit.sose.domain.entity.MenuBack"
+                    select="listMenuByParentId" column="{parentId=id,level=level}"></collection>
+    </resultMap>
+
+    <!-- 菜单根据自己的id递归 -->
+    <resultMap id="MenuTableTreeResultMap" type="org.jit.sose.domain.vo.MenuBackTableTreeVo"
+               extends="BaseResultMap">
+        <collection property="children" ofType="org.jit.sose.domain.vo.MenuBackTableTreeVo"
+                    select="listMenuTableTreeByParentId" column="{parentId=id,level=level}"></collection>
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+    id, url, name, parent_id, type, level, seq, is_enable, icon, create_date, update_date, 
+    state
+  </sql>
+
+    <select id="listMenuByRoleKey" resultType="java.util.Map" parameterType="java.lang.String">
+    SELECT
+        m.id,
+        m.url
+    FROM
+        `a_menu_back` m
+    INNER JOIN a_role_menu_back rm ON rm.menu_back_id = m.id
+    INNER JOIN a_role r ON rm.role_id = r.id
+    WHERE
+        m.state = 'A'
+    AND rm.state = 'A'
+    AND r.state = 'A'
+    AND r.is_enable = TRUE
+    AND m.`level` = 2
+    AND m.is_enable = TRUE
+    AND r.role_key = #{roleKey,jdbcType=VARCHAR}
+  </select>
+
+    <select id="listMenuButtonIdByRoleKeyAndMenuId" resultType="java.lang.Integer" parameterType="java.util.Map">
+    SELECT
+        m.id
+    FROM
+        `a_menu_back` m
+    INNER JOIN a_role_menu_back rm ON rm.menu_back_id = m.id
+    INNER JOIN a_role r ON rm.role_id = r.id
+    WHERE
+        m.state = 'A'
+    AND rm.state = 'A'
+    AND r.state = 'A'
+    AND r.is_enable = TRUE
+    AND m.`level` = 3
+    AND m.is_enable = TRUE
+    AND r.role_key = #{roleKey,jdbcType=VARCHAR}
+    AND m.parent_id = #{menuId,jdbcType=INTEGER}
+  </select>
+
+    <select id="listMenuByUserId" parameterType="java.lang.Integer" resultMap="MenuListByUserIdResultMap">
+        SELECT DISTINCT
+            m.id,
+            m.url,
+            m.`name`,
+            m.seq,
+            m.icon,
+            ur.user_id AS userId
+        FROM
+            `a_menu_back` m
+        INNER JOIN a_role_menu_back rm ON m.id = rm.menu_back_id
+        INNER JOIN a_user_role ur ON rm.role_id = ur.role_id
+        WHERE
+            m.state = 'A'
+        AND m.is_enable = TRUE
+        AND rm.state = 'A'
+        AND ur.state = 'A'
+        AND m.parent_id = 0
+        AND ur.user_id = #{userId,jdbcType=INTEGER}
+        ORDER BY
+            m.seq
+    </select>
+
+
+    <select id="listMenuByDirIdAndUserId" parameterType="java.util.Map" resultMap="BaseResultMap">
+        SELECT DISTINCT
+            m.id,
+            m.url,
+            m.`name`,
+            m.icon,
+            m.seq
+        FROM
+            `a_menu_back` m
+        INNER JOIN a_role_menu_back rm ON m.id = rm.menu_back_id
+        INNER JOIN a_user_role ur ON rm.role_id = ur.role_id
+        WHERE
+            m.state = 'A'
+        AND m.is_enable = TRUE
+        AND rm.state = 'A'
+        AND ur.state = 'A'
+        AND m.parent_id = #{dirId,jdbcType=INTEGER}
+        AND ur.user_id = #{userId,jdbcType=INTEGER}
+        ORDER BY
+            m.seq
+    </select>
+
+    <select id="listMenuByRoleId" parameterType="java.lang.Integer" resultMap="MenuResultMapByRoleId">
+        SELECT
+            m.id,
+            m.url,
+            m.`name`,
+            m.seq,
+            m.`level`,
+            rm.role_id AS roleId
+        FROM
+            `a_menu_back` m
+        INNER JOIN a_role_menu_back rm ON m.id = rm.menu_back_id
+        WHERE
+            m.state = 'A'
+        AND m.is_enable = TRUE
+        AND rm.state = 'A'
+        AND m.parent_id = 0
+        AND m.`level` = 1
+        AND rm.role_id = #{roleId,jdbcType=INTEGER}
+        ORDER BY
+            m.seq
+    </select>
+
+    <select id="listMenuByParentIdAndRoleId" parameterType="java.util.Map" resultMap="MenuResultMapByRoleId">
+        SELECT
+            m.id,
+            m.url,
+            m.`name`,
+            m.seq,
+            m.`level`,
+            rm.role_id AS roleId
+        FROM
+            `a_menu_back` m
+        INNER JOIN a_role_menu_back rm ON m.id = rm.menu_back_id
+        WHERE
+            m.state = 'A'
+        AND m.is_enable = TRUE
+        AND rm.state = 'A'
+        AND m.`level` = #{level,jdbcType=INTEGER}+1
+        AND m.parent_id = #{dirId,jdbcType=INTEGER}
+        AND rm.role_id = #{roleId,jdbcType=INTEGER}
+        ORDER BY
+            m.seq
+    </select>
+
+    <select id="listAllMenu" resultMap="MenuResultMap">
+        SELECT
+            m.id,
+            m.`name`,
+            m.seq,
+            m.`level`
+        FROM
+            `a_menu_back` m
+        WHERE
+            m.state = 'A'
+        AND m.is_enable = TRUE
+        AND m.`level` = 1
+        AND m.parent_id = 0
+        ORDER BY
+            m.seq 
+    </select>
+
+    <select id="listMenuByParentId" parameterType="java.util.Map" resultMap="MenuResultMap">
+       SELECT
+            m.id,
+            m.`name`,
+            m.seq,
+            m.`level`
+        FROM
+            `a_menu_back` m
+        WHERE
+            m.state = 'A'
+        AND m.is_enable = TRUE
+        AND m.`level` = #{level,jdbcType=INTEGER}+1
+        AND m.parent_id = #{parentId,jdbcType=INTEGER}
+        ORDER BY
+            m.seq     
+    </select>
+
+    <select id="listMenuTableTree" resultMap="MenuTableTreeResultMap">
+        SELECT
+            m.id,
+            m.url,
+            m.`name`,
+            m.parent_id,
+            m.type,
+            m.is_enable,
+            m.icon,
+            m.seq,
+            m.`level`
+        FROM
+            `a_menu_back` m
+        WHERE
+            m.state = 'A'
+        AND m.`level` = 1
+        AND m.parent_id = 0
+        ORDER BY
+            m.seq
+    </select>
+
+    <select id="listMenuTableTreeByParentId" parameterType="java.util.Map" resultMap="MenuTableTreeResultMap">
+        SELECT
+            m.id,
+            m.url,
+            m.`name`,
+            m.parent_id,
+            m.type,
+            m.is_enable,
+            m.icon,
+            m.seq,
+            m.`level`
+        FROM
+            `a_menu_back` m
+        WHERE
+            m.state = 'A'
+        AND m.`level` = #{level,jdbcType=INTEGER}+1
+        AND m.parent_id = #{parentId,jdbcType=INTEGER}
+        ORDER BY
+            m.seq
+    </select>
+
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.MenuBack">
+        insert into a_menu_back
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="url != null">
+                url,
+            </if>
+            name,
+            parent_id,
+            type,
+            level,
+            seq,
+            <if test="icon != null">
+                icon,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="url != null">
+                #{url,jdbcType=VARCHAR},
+            </if>
+            #{name,jdbcType=VARCHAR},
+            #{parentId,jdbcType=INTEGER},
+            #{type,jdbcType=VARCHAR},
+            #{level,jdbcType=INTEGER},
+            #{seq,jdbcType=INTEGER},
+            <if test="icon != null">
+                #{icon,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+  <update id="disableList" parameterType="java.util.List">
+    UPDATE a_menu_back
+    SET is_enable = FALSE
+    WHERE
+        state = 'A'
+    AND id IN 
+    <foreach collection="idList" item="id" open="(" close=")" separator=",">
+       #{id,jdbcType=INTEGER}
+    </foreach>
+  </update>
+
+</mapper>

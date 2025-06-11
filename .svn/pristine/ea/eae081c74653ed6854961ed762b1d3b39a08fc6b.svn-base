@@ -1,0 +1,248 @@
+package org.jit.sose.service.impl;
+
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.*;
+import org.jit.sose.domain.param.FileInfoParam;
+import org.jit.sose.domain.param.ListChargingFileParam;
+import org.jit.sose.domain.param.ListFileTemParam;
+import org.jit.sose.domain.param.ListMyFileParam;
+import org.jit.sose.domain.vo.ListChargingFileVo;
+import org.jit.sose.domain.vo.ListFileTemVo;
+import org.jit.sose.domain.vo.ListMyFileVo;
+import org.jit.sose.domain.vo.ListMatchFileTemVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.*;
+import org.jit.sose.service.FileInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.util.*;
+
+/**
+ * @author wufang
+ * @Date 2020-09-22 11:17:48
+ */
+@Service
+public class FileInfoServiceImpl extends ServiceImpl<FileInfoMapper, FileInfo> implements FileInfoService {
+
+    @Autowired
+    private FileInfoMapper fileInfoMapper;
+
+    @Autowired
+    private FileRoleConMapper fileRoleConMapper;
+
+    @Autowired
+    private FileCategoryConMapper fileCategoryConMapper;
+
+    @Autowired
+    private FileTermConMapper fileTermConMapper;
+
+    @Autowired
+    private FileCourseConMapper fileCourseConMapper;
+
+    @Override
+    public PageInfoVo<ListMatchFileTemVo> listMatchFile(Integer termId, Integer courseId, Integer pageNum, Integer pageSize) {
+        // 设置分页参数
+        PageHelper.startPage(pageNum, pageSize);
+        // 查询集合(包括流程信息、所属学院idList、服务角色idList、公文模板idList)
+        List<ListMatchFileTemVo> voList = fileInfoMapper.listMatchFile(termId, courseId);
+        PageInfo<ListMatchFileTemVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Transactional
+    @Override
+    public void editFileInfo(FileInfoParam param) {
+        if (param.getCategoryId() != null) {
+            System.out.println("分类修改了");
+            //修改文档分类关联
+            fileCategoryConMapper.changeCon(param.getId(), param.getCategoryId());
+        }
+        if (param.getTermId() != null) {
+            System.out.println("学期修改了");
+            //修改文档学期关联
+            fileTermConMapper.changeCon(param.getId(), param.getTermId());
+        }
+        if (param.getCourseId() != null) {
+            System.out.println("课程修改了");
+            //修改文档课程关联
+            fileCourseConMapper.changeCon(param.getId(), param.getCourseId());
+        }
+        fileInfoMapper.editFileInfo(param);
+    }
+
+    @Override
+    public PageInfoVo<ListFileTemVo> listFileTemByCondition(ListFileTemParam param) {
+        // 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        // 查询集合(包括流程信息、所属学院idList、服务角色idList、公文模板idList)
+        List<ListFileTemVo> voList = fileInfoMapper.listFileTemByCondition(param);
+        PageInfo<ListFileTemVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Override
+    public PageInfoVo<ListMyFileVo> listMyFile(ListMyFileParam param) {
+        // 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        // 查询集合(包括流程信息、所属学院idList、服务角色idList、公文模板idList)
+        List<ListMyFileVo> voList = fileInfoMapper.listMyFile(param);
+        PageInfo<ListMyFileVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Override
+    public PageInfoVo<ListChargingFileVo> listChargingFileByCondition(ListChargingFileParam param) {
+        // 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        // 查询集合(包括)
+        List<ListChargingFileVo> voList = fileInfoMapper.listChargingFileByCondition(param);
+        PageInfo<ListChargingFileVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Override
+    public int insertFileTem(FileInfo fileInfo) throws IOException {
+        fileInfo.setFileCode(Base64.getDecoder().decode(fileInfo.getBase64().split(",")[1]));
+        fileInfo.setPrefix(fileInfo.getBase64().split(",")[0] + ",");//前缀
+        Integer flag = fileInfoMapper.insertSelective(fileInfo);
+        Integer categoryId = (Integer) fileInfo.getParameters().get(1);//文档分类id
+        Integer termId = (Integer) fileInfo.getParameters().get(2);//学期id
+        Integer courseId = (Integer) fileInfo.getParameters().get(3);//课程id
+        Integer fileId = fileInfo.getId();//课程id
+        FileCategoryCon fileCategoryCon = new FileCategoryCon();//文档分类关联信息
+        fileCategoryCon.setFileId(fileId);
+        fileCategoryCon.setCategoryId(categoryId);
+        fileCategoryConMapper.insert(fileCategoryCon);
+        FileTermCon fileTermCon = new FileTermCon();//文档学期关联信息
+        fileTermCon.setFileId(fileId);
+        fileTermCon.setTermId(termId);
+        fileTermConMapper.insert(fileTermCon);
+        FileCourseCon fileCourseCon = new FileCourseCon();//文件课程关联信息
+        fileCourseCon.setCourseId(courseId);
+        fileCourseCon.setFileInfoId(fileId);
+        fileCourseConMapper.insert(fileCourseCon);
+
+        return flag;
+    }
+
+    @Override
+    public int insertMyFile(FileInfo fileInfo) throws IOException {
+        fileInfo.setFileCode(Base64.getDecoder().decode(fileInfo.getBase64().split(",")[1]));
+        fileInfo.setPrefix(fileInfo.getBase64().split(",")[0] + ",");//前缀
+        Integer flag = fileInfoMapper.insertSelective(fileInfo);
+        Integer categoryId = fileInfo.getCategoryId();//文档分类id
+        Integer termId = fileInfo.getTermId();//学期id
+        Integer courseId = fileInfo.getCourseId();//课程id
+        Integer fileId = fileInfo.getId();//文件id
+        FileCategoryCon fileCategoryCon = new FileCategoryCon();//文档分类关联信息
+        fileCategoryCon.setFileId(fileId);
+        fileCategoryCon.setCategoryId(categoryId);
+        fileCategoryConMapper.insert(fileCategoryCon);
+        if(termId.equals(null)){
+
+        }else{
+            FileTermCon fileTermCon = new FileTermCon();//文档学期关联信息
+            fileTermCon.setFileId(fileId);
+            fileTermCon.setTermId(termId);
+            fileTermConMapper.insert(fileTermCon);
+        }
+        if(courseId.equals(null)){
+
+        }else{
+            FileCourseCon fileCourseCon = new FileCourseCon();//文件课程关联信息
+            fileCourseCon.setCourseId(courseId);
+            fileCourseCon.setFileInfoId(fileId);
+            fileCourseConMapper.insert(fileCourseCon);
+        }
+
+
+        return flag;
+    }
+
+    @Override
+    public int insertSelective(FileInfo record) throws IOException {
+        return fileInfoMapper.insertSelective(record);
+    }
+
+    @Override
+    public int insertSignature(FileInfo fileInfo) throws IOException {
+        fileInfo.setFileCode(Base64.getDecoder().decode(fileInfo.getBase64().split(",")[1]));
+        fileInfo.setPrefix(fileInfo.getBase64().split(",")[0] + ",");//前缀
+//        System.out.println(fileInfo);
+        Integer flag = fileInfoMapper.insertSignature(fileInfo);
+
+        if (fileInfo.getRoleIdList() != null && fileInfo.getRoleIdList().size() != 0) {//若角色id不为空
+            List<FileRoleCon> fileRoleConList = new ArrayList<FileRoleCon>();
+            for (Integer roleId : fileInfo.getRoleIdList()) {
+                FileRoleCon fileRoleCon = new FileRoleCon();
+                fileRoleCon.setFileId(fileInfo.getId());
+                fileRoleCon.setRoleId(roleId);
+                fileRoleConList.add(fileRoleCon);
+            }
+            fileRoleConMapper.insertList(fileRoleConList);
+        }
+        return flag;
+    }
+
+    @Override
+    public PageInfoVo<FileInfo> signatureListPageInfo(FileInfo fileInfo, Integer pageNum, Integer pageSize) {
+        // 设置分页参数
+        PageHelper.startPage(pageNum, pageSize);
+        Map<String, Object> params = new HashMap<>();
+
+        params.put("userId", fileInfo.getUserId());
+        if (fileInfo.getRoleIdList().size() > 0) {
+            params.put("roleIdList", fileInfo.getRoleIdList());
+        }
+        params.put("fileName", fileInfo.getFileName());
+        // 查询集合
+        List<FileInfo> fileInfoList = fileInfoMapper.selectSignatureList(params);
+        PageInfo<FileInfo> pageInfo = new PageInfo<>(fileInfoList);
+        // 封装集合
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Override
+    public FileInfo selectByPrimaryKey(Integer id) {
+        FileInfo fileInfo = fileInfoMapper.selectByPrimaryKey(id);
+        return fileInfo;
+    }
+
+    @Override
+    public FileInfo getFileCodeById(Integer id) {
+        return fileInfoMapper.getFileCodeById(id);
+    }
+
+    @Override
+    public int updateStateToX(Integer id) {
+        return fileInfoMapper.updateStateToX(id);
+    }
+
+    @Override
+    public int fileVerification(String hashCode) {
+        return fileInfoMapper.fileVerification(hashCode);
+    }
+
+	@Override
+	public int insertMessFile(FileInfo fileInfo) {
+		fileInfo.setFileCode(Base64.getDecoder().decode(fileInfo.getBase64().split(",")[1]));
+        fileInfo.setPrefix(fileInfo.getBase64().split(",")[0] + ",");//前缀
+        fileInfoMapper.insertSelective(fileInfo);
+        Integer fileId = fileInfo.getId();//文件id
+		return fileId;
+	}
+
+	@Override
+	public int insertNoticeFile(FileInfo fileInfo) {
+		fileInfo.setFileCode(Base64.getDecoder().decode(fileInfo.getBase64().split(",")[1]));
+        fileInfo.setPrefix(fileInfo.getBase64().split(",")[0] + ",");//前缀
+        fileInfoMapper.insertSelective(fileInfo);
+        Integer fileId = fileInfo.getId();//文件id
+		return fileId;
+	}
+}

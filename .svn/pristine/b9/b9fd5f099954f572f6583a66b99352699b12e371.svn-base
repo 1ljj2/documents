@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.MessMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.Mess">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="state_time" property="stateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap id="ListMessMap" type="org.jit.sose.domain.vo.ListMessVo" extends="BaseResultMap">
+        <!--根据部门标识查询部门及其父部门-->
+        <association property="department" column="departmentId"
+                     select="org.jit.sose.mapper.DepartmentMapper.selectDepartmentById"></association>
+		<!--根据mess的id获取面向用户的idList -->
+		<collection property="readUserId" column="id"
+			select="org.jit.sose.mapper.MessReadUserMapper.listReadUserIdByMessId"
+			ofType="java.lang.Integer"></collection>
+		<!--根据mess的id获取面向角色的idList -->
+		<collection property="roleId" column="id"
+			select="org.jit.sose.mapper.MessRoleConMapper.listRoleIdByMessId"
+			ofType="java.lang.Integer"></collection>
+		<!-- 可能用不到 -->
+		<!--根据mess的id获取面向角色 -->
+		<collection property="role" column="id"
+			select="org.jit.sose.mapper.MessRoleConMapper.listRoleByMessId"></collection>
+		<!--根据mess的id获取面向用户 -->
+		<collection property="readUser" column="id"
+			select="org.jit.sose.mapper.MessReadUserMapper.listReadUserByMessId"></collection>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+         id, title, content, state, create_time, state_time
+    </sql>
+    
+    <!-- 登录用户查看个人消息 -->
+    <select id="listMessMyRemind" resultMap="ListMessMap" parameterType="org.jit.sose.domain.param.ListMessParam">
+        SELECT DISTINCT
+        m.id,
+        m.title,
+        m.content,
+        m.state,
+        m.create_time AS createTimeString,
+        m.state_time AS stateTimeString,
+        muc.user_id AS userId,
+        u.user_name AS userName,
+        mfc.file_id AS fileId,
+        fi.file_name AS fileName,
+        udc.department_id AS departmentId,
+        mcc.category_id AS categoryId,
+        c.`name` AS categoryName,
+        mru.is_read AS isRead
+        FROM
+        `t_mess` m
+        LEFT JOIN t_mess_user_con muc ON (
+        muc.state = 'A'
+        AND muc.mess_id = m.id
+        )
+        LEFT JOIN t_mess_file_con mfc ON (
+        mfc.state = 'A'
+        AND mfc.mess_id = m.id
+        )
+        LEFT JOIN t_mess_category_con mcc ON (
+        mcc.state = 'A'
+        AND mcc.mess_id = m.id
+        )
+        LEFT JOIN t_user_department_con udc ON (
+        udc.state = 'A'
+        AND udc.user_id = muc.user_id
+        )
+        LEFT JOIN a_category c ON (
+        c.state = 'A'
+        AND c.id = mcc.category_id
+        )
+        LEFT JOIN t_department d ON (
+        d.state = 'A'
+        AND d.id = udc.department_id
+        )
+        LEFT JOIN a_user u ON (
+        u.state = 'A'
+        AND u.id = muc.user_id
+        )
+        LEFT JOIN a_file_info fi ON (
+        fi.state = 'A'
+        AND fi.id = mfc.file_id
+        )
+        LEFT JOIN t_mess_read_user mru ON (
+        mru.state = 'A'
+        AND mru.mess_id = m.id
+        )
+        WHERE
+        m.state = 'A'
+            AND mru.user_id = #{userId,jdbcType=INTEGER}
+        ORDER BY
+        m.state_time DESC
+    </select>
+    
+    <!-- 新增消息 -->
+	<insert id="addMess" parameterType="org.jit.sose.domain.entity.Mess" useGeneratedKeys="true" keyProperty="id">
+        insert into t_mess
+	      <trim prefix="(" suffix=")" suffixOverrides=",">
+            title,content
+        </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	        #{title,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}
+        </trim>
+    </insert>
+    
+    <!-- 编辑消息 -->
+  	<update id="editMess" parameterType="org.jit.sose.domain.entity.Mess">
+        update t_mess
+        <set>
+            <if test="title != null">
+                title = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="content != null">
+                content = #{content,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 删除单个消息 -->
+    <update id="removeMess" parameterType="java.lang.Integer">
+		UPDATE t_mess
+		SET state
+		= 'X'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+
+    <!-- 删除选中的消息 -->
+    <update id="removeMessSelect" parameterType="java.util.List">
+        UPDATE t_mess
+        SET state = 'X'
+        WHERE
+        id IN
+        <foreach collection="list" item="id" index="index"
+                 separator="," open="(" close=")">
+            #{id,jdbcType=INTEGER}
+        </foreach>
+    </update>
+
+    <!-- 查看全部消息 -->
+    <select id="listMess" resultMap="ListMessMap" parameterType="org.jit.sose.domain.param.ListMessParam">
+        SELECT DISTINCT
+        m.id,
+        m.title,
+        m.content,
+        m.state,
+        m.create_time AS createTimeString,
+        m.state_time AS stateTimeString,
+        muc.user_id AS userId,
+        u.user_name AS userName,
+        mfc.file_id AS fileId,
+        fi.file_name AS fileName,
+        udc.department_id AS departmentId,
+        mcc.category_id AS categoryId,
+        c.`name` AS categoryName
+        FROM
+        `t_mess` m
+        LEFT JOIN t_mess_user_con muc ON (
+        muc.state = 'A'
+        AND muc.mess_id = m.id
+        )
+        LEFT JOIN t_mess_file_con mfc ON (
+        mfc.state = 'A'
+        AND mfc.mess_id = m.id
+        )
+        LEFT JOIN t_mess_category_con mcc ON (
+        mcc.state = 'A'
+        AND mcc.mess_id = m.id
+        )
+        LEFT JOIN t_user_department_con udc ON (
+        udc.state = 'A'
+        AND udc.user_id = muc.user_id
+        )
+        LEFT JOIN a_category c ON (
+        c.state = 'A'
+        AND c.id = mcc.category_id
+        )
+        LEFT JOIN t_department d ON (
+        d.state = 'A'
+        AND d.id = udc.department_id
+        )
+        LEFT JOIN a_user u ON (
+        u.state = 'A'
+        AND u.id = muc.user_id
+        )
+        LEFT JOIN a_file_info fi ON (
+        fi.state = 'A'
+        AND fi.id = mfc.file_id
+        )
+        WHERE
+        m.state = 'A'
+        <if test="title != null">
+            AND m.title LIKE CONCAT('%', #{title,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="userId != null">
+            AND muc.user_id = #{userId,jdbcType=INTEGER}
+        </if>
+        <if test="departmentId != null">
+            AND udc.department_id = #{departmentId,jdbcType=INTEGER}
+        </if>
+        <if test="categoryId != null">
+            AND mcc.category_id = #{categoryId,jdbcType=INTEGER}
+        </if>
+        ORDER BY
+        m.state_time DESC
+    </select>
+
+
+    <!-- 下面部分是逆向工程自动生成的 -->
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select
+        <include refid="Base_Column_List"/>
+        from t_mess
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_mess
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.Mess">
+    insert into t_mess (id, title, content, 
+      state, create_time, state_time
+      )
+    values (#{id,jdbcType=INTEGER}, #{title,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}, 
+      #{state,jdbcType=CHAR}, #{createTime,jdbcType=TIMESTAMP}, #{stateTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+    <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.Mess">
+        insert into t_mess
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="title != null">
+                title,
+            </if>
+            <if test="content != null">
+                content,
+            </if>
+            <if test="state != null">
+                state,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="stateTime != null">
+                state_time,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="title != null">
+                #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="content != null">
+                #{content,jdbcType=VARCHAR},
+            </if>
+            <if test="state != null">
+                #{state,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="stateTime != null">
+                #{stateTime,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.Mess">
+        update t_mess
+        <set>
+            <if test="title != null">
+                title = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="content != null">
+                content = #{content,jdbcType=VARCHAR},
+            </if>
+            <if test="state != null">
+                state = #{state,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="stateTime != null">
+                state_time = #{stateTime,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.Mess">
+    update t_mess
+    set title = #{title,jdbcType=VARCHAR},
+      content = #{content,jdbcType=VARCHAR},
+      state = #{state,jdbcType=CHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

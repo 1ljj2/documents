@@ -1,0 +1,488 @@
+let vUser = new Vue({
+    el: '#user',
+    data: function () {
+        return {
+            requestPath: {
+                userPath: '/account/user',
+                rolePath: '/account/role'
+            },
+            nowData: [], loading: true, selection: [],// 表格参数
+            column: [
+                {title: '用户名称', key: 'userName', minWidth: 150},
+                {title: '手机号码', key: 'phone', minWidth: 150},
+                {title: '邮箱', key: 'mail', minWidth: 150},
+                {title: '微信名称', key: 'weixinName', minWidth: 150},
+                {title: '创建时间', key: 'createDate', minWidth: 200}
+            ],// 表头
+            totalNum: 0, pageNum: 1, pageSize: 10,  // 分页参数
+            loadingMsg: '',// 加载提示
+            notice: '',// 提醒对象
+            userRole: {
+                id: '', userId: '', roleId: '', userName: '', roleName: '', description: '',
+                remark: '', password: '', password1: '',
+            },// 实体类
+            sUserRole: {
+                userName: '',
+            },// 搜索信息
+            addUserRoleModal: false,// 新增用户角色材模态框
+            editUserRoleModal: false,// 编辑用户角色模态框
+            removeUserRoleModal: false,// 删除用户角色模态框
+            removeUserRoleSelectModal: false,// 批量删除用户角色模态框
+            updatePasswordModal: false,//修改密码模态框
+
+            roleList: [],// 角色集合
+            ownRoleIdList: [],// 拥有的角色集合
+
+            flag: 0//是否正确标志
+        }
+    },
+    components: {
+        'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+        'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+        'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+    },
+    beforeCreate: function () {
+        CheckPermissions();
+    },
+    mounted() {
+        this.initPage();
+        this.getTableHead();
+    },
+    methods: {
+        /**
+         * 页面初始化加载项 表格表头
+         */
+        initPage() {
+            this.filter();
+        },
+
+        /**
+         * 表头
+         */
+        getTableHead() {
+            // 添加自定义slot-scope
+            this.column.push(HeadActionSlot());
+            // 添加序号
+            this.column.unshift(HeadIndex());
+            // 添加多选
+            this.column.unshift(HeadSelection());
+        },
+
+        /**
+         * 合并表格行列
+         */
+        // handleSpan({row, column, rowIndex, columnIndex}) {
+        //     console.log('合并信息', row, column, rowIndex, columnIndex);
+        //     if (rowIndex === 0 && columnIndex === 2) {
+        //         return [3, 1];
+        //     } else if (rowIndex === 1 && columnIndex === 2) {
+        //         return [0, 0];
+        //     } else if (rowIndex === 2 && columnIndex === 2) {
+        //         return [0, 0];
+        //     }
+        //     if (rowIndex === 3 && columnIndex === 2) {
+        //         return [2, 1];
+        //     } else if (rowIndex === 4 && columnIndex === 2) {
+        //         return [0, 0];
+        //     }
+        // },
+
+        /**
+         * 表格过滤查询
+         */
+        filter() {
+            let data = {
+                pageNum: this.pageNum,
+                pageSize: this.pageSize,
+                userName: this.sUserRole.userName
+            };
+            let url = this.requestPath.userPath + '/selectPageInfo';
+            CallAjaxPost(url, data, this.filterSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        /**
+         * 表格过滤查询回调函数
+         *
+         * @param data
+         *            请求返回参数
+         */
+        filterSuc(data) {
+            // 取消显示加载
+            this.loading = false;
+            this.nowData = data.obj.list;
+            this.totalNum = data.obj.total;
+            console.log(data);
+            // 再次设置当前页码
+            this.pageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+
+        /**
+         * 清除搜索条件
+         */
+        clearSUserRole() {
+            this.sUserRole.userName = '';
+        },
+        /**
+         * 改变页码
+         *
+         * @param pageNum
+         *            改变后的页码
+         */
+        onPageChange(pageNum) {
+            this.pageNum = pageNum;
+            this.filter();
+        },
+        /**
+         * 切换每页条数
+         *
+         * @param pageSize
+         *            换后的每页条数
+         */
+        onPageSizeChange(pageSize) {
+            this.pageSize = pageSize;
+            this.filter();
+        },
+
+        /**
+         * 检查数据
+         */
+        checkUserRole() {
+            this.flag = 0;
+            //检查用户名
+            if (this.userRole.userName === null || this.userRole.userName === '') {
+                MessageWarning("请输入用户名！");
+                this.flag = 1;
+                return;
+            }
+            if (this.userRole.password === null || this.userRole.password === '') {
+                MessageWarning("请输入密码！");
+                this.flag = 1;
+                return;
+            }
+            if (this.userRole.password.length < 6 || this.userRole.password.length > 16) {
+                MessageWarning("密码长度在6~16之间");
+                this.flag = 1;
+                return;
+            }
+            if (this.userRole.password1 === null || this.userRole.password1 === '') {
+                MessageWarning("请输入确认密码！");
+                this.flag = 1;
+                return;
+            }
+            if (this.userRole.password != this.userRole.password1) {
+                MessageWarning("确认密码与登录密码不一致，请重新输入！");
+                this.flag = 1;
+                return;
+            }
+            if (this.userRole.roleId === null || this.userRole.roleId === '') {
+                MessageWarning("请选择角色！");
+                this.flag = 1;
+                return;
+            }
+            //设置参数
+            let data = {userName: this.userRole.userName};
+            //调动业务端方法
+            let url = '/account/login/checkByName';
+            CallAjaxPostAsync(url, data, this.findLoginNameSuc);
+        },
+
+        findLoginNameSuc(data) {
+            console.log("-------", data);
+            //用户名已存在或后台异常直接返回
+            if (data.obj === 'error') {
+                MessageWarning("用户名检测异常，请稍后再试！");
+                this.flag = 1;
+                return;
+            }
+            if (data.obj === 'exist') {
+                MessageWarning("用户名已经存在，请重新输入！");
+                this.flag = 1;
+                return;
+            }
+            if (data.obj === 'null') {
+                this.flag = 0;
+            }
+        },
+        /**
+         * 新增用户角色
+         */
+        addUserRole() {
+            this.checkUserRole();
+            console.log(this.flag);
+            // 检查数据格式
+            if (this.flag == 1) {
+                return;
+            }
+            // 发送请求
+            let data = {
+//            		userId:this.userRole.userId,
+                userName: this.userRole.userName,
+                password: this.userRole.password,
+                roleId: this.userRole.roleId,
+                remark: this.userRole.remark,
+            };
+            console.log("-------", data);
+            let url = this.requestPath.userPath + '/insert';
+            CallAjaxPost(url, data, this.addUserRoleSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        /**
+         * 新增用户角色回调函数
+         *
+         * @param data
+         *            请求返回参数
+         */
+        addUserRoleSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            if (data.obj == "user_exist") {
+                MessageWarning("用户已存在！");
+                return;
+            }
+            // 关闭模态框
+            this.addUserRoleModal = false;
+            MessageSuccess("新增用户角色成功");
+            // 重新查询数据
+            this.filter();
+            // 清除器材
+            this.clearUserRole();
+        },
+        /**
+         * 取消器材
+         */
+        cancelAddUserRole() {
+            // 关闭模态框
+            this.addUserRoleModal = false;
+            // 清除器材
+            this.clearUserRole();
+        },
+
+        /**
+         * 打开编辑用户角色模态框
+         *
+         * @param index
+         *            当前数据索引
+         */
+        openEditUserRoleModal(index) {
+            this.userRole.userId = this.nowData[index].id;
+            this.userRole.userName = this.nowData[index].userName;
+
+            let url = this.requestPath.rolePath + "/listByUserId";
+            CallAjaxPost(url, this.userRole.userId, this.getRoleListSuc, null, null, false);
+
+            // 打开模态框
+            this.editUserRoleModal = true;
+        },
+        getRoleListSuc(data) {
+            console.log(data.obj);
+            this.roleList = data.obj.roleList;
+            this.ownRoleIdList = [];
+            data.obj.ownRoleList.forEach(role => {
+                this.ownRoleIdList.push(role.id);
+            })
+        },
+
+        editUserRole() {
+            let data = {
+                userId: this.userRole.userId,
+                roleIdList: this.ownRoleIdList
+            };
+            let url = this.requestPath.rolePath + '/updateUserRole';
+            console.log(data);
+
+            CallAjaxPost(url, data, this.editUserRoleSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        editUserRoleSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            if (data.obj == "user_exist") {
+                MessageWarning("用户已存在！");
+                return;
+            }
+            // 关闭模态框
+            this.editUserRoleModal = false;
+            MessageSuccess("用户角色修改成功");
+            // 重新查询数据
+            this.filter();
+            // 清除器材
+            this.clearUserRole();
+        },
+        /**
+         * 取消修改器材
+         */
+        cancelEditUserRole() {
+            // 关闭模态框
+            this.editUserRoleModal = false;
+            // 清除器材
+            this.clearUserRole();
+        },
+        /**
+         * 打开修改密码模态框
+         */
+        openUpdatePasswordModal(index) {
+            this.userRole.userId = this.nowData[index].userId;
+            this.userRole.userName = this.nowData[index].userName;
+            this.updatePasswordModal = true;
+        },
+        /**
+         * 修改密码
+         */
+        updatePassword() {
+            if (this.userRole.password === null || this.userRole.password === '') {
+                MessageWarning("请输入密码！");
+                return;
+            }
+            if (this.userRole.password.length < 6 || this.userRole.password.length > 16) {
+                MessageWarning("密码长度在6~16之间");
+                return;
+            }
+            if (this.userRole.password1 === null || this.userRole.password1 === '') {
+                MessageWarning("请输入确认密码！");
+                return;
+            }
+            if (this.userRole.password != this.userRole.password1) {
+                MessageWarning("确认密码与登录密码不一致，请重新输入！");
+                return;
+            }
+            let data = {
+                id: this.userRole.userId,
+                userName: this.userRole.userName,
+                password: this.userRole.password,
+            }
+            console.log(data);
+            let url = this.requestPath.userPath + '/changePwd';
+            CallAjaxPost(url, data, this.updatePasswordSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        updatePasswordSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            // 关闭模态框
+            this.updatePasswordModal = false;
+            MessageSuccess("用户密码修改成功");
+            // 重新查询数据
+            this.filter();
+            // 清除器材
+            this.clearUserRole();
+        },
+        /**
+         * 取消修改器材
+         */
+        cancelUpdatePassword() {
+            // 关闭模态框
+            this.updatePasswordModal = false;
+            // 清除器材
+            this.clearUserRole();
+        },
+        /**
+         * 清除器材
+         */
+        clearUserRole() {
+            this.userRole.id = '';
+            this.userRole.userId = '';
+            this.userRole.roleId = '';
+            this.userRole.remark = '';
+            this.userRole.userName = '';
+            this.userRole.password = '';
+            this.userRole.password1 = '';
+        },
+
+        /**
+         * 在多选模式下有效，只要选中项发生变化时就会触发
+         *
+         * @param selection
+         *            已选项数据
+         */
+        onSelectionChange(selection) {
+            console.log('多选', selection);
+            this.selection = selection;
+        },
+
+        /**
+         * 打开删除用户角色模态框
+         */
+        openRemoveUserRoleSelectModal() {
+            // 判断当前多选是否勾选
+            if (this.selection.length === 0) {
+                MessageWarning('请先勾选数据，再批量删除');
+                return;
+            }
+            // 打开模态框
+            this.removeUserRoleSelectModal = true;
+        },
+
+        /**
+         * 批量删除数据
+         */
+        removeUserRoleSelect() {
+            // 关闭模态框
+            this.removeUserRoleSelectModal = false;
+            let idList = [];
+            for (let i = 0; i < this.selection.length; i++) {
+                idList[i] = this.selection[i].id;
+            }
+            let data = idList;
+            let url = this.requestPath.userPath + '/deleteList';
+            CallAjaxPost(url, data, this.removeUserRoleSelectSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+
+        /**
+         * 批量删除数据成功回调函数
+         */
+        removeUserRoleSelectSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('成功删除 ' + data.obj + ' 条记录');
+            // 清除多选列表
+            this.selection = [];
+            // 加载表格数据
+            this.filter();
+        },
+
+        /**
+         * 打开删除用户角色模态框
+         *
+         * @param index
+         *            当前数据索引
+         */
+        openRemoveUserRoleModal(index) {
+            this.userRole.id = this.nowData[index].id;
+            this.removeUserRoleModal = true;
+        },
+
+        /**
+         * 删除
+         *
+         * @param index
+         */
+        removeUserRole(index) {
+            this.removeUserRoleModal = false;
+            let data = this.userRole.id;
+            let url = this.requestPath.userPath + '/delete';
+            CallAjaxPost(url, data, this.removeUserRoleSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+
+        removeUserRoleSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('用户角色删除成功');
+            // 重新查询数据
+            this.filter();
+        },
+
+    },
+
+
+});
+
+
+

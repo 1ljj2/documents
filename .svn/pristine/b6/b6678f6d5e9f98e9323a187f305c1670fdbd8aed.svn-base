@@ -1,0 +1,95 @@
+package org.jit.sose.domain.entity;
+
+import java.util.Date;
+
+public class ArchiveTemplate {
+    private Integer id;
+
+    private String number;
+
+    private String name;
+
+    private Integer termId;
+
+    private Integer courseId;
+
+    private String remark;
+
+    private String state;
+
+    private Date createTime;
+
+    private Date stateTime;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number == null ? null : number.trim();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name == null ? null : name.trim();
+    }
+
+    public Integer getTermId() {
+        return termId;
+    }
+
+    public void setTermId(Integer termId) {
+        this.termId = termId;
+    }
+
+    public Integer getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(Integer courseId) {
+        this.courseId = courseId;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark == null ? null : remark.trim();
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state == null ? null : state.trim();
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public Date getStateTime() {
+        return stateTime;
+    }
+
+    public void setStateTime(Date stateTime) {
+        this.stateTime = stateTime;
+    }
+}

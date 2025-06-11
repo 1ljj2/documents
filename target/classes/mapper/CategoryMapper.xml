@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.CategoryMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.Category" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="type" property="type" jdbcType="CHAR" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+    <result column="state" property="state" jdbcType="CHAR" />
+    <result column="state_time" property="stateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, name, type, remark, state, state_time
+  </sql>
+
+  <select id="listCategoryByType" resultType="org.jit.sose.domain.vo.ListCategoryVo" parameterType="java.lang.String" >
+    SELECT
+        id,
+        `name` AS categoryName
+    FROM
+        `a_category`
+    WHERE
+        state = 'A'
+    AND type = #{type,jdbcType=CHAR}
+  </select>
+
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from a_category
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from a_category
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.Category" >
+    insert into a_category (id, name, type, 
+      remark, state, state_time
+      )
+    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{type,jdbcType=CHAR}, 
+      #{remark,jdbcType=VARCHAR}, #{state,jdbcType=CHAR}, #{stateTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.Category" >
+    insert into a_category
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="name != null" >
+        name,
+      </if>
+      <if test="type != null" >
+        type,
+      </if>
+      <if test="remark != null" >
+        remark,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+      <if test="stateTime != null" >
+        state_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="type != null" >
+        #{type,jdbcType=CHAR},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+      <if test="stateTime != null" >
+        #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.Category" >
+    update a_category
+    <set >
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="type != null" >
+        type = #{type,jdbcType=CHAR},
+      </if>
+      <if test="remark != null" >
+        remark = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+      <if test="stateTime != null" >
+        state_time = #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.Category" >
+    update a_category
+    set name = #{name,jdbcType=VARCHAR},
+      type = #{type,jdbcType=CHAR},
+      remark = #{remark,jdbcType=VARCHAR},
+      state = #{state,jdbcType=CHAR},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+
+
+
+
+
+
+
+
+
+
+
+  <!--
+  =================================================================================
+  -->
+
+
+  <select id="selectCategory" resultType="org.jit.sose.domain.entity.Category">
+    select id,name,type,remark
+    from a_category
+    where state='A'
+    <if test="type != null and type !=''">
+      AND type =#{type}
+    </if>
+  </select>
+
+
+  <insert id="insertOneCategory">
+    insert into a_category  (name,type,remark) values
+    (#{name},#{type},#{remark})
+  </insert>
+
+
+  <update id="updateOneCategory">
+    update a_category
+    <set >
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="type != null" >
+        type = #{type,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null" >
+        remark = #{remark,jdbcType=VARCHAR},
+      </if>
+
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+
+  </update>
+
+
+  <delete id="deleteOneCategory">
+    delete from a_category where id=#{id}
+  </delete>
+
+  <delete id="deleteSelectedCategory">
+    delete from a_category
+    where id in
+    <foreach collection="array" open="(" close=")" separator="," item="onId">
+      #{onId}
+    </foreach>
+  </delete>
+<!--
+
+
+deleteOneCategory
+deleteSelectedCategory
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</mapper>

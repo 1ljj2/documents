@@ -1,0 +1,126 @@
+package org.jit.sose.controller.config;
+
+import com.alibaba.fastjson.JSONObject;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import org.jit.sose.domain.entity.Category;
+import org.jit.sose.domain.vo.ListCategoryVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.service.CategoryService;
+import org.jit.sose.util.ResponseUtil;
+import org.jit.sose.web.response.CommonRespT;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-09-22 11:16:14
+ */
+@ApiResponses({@ApiResponse(code = 200, message = "Request Success"),
+        @ApiResponse(code = 401, message = "Authentication Failure"),
+        @ApiResponse(code = 402, message = "Login Information Invalid"),
+        @ApiResponse(code = 403, message = "No Permission"), @ApiResponse(code = 500, message = "Request fail")})
+@Api(tags = "分类接口")
+@RestController
+@RequestMapping("/config/category")
+public class CategoryController {
+
+    @Autowired
+    private CategoryService categoryService;
+
+    @ApiOperation(value = "查询分类 并分页")
+    @PostMapping(value = "/queryAllCategory")
+    public CommonRespT<PageInfoVo<Category>> listCourse(@RequestBody JSONObject json) {
+        Category one = new Category();
+        String type = json.getString("type");
+        // 当前页码
+        Integer pageNum = json.getInteger("pageNum");
+        // 每页条数
+        Integer pageSize = json.getInteger("pageSize");
+        one.setType(type);
+        PageInfoVo<Category> pageInfo = categoryService.selectPageInfo(one, pageNum, pageSize);
+        return ResponseUtil.successT(pageInfo);
+    }
+
+    @ApiOperation(value = "增加一条记录")
+    @PostMapping("/insertOneCategory")
+    public void insertOneCategory(@RequestBody Category oneCategory) {
+        System.out.println(oneCategory.toString());
+        categoryService.insertOneCategory(oneCategory);
+    }
+
+    @ApiOperation(value = "更新一条记录")
+    @PostMapping("/updateOneCategory")
+    public void updateOneCategory(@RequestBody Category oneCategory) {
+        System.out.println("进入编辑方法");
+        System.out.println(oneCategory.toString());
+        categoryService.updateOneCategory(oneCategory);
+    }
+
+    @ApiOperation(value = "删除一条记录")
+    @PostMapping("/deleteOneCategory")
+    public void deleteOneCategory(@RequestBody Integer id) {
+        System.out.println("进入删除方法");
+        System.out.println(id);
+        categoryService.deleteOneCategory(id);
+    }
+
+    @ApiOperation(value = "删除多条")
+    @PostMapping("/deleteSelectedCategory")
+    public void deleteSelectedCategory(@RequestBody int[] idList) {
+        System.out.println("进入删除方法");
+        System.out.println(Arrays.toString(idList));
+        categoryService.deleteSelectedCategory(idList);
+    }
+
+    @ApiOperation(value = "获取档案的分类name集合")
+    @GetMapping("/listArchiveCategory")
+    public CommonRespT<List<ListCategoryVo>> listArchiveCategory() {
+        //档案的分类的类型为A
+        String type = "B";
+        List<ListCategoryVo> categoryNameList = categoryService.listCategoryByType(type);
+        return ResponseUtil.successT(categoryNameList);
+    }
+
+    @ApiOperation(value = "获取文档的分类name集合")
+    @GetMapping("/listFileCategory")
+    public CommonRespT<List<ListCategoryVo>> listFileCategory() {
+        //文档的分类的类型为A
+        String type = "A";
+        List<ListCategoryVo> categoryNameList = categoryService.listCategoryByType(type);
+        return ResponseUtil.successT(categoryNameList);
+    }
+
+    @ApiOperation(value = "获取公告分类name集合")
+    @GetMapping("/listNoticeCategory")
+    public CommonRespT<List<ListCategoryVo>> listNoticeCategory() {
+        //公告的分类的类型为C
+        String type = "C";
+        List<ListCategoryVo> categoryNameList = categoryService.listCategoryByType(type);
+        return ResponseUtil.successT(categoryNameList);
+    }
+
+    @ApiOperation(value = "获取消息分类name集合")
+    @GetMapping("/listMessCategory")
+    public CommonRespT<List<ListCategoryVo>> listMessCategory() {
+        //消息的分类的类型为E
+        String type = "E";
+        List<ListCategoryVo> categoryNameList = categoryService.listCategoryByType(type);
+        return ResponseUtil.successT(categoryNameList);
+    }
+
+    @ApiOperation(value = "获取流程的分类name集合")
+    @GetMapping("/listProcessCategory")
+    public CommonRespT<List<ListCategoryVo>> listProcessCategory() {
+        //流程的分类的类型为D
+        String type = "D";
+        List<ListCategoryVo> categoryNameList = categoryService.listCategoryByType(type);
+        return ResponseUtil.successT(categoryNameList);
+    }
+
+}

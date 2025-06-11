@@ -1,0 +1,32 @@
+package org.jit.sose.domain.param;
+
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+
+/**
+ * @Author: LJH
+ * @Date: 2020/10/17 16:07
+ */
+@Data
+public class MyArchiveForReviewParam {
+    @ApiModelProperty(value = "流程标识")
+    private Integer processId;
+
+    @ApiModelProperty(value = "当前用户标识")
+    private Integer nowUserId;
+
+    @ApiModelProperty(value = "审核用户标识")
+    private Integer userId;
+
+    @ApiModelProperty(value = "步骤标识")
+    private Integer stepId;
+
+    @ApiModelProperty(value = "文档模板标识")
+    private Integer archiveTemplateId;
+
+    //档案名称
+    private String archiveName;
+
+    //档案编号
+    private String archiveNumber;
+}

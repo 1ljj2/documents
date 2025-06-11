@@ -1,0 +1,45 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.domain.entity.FileExampleProcess;
+import org.jit.sose.mapper.FileAuditMapper;
+import org.jit.sose.mapper.FileExampleProcessMapper;
+import org.jit.sose.mapper.ProcessStepsMapper;
+import org.jit.sose.service.FileAuditService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @author wufang
+ * @Date 2020-10-16 10:44:26
+ */
+@Service
+public class FileAuditServiceImpl implements FileAuditService {
+
+    @Autowired
+    private FileAuditMapper fileAuditMapper;
+
+    @Autowired
+    private FileExampleProcessMapper fileExampleProcessMapper;
+
+    @Autowired
+    private ProcessStepsMapper processStepsMapper;
+
+    @Transactional
+    @Override
+    public void myFileForReview(Integer processId,Integer stepId, Integer userId, Integer fileId) {
+        //t_file_example_process新增
+        FileExampleProcess example = new FileExampleProcess();
+        example.setFileId(fileId);
+        example.setProcessId(processId);
+        example.setAuditState("B");
+        fileExampleProcessMapper.addExample(example);
+        //获取新增返回的主键
+        Integer exampleId = example.getId();
+        //根据当前选择流程的第一个步骤标识，查询下一个步骤标识
+        Integer auditStepId = processStepsMapper.selectNextStepIdById(stepId);
+        //t_file_audit新增未审核的记录
+        fileAuditMapper.addAuditRecord(exampleId,userId,auditStepId,"B");
+
+    }
+}

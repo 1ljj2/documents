@@ -1,0 +1,848 @@
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/templates/pdfh5/js/build/pdf.worker.js';//自己的路径,加载核心库
+var vExcel = new Vue({
+    el: '#myFile',
+    data: function () {
+        let vm = this;
+        return {
+            //---------------------------------接口路径参数-------------------------
+            processPath: '/process/process',
+            processStepsPath: '/process/processSteps',
+            rolePath: '/account/role',
+            categoryPath: '/config/category',
+            userPath: '/account/user',
+            yearTermPath: '/account/yearTerm',
+            fileInfoPath: '/file/file',
+            coursePath: '/account/course',
+            //------------------------------------------------------------------------------------！！公有！！-------------------------
+            categoryList: [],//文档的分类
+            termList: [],//学期
+            courseList: [],//课程
+            userList: [],//用户
+            stateList: [],//状态
+            auditStateList: [
+                {auditStateString: '未审核', auditState: 'A'},
+                {auditStateString: '审核中', auditState: 'B'},
+                {auditStateString: '审核通过', auditState: 'C'},
+                {auditStateString: '审核不通过', auditState: 'D'}
+            ],//审核状态
+            aesKey: '',//对称加密密钥
+            numPages: '',//pdf文件的页数,从1开始计数的页数
+            componentSize: 'medium',// 组件尺寸
+            nowData: [],
+            column: [
+                {title: '文档名称', key: 'fileName'},
+                {title: '学期', key: 'termName'},
+                {title: '分类', key: 'categoryName'},
+                {title: '备注', key: 'remark'},
+                {title: '状态', key: 'auditStateString'},
+            ],
+            loading: true, selection: [],
+            totalNum: 0, pageNum: 1, pageSize: 10,  // 分页参数
+            loadingMsg: '',// 加载提示
+            sFileInfo: {
+                fileName: '', termId: '', categoryId: '', state: '', type: '', auditState: '',
+            },//页面过滤查询参数
+            fileList: [],// 所要上传的【文档】的文件列表
+            //---------------------------------模态框-------------------------
+            addFileModal: false,//新建/上传文档模态框
+            removeFileModal: false,//删除文档模态框
+            removeMyFileModal: false,//删除文档模态框
+            editMyFileModal: false,//删除文档模态框
+            pdfModal: false,//预览文档模态框
+
+
+            fileInfo: {
+                fileName: '', fileCode: '', termId: '', categoryId: '', state: '', auditState: '',
+                id: '', userName: '', accessUrl: '', type: '', remark: '',
+            },// 文档实体类
+
+            uploadUrl: METHOD_URL, // 请求地址
+            picFormData: new FormData(), // 图片表单对象
+            picfileList: [],// 图片列表
+            picIdList: [],// 图片id列表
+            maxPixSize: 30,// 最大大小，单位mb(单位可自行调整)
+            signUrl: '',//图片路径
+            dialogImageUrl: '',// 图片预览地址
+            dialogImageAlt: '',// 图片预览提示文字
+            dialogVisible: false,// 是否显示预览
+
+            // ============ 文本上传
+            // 文件相关属性
+            textFormData: new FormData(), // 文本表单对象
+            textFileType: 'T',// 文件类型
+            textFileList: [],// 文件列表
+            textIdList: [],// 图片id列表
+            maxTextSize: 20,// 最大大小，单位mb(单位可自行调整)
+            fileStr: '',// 加密后的文件base64编码
+            aesKey: '',// 对称加密秘钥
+            base64: '',// 文件的base64编码
+
+            addNameModel: false,//新增签名模态框
+            removeSignModal: false,//删除模态框
+            picModel: false,//展示图片模态框
+            removeMyFileSelectedModal: false,//批量删除我的文档模态框
+            forReviewModal: false,//送审模态框
+
+            submitFileData: [],//上传签名的列表信息
+            roleList: [],// 角色集合
+            isAdmin: false,//是否是admin管理员，默认不是
+            value: '',
+
+            //-------------------------------------------------------------选择文件送审的模态框参数-----------
+            categoryListD: [],//流程的分类
+            proConditions: {processName: '', categoryId: ''},//搜索信息
+            proTotalNum: 0, proPageNum: 1, proPageSize: 6,  // 分页参数
+            proColumn: [
+                {title: "流程名称", key: "processName", minWidth: 200},
+                {title: "分类", key: "categoryName", minWidth: 150},
+                {title: "更新时间", key: "stateTimeString", minWidth: 150},
+            ], // 表头信息
+            nowProData: [],//表格目前的参数
+            viewProcessStepModal: false,//查看流程步骤模态框
+            process: {
+                id: '',
+                stepId: '',
+                roleName: '',
+                processName: '',
+                remark: '',
+                processStepsList: [],
+            },//流程参数
+            selectedProcess: false,
+            forReviewData: {processId: '', userId: '', stepId: ''},//选择流程，审核人的参数
+            processSelected: false,//是否选择了流程
+            userConditions: {userName: '', phone: '', departmentId: ''},//审批人搜索信息
+            userColumn: [
+                {title: "姓名", key: "userName", minWidth: 100},
+                {title: "电话号码", key: "phone", minWidth: 150},
+                {title: "Email地址", key: "email", minWidth: 200},
+            ], // 表头信息
+            nowUserData: [],
+            userTotalNum: 0, userPageNum: 1, userPageSize: 4,  // 分页参数
+            user: {
+                id: '', schoolId: '', departmentId: '', userName: '', phone: '', email: '',
+            },
+            fileAuditPath: '/file/fileAudit',
+            departmentPath: '/account/department',
+            departmentList: [],
+            processStepsList: [],//送审模态框中：流程步骤条参数
+            messNeeded: {phone: '', userName: ''},
+        }
+    },
+    components: {
+        'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+        'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+        'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+    },
+    beforeCreate: function () {
+    },
+    mounted() {
+        this.initPage();//初始化表格表头
+        this.setProcessTableTitle();//流程表格的表头
+        this.setUserTableTitle();//审核人表格的表头
+        this.filter();//表格过滤查询
+        // this.geCategoryList();//获取分类列表
+        this.geCategoryList();
+        this.getProCategoryList();
+        // this.listTermByName('');
+        this.getDepartmentList();
+    },
+    methods: {
+        /**
+         * 初始化表格表头
+         */
+        initPage() {
+            // 添加操作
+            this.column.push(HeadActionSlot(true, 350));
+            // 添加序号多选
+            this.column.unshift(HeadIndex(true));
+            this.column.unshift(HeadSelection());
+        },
+
+        /**
+         * 过滤查新页面数据
+         */
+        filter() {
+            // console.log('当前页：' + this.pageNum);
+            // console.log('页面大小：' + this.pageSize);
+            // console.log('sFileInfo：' + this.sFileInfo.roleId);
+            let data = {
+                pageNum: this.pageNum,
+                pageSize: this.pageSize,
+                fileName: this.sFileInfo.fileName,
+                termId: this.sFileInfo.termId,
+                categoryId: this.sFileInfo.categoryId,
+                auditState: this.sFileInfo.auditState,
+            };
+            console.log('filter', data);
+            let url = this.fileInfoPath + '/listMyFile';//请求路径
+            CallAjaxPost(url, data, this.filterSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        /**
+         * 过滤查询回调函数
+         * @param data
+         */
+        filterSuc(data) {
+            console.log('filterSuc', data);
+            //取消显示加载
+            this.loading = false;
+            this.nowData = data.obj.list;
+            this.totalNum = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+            for (let i = 0; i < this.nowData.length; i++) {
+                if (this.nowData[i].auditState == 'B') {
+                    this.nowData[i].auditStateString = '审核中'
+                } else if (this.nowData[i].auditState == 'C') {
+                    this.nowData[i].auditStateString = '审核通过'
+                } else if (this.nowData[i].auditState == 'D') {
+                    this.nowData[i].auditStateString = '审核不通过'
+                } else {
+                    this.nowData[i].auditStateString = '未审核'
+                }
+            }
+        },
+
+        /**
+         * 清空搜索框信息
+         */
+        clearSFileInfo() {
+            this.sFileInfo.fileName = '';
+            this.sFileInfo.termId = '';
+            this.sFileInfo.categoryId = '';
+            this.sFileInfo.state = '';
+            this.sFileInfo.type = '';
+            this.sFileInfo.auditState = '';
+        },
+
+        /**
+         * 清空文档信息
+         */
+        clearFileInfo() {
+            this.fileInfo.fileName = '';
+            this.fileInfo.fileCode = '';
+            this.fileInfo.termId = '';
+            this.fileInfo.categoryId = '';
+            this.fileInfo.state = '';
+            this.fileInfo.type = '';
+            this.fileInfo.auditState = '';
+            this.fileInfo.id = '';
+            this.fileInfo.userName = '';
+        },
+
+        /**
+         * 在多选模式下有效，只要选中项发生变化时就会触发
+         * @param selection 已选项数据
+         */
+        onSelectionChange(selection) {
+            this.selection = selection;
+            console.log(this.selection);
+        },
+        /**
+         * 改变页码
+         *
+         * @param pageNum
+         *            改变后的页码
+         */
+        onPageChange(pageNum) {
+            this.pageNum = pageNum;
+            this.filter();
+        },
+        /**
+         * 切换每页条数
+         *
+         * @param pageSize
+         *            换后的每页条数
+         */
+        onPageSizeChange(pageSize) {
+            this.pageSize = pageSize;
+            this.filter();
+        },
+
+        /**
+         * 根据输入的termName获得termList
+         */
+        listTermByName(name) {
+            let data = {
+                name: name,
+            };
+            let url = this.yearTermPath + '/listTermByName';
+            // console.log("listTermByName参数：", data)
+            CallAjaxPost(url, data, this.listTermByNameSuc);
+        },
+        listTermByNameSuc(data) {
+            this.termList = data.obj;
+            // console.log("listTermByNameSuc: ", this.termList);
+        },
+        /**
+         * 获取文档分类列表
+         */
+        geCategoryList() {
+            let url = this.categoryPath + '/listFileCategory';
+            console.log(url)
+            CallAjaxGetNoParam(url, this.getCategoryListSuc);
+
+        },
+        getCategoryListSuc(data) {
+            console.log("getCategoryListSuc", data)
+            this.categoryList = data.obj;
+        },
+
+        /**
+         * 根据输入的courseName获得courseList
+         */
+        listCourseByName(name) {
+            let data = {
+                name: name,
+            };
+            let url = this.coursePath + '/listCourseByName';
+            // console.log("listTermByName参数：", data)
+            CallAjaxPost(url, data, this.listCourseByNameSuc);
+        },
+        listCourseByNameSuc(data) {
+            this.courseList = data.obj;
+            // console.log("listCourseByNameSuc: ", this.courseList);
+        },
+
+        /**
+         * 取消新增【文档】
+         * 关闭新增模态框并清空相关文件及数据
+         */
+        cancelAddMyFile() {
+            this.addFileModal = false;
+        },
+        /**
+         * 文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+         * @param file 当前文件
+         * @param fileList 文件列表
+         */
+        handleChange(file, fileList) {
+            this.fileList = fileList;
+            for (let i = 0; i < this.fileList.length; i++) {
+                // this.fileList
+            }
+            console.log("this.fileList", this.fileList)
+
+        },
+
+        /**
+         * 文件列表移除文件时的钩子
+         * @param file 移除的文件
+         * @param fileList 文件列表
+         */
+        handleRemove(file, fileList) {
+            this.fileList = fileList;
+        },
+
+        /**
+         * 点击文件列表中已上传的文件时的钩子
+         * @param file 当前文件
+         */
+        handlePreview(file) {
+            console.log(file);
+        },
+
+
+        /**
+         * 文件超出个数限制
+         */
+        handleExceedLimit() {
+            MessageWarning('已超出最大文件个数');
+        },
+
+        addMyFile() {
+            this.loadingMsg = MessageLoading();//打开上传文件加载提示
+            let that = this;
+            // 检查数据格式
+            // if (this.checkName()) {
+            //     return;
+            // }
+            // 文件大小超过最大值
+            // if (this.picfileList[0].size > this.maxPixSize * 1024 * 1024) {
+            //     MessageWarning('图片' + '：' + this.picfileList[0].name + ' 已超过' + this.maxPixSize + 'Mb!');
+            //     this.picFormData = new FormData(); // 创建新的表单
+            //     return;
+            // }
+            //
+            //
+            // 文件大小超过最大值
+            // if (this.picfileList[0].size > this.maxPixSize * 1024 * 1024) {
+            //     MessageWarning('图片' + '：' + this.picfileList[0].name + ' 已超过' + this.maxPixSize + 'Mb!');
+            //     this.picFormData = new FormData(); // 创建新的表单
+            //     return;
+            // }
+
+
+            // for (let i = 0; i < this.picfileList.length; i++) {
+            //     this.picfileList[i].roleId = this.submitFileData[i].roleId;
+            //     this.picfileList[i].remark = this.submitFileData[i].remark;
+            //     this.picfileList[i].name = this.submitFileData[i].signatureName;
+            //     if (!Boolean(this.picfileList[i].name)) {
+            //         console.log("this.picfileList[i].name", this.picfileList[i].name)
+            //         MessageWarning('公章签名名称不能为空！');
+            //         return;
+            //     }
+            // }
+            for (let i = 0; i < this.fileList.length; i++) {//验证参数信息是否齐全
+                if (this.fileList[i].name.length < 1) {
+                    MessageWarning('文档名称不能为空！');
+                    CloseMessageLoading(this.loadingMsg);
+                    return;
+                }
+            }
+            console.log(this.fileList)
+            SubmitFileList(this.fileList, this.addMyFileSuc, "C1")//上传文件
+
+
+        },
+        addMyFileSuc(data) {
+            console.log(data)
+            CloseMessageLoading(this.loadingMsg);
+            this.cancelAddMyFile()
+            this.filter()
+        },
+
+        /**
+         * 打开删除模态框
+         * @param index
+         */
+        openRemoveMyFileModal(index) {
+            this.removeMyFileModal = true;
+            this.fileInfo.id = this.nowData[index].fileId;
+            // console.log(this.nowData[index])
+        },
+
+        /**
+         * 删除文件
+         */
+        removeMyFile() {
+            let url = "/file/file/delete"
+            CallAjaxPost(url, this.fileInfo.id, this.removeMyFileSuc);
+        },
+        /**
+         *删除文件回调函数
+         * @param data
+         */
+        removeMyFileSuc(data) {
+            this.filter()
+            // this.fileInfo.id = '';
+            this.clearFileInfo()
+        },
+        /**
+         * 取消删除文档
+         */
+        cancelRemoveMyFile() {
+            this.removeMyFileModal = false;
+            // this.fileInfo.id = '';
+            this.clearFileInfo()
+        },
+        /**
+         * 打开批量删除文档模态框
+         */
+        openRemoveFileModal() {
+            // 判断当前多选是否勾选
+            if (this.selection.length === 0) {
+                MessageWarning('请先勾选数据，再批量删除');
+                return;
+            }
+            this.removeMyFileSelectedModal = true;
+        },
+        /**
+         * 批量删除
+         */
+        removeMyFileSelected() {
+            // 关闭模态框
+            this.removeMyFileSelectedModal = false;
+            //获取索引集合
+            let idList = [];
+            for (let i = 0; i < this.selection.length; i++) {
+                idList[i] = this.selection[i].fileId;
+            }
+            let data = idList;
+            let url = this.fileInfoPath + '/deleteMyFileSelected';
+            console.log(data)
+            CallAjaxPost(url, data, this.removeMyFileSelectedSuc);
+        },
+        removeMyFileSelectedSuc() {
+            MessageSuccess('成功删除 ' + this.selection.length + ' 个文件');
+            // 清除多选列表
+            this.selection = [];
+            // 加载表格数据
+            this.filter();
+        },
+        /**
+         * 取消批量删除
+         */
+        cancelRemoveMyFileSelected() {
+
+        },
+        /**
+         * 打开编辑文件模态框
+         * @param index
+         */
+        openEditMyFileModal(index) {
+            // console.log("openEditMyFileModal",index)
+            // console.log('openEditMyFileModal',this.nowData[index])
+            this.fileInfo.id = this.nowData[index].fileId;
+            this.fileInfo.fileName = this.nowData[index].fileName;
+            this.fileInfo.categoryId = this.nowData[index].categoryId;
+            this.fileInfo.termId = this.nowData[index].termId;
+            this.fileInfo.remark = this.nowData[index].remark;
+            this.editMyFileModal = true;
+        },
+        /**
+         * 取消编辑文档
+         */
+        cancelEditMyFile() {
+            this.editMyFileModal = false
+            this.clearFileInfo()
+        },
+        /**
+         * 确认编辑文件
+         */
+        editMyFile() {
+            if (this.fileInfo.fileName.length < 1) {
+                MessageWarning('文档名称不能为空！');
+                CloseMessageLoading(this.loadingMsg);
+                return;
+            }
+            let url = this.fileInfoPath + "/editMyFile"
+            CallAjaxPost(url, this.fileInfo, this.editMyFileSuc)
+        },
+        /**
+         * 编辑文件回调函数
+         * @param data
+         */
+        editMyFileSuc(data) {
+            this.cancelEditMyFile();
+            this.filter();
+        },
+        /**
+         * 下载文档
+         * @param index
+         */
+        downloadMyFile(index) {
+            downloadFileEncrypt(this.nowData[index].fileId)
+        },
+        /**
+         * 打开预览pdf模态框
+         */
+        previewPdf(index) {
+            this.loadingMsg = MessageLoading();//打开加载提示
+            this.aesKey = GetAesKey();//生成16位对称加密秘钥
+            console.log(index);
+
+            let url = "/file/file" + "/getFileCodeById"
+            // CallAjaxPost(url, this.nowData[index].id, this.showSignaturePictureSuc)
+            // this.signUrl = this.submitFileData[index].signUrl;//获取文件预览地址
+            // this.picModel = true;
+            GetFileCodeById(this.nowData[index].fileId, this.aesKey, this.previewPdfSuc)
+            // downloadFileEncrypt(this.nowData[index].id)
+        },
+        previewPdfSuc(data) {
+            console.log("previewPdfSuc", data)
+            var that = this;
+            // console.log("showSignaturePictureSuc",data)
+            let base64 = AesDecrypt(this.aesKey, data.obj.base64);//AES非对称加密解码
+            console.log("base64", base64)
+            var loadingTask = pdfjsLib.getDocument({data: atob(base64.split(",")[1]),});
+            loadingTask.promise.then(function (pdf) {
+                that.numPages = pdf.numPages;//pdf的页数
+                console.log("that.numPages", that.numPages);//pdf的页数
+                for (let i = 1; i <= that.numPages; i++) {//循环设置所有pdf页
+                    pdf.getPage(i).then(function (page) {
+                        var canvasList = document.getElementById('canvas_list');
+                        let canvas = document.createElement('canvas');
+                        canvas.id = "page" + i;//设置canvas的id
+                        canvasList.appendChild(canvas);
+                        // canvasList.appendChild(document.createElement('hr'));//横线
+                        canvasList.appendChild(document.createElement('br'));//横线
+
+                        var ctx = canvas.getContext('2d');
+                        // var viewport = page.getViewport({scale: 1.5,});//设置缩放比例
+                        var viewport = page.getViewport({scale: 1,});//设置缩放比例
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        // Render PDF page into canvas context
+                        var renderContext = {
+                            canvasContext: ctx,
+                            viewport: viewport
+                        };
+                        var renderTask = page.render(renderContext);
+                    });
+                }
+            });
+            // CloseMessageLoading(this.loadingMsg);// 关闭加载提示
+            //延时1000ms
+            // setTimeout(function () {
+            //要延迟执行的代码块
+            CloseMessageLoading(this.loadingMsg);
+            this.pdfModal = true;
+            // }, 1000);
+
+        },
+        /**
+         * 关闭预览pdf文件模态框
+         */
+        closePdfModal() {
+            this.pdfModal = false;
+        },
+        //---------------------------------------------------------------------------送审-------------
+        /**
+         * 设置表头
+         */
+        setProcessTableTitle() {
+            // 添加自定义slot-scope(操作栏)
+            this.proColumn.push(HeadActionSlot(true, 250));
+            // 添加序号
+            this.proColumn.unshift(HeadIndex(true));
+        },
+        /**
+         * 设置表头
+         */
+        setUserTableTitle() {
+            // 添加自定义slot-scope(操作栏)#f78989
+            this.userColumn.push(HeadActionSlot(true, 100));
+            // 添加序号
+            this.userColumn.unshift(HeadIndex(true));
+        },
+        /**
+         * 打开送审，模态框
+         */
+        openForReviewModal(index) {
+            //当前文件的标识
+            this.fileInfo.id = this.nowData[index].fileId;
+            console.log(this.fileInfo.id)
+            //获取可供选择的流程
+            this.listProcessByQuery();
+            //打开送审的模态框
+            this.forReviewModal = true;
+        },
+        /**
+         * 获取流程分类列表
+         */
+        getProCategoryList() {
+            let url = this.categoryPath + '/listProcessCategory';
+            console.log(url)
+            CallAjaxGetNoParam(url, this.getProCategoryListSuc);
+        },
+        getProCategoryListSuc(data) {
+            console.log("getProCategoryListSuc", data)
+            this.categoryListD = data.obj;
+        },
+        /**
+         * 展示出流程给文档送审
+         */
+        listProcessByQuery() {
+            let data = {
+                processName: this.proConditions.processName,
+                categoryId: this.proConditions.categoryId,
+                pageNum: this.proPageNum,
+                pageSize: this.proPageSize,
+            };
+            let url = this.processPath + '/listForReviewByCondition';
+            console.log("listProcessByQuery参数：", data)
+            CallAjaxPost(url, data, this.listProcessByQuerySuc);
+        },
+        listProcessByQuerySuc(data) {
+            this.nowProData = data.obj.list;
+            console.log("listProcessByQuerySuc", this.nowProData);
+            this.proTotalNum = data.obj.total;
+            this.proPageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        /**
+         * 清空流程的搜索条件
+         */
+        clearProConditions() {
+            this.proConditions.processName = '';
+            this.proConditions.categoryId = '';
+            //重新查询选择流程表格数据
+            this.listProcessByQuery();
+        },
+        selectProcess(index) {
+            console.log("流程表格行数据：", this.nowProData[index])
+            //根据索引，获取当前选择的流程的标识
+            this.process.id = this.nowProData[index].id;
+            this.process.stepId = this.nowProData[index].stepId;
+            this.process.processName = this.nowProData[index].processName;
+            //选择完流程之后的下一个步骤所需审核的用户角色
+            this.process.roleName = this.nowProData[index].roleName;
+            //获取到stepId，可以获取审核用户集合
+            this.listAuditUser();
+            //将所有的都改为“未选中”
+            for (let i = 0; i < this.nowProData.length; i++) {
+                this.nowProData[i].isSelected = false;
+            }
+            //将此索引所对应行的按钮变为“已选择”
+            this.nowProData[index].isSelected = true;
+            //将流程标识传给送审的参数
+            this.forReviewData.stepId = this.process.stepId;
+            this.forReviewData.processId = this.process.id;
+            console.log("流程标识：", this.forReviewData.processId);
+            this.processSelected = true;
+            //获取流程步骤条
+            this.viewProcessStep();
+        },
+        /**
+         * 根据条件搜索用户-用于审核
+         */
+        listAuditUser() {
+            let data = {
+                stepId: this.process.stepId,
+                userName: this.userConditions.userName,
+                phone: this.userConditions.phone,
+                departmentId: this.userConditions.departmentId,
+                pageNum: this.userPageNum,
+                pageSize: this.userPageSize,
+            };
+            let url = this.userPath + '/listAuditUser';
+            console.log("listAuditUser参数：", data)
+            CallAjaxPost(url, data, this.listAuditUserSuc);
+        },
+        listAuditUserSuc(data) {
+            this.nowUserData = data.obj.list;
+            console.log("listAuditUserSuc", this.nowUserData);
+            this.userTotalNum = data.obj.total;
+            this.userPageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        /**
+         * 清除用户搜索条件
+         */
+        clearUserConditions() {
+            this.userConditions.userName = '';
+            this.userConditions.phone = '';
+            this.userConditions.departmentId = '';
+            this.listAuditUser();
+        },
+        /**
+         * 选择审核人----改变页码
+         */
+        onUserPageChange(pageNum) {
+            this.userPageNum = pageNum;
+            this.listAuditUser();
+        },
+        selectAuditUser(index) {
+            //根据索引，获取当前选择的用户的标识
+            // console.log(this.nowUserData[index])
+            this.user.id = this.nowUserData[index].id;
+            //获取发短信需要的值
+            this.messNeeded.phone = this.nowUserData[index].phone;
+            //将所有的都改为“未选中”
+            for (let i = 0; i < this.nowUserData.length; i++) {
+                this.nowUserData[i].isSelected = false;
+            }
+            //将此索引所对应行的按钮变为“已选择”
+            this.nowUserData[index].isSelected = true;
+            this.forReviewData.userId = this.user.id;
+            // console.log("用户标识：", this.forReviewData.userId);
+        },
+        /**
+         * 选择流程----改变页码
+         */
+        onProPageChange(pageNum) {
+            this.proPageNum = pageNum;
+            this.listProcessByQuery();
+        },
+        /**
+         * 打开查看流程步骤模态框
+         */
+        openViewStepModal(index) {
+            this.process.id = this.nowProData[index].id;
+            this.process.processName = this.nowProData[index].processName;
+            this.viewProcessStep();
+            // 打开模态框
+            this.viewProcessStepModal = true;
+        },
+        /**
+         * 根据流程标识获取流程步骤
+         */
+        viewProcessStep() {
+            console.log("来获取流程步骤信息")
+            let data = this.process.id;
+            let url = this.processStepsPath + '/viewStepsByProcessId';
+            //发同步请求，防止在点击【编辑】的时候出现还没有请求完成就显示出模态框
+            CallAjaxPost(url, data, this.viewProcessStepSuc);
+        },
+        viewProcessStepSuc(data) {
+            console.log("viewProcessStepSuc:", data.obj)
+            //将信息赋值给流程步骤条
+            this.processStepsList = data.obj;
+        },
+        /**
+         * 退出查看【流程步骤图】
+         */
+        exitViewStep() {
+            //关闭模态框
+            this.viewProcessStepModal = false;
+        },
+        /**
+         * 获取文档分类列表
+         */
+        getDepartmentList() {
+            let url = this.departmentPath + '/getDepartmentList';
+            CallAjaxGetNoParam(url, this.getDepartmentListSuc);
+        },
+        getDepartmentListSuc(data) {
+            console.log("getDepartmentListSuc:", data)
+            this.departmentList = data.obj;
+        },
+        /**
+         * 送审
+         */
+        forReview() {
+            let data = {
+                processId: this.forReviewData.processId,
+                userId: this.forReviewData.userId,
+                stepId: this.forReviewData.stepId,
+                fileId: this.fileInfo.id,
+            };
+            let url = this.fileAuditPath + '/myFileForReview';
+            console.log("forReview参数：", data)
+            CallAjaxPost(url, data, this.forReviewSuc);
+        },
+        forReviewSuc(data) {
+            //关闭模态框
+            this.forReviewModal = false;
+            //检验是否发送短信
+            let url = '/config/configuration/checkMessage4Audit';
+            CallAjaxGetNoParam(url, this.checkMessage4AuditSuc);
+        },
+        checkMessage4AuditSuc(data) {
+            console.log("checkMessage4AuditSuc:", data.obj)
+            console.log("准备发短信**************************************")
+            //需要发短信
+            if (data.obj == true) {
+                let messData = {
+                    phone: this.messNeeded.phone,
+                };
+                console.log(messData,"准备发短信****")
+                let url = '/message/myFileSendMessage';
+                CallAjaxPost(url, messData, this.myFileSendMessageSuc);
+            }
+        },
+        myFileSendMessageSuc() {
+            console.log("已发送短信至审核人*****************************************")
+            MessageSuccess("已发送短信至审核人");
+        },
+        /**
+         * 取消送审
+         */
+        cancelForReview() {
+            //将选择的流程置空
+            if (IsNotEmpty(this.process.id)) {
+                this.nowProData[this.process.id].isSelected = false;
+            }
+            if (IsNotEmpty(this.user.id)) {
+                this.nowUserData[this.user.id].isSelected = false;
+            }
+            this.process.id = null;
+            this.user.id = null;
+            this.forReviewData.processId = null;
+            this.forReviewData.userId = null;
+            //关闭模态框
+            this.forReviewModal = false;
+        },
+    }
+})

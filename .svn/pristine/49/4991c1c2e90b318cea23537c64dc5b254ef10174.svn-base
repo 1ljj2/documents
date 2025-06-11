@@ -1,0 +1,212 @@
+package org.jit.sose.service.impl;
+
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.jit.sose.domain.entity.MenuBack;
+import org.jit.sose.domain.entity.SecurityUser;
+import org.jit.sose.domain.entity.User;
+import org.jit.sose.domain.entity.UserInfo;
+import org.jit.sose.domain.param.ListUserParam;
+import org.jit.sose.domain.vo.ListAuditUserVo;
+import org.jit.sose.domain.vo.ListUserVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.domain.vo.UserVo;
+import org.jit.sose.mapper.ProcessStepsMapper;
+import org.jit.sose.mapper.RoleMapper;
+import org.jit.sose.mapper.UserInfoMapper;
+import org.jit.sose.mapper.UserMapper;
+import org.jit.sose.redis.RedisService;
+import org.jit.sose.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Slf4j
+@Service
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private UserInfoMapper userInfoMapper;
+
+    @Autowired
+    private RoleMapper roleMapper;
+
+    @Autowired
+    RedisService redisService;
+
+    @Autowired
+    private ProcessStepsMapper processStepsMapper;
+
+    @Override
+    public List<Integer> translateNameToId(List<String> userNameList) {
+        return userMapper.translateNameToId(userNameList);
+    }
+
+    @Override
+    public List<String> showUserSelected(List<Integer> userIdList) {
+        return userMapper.showUserSelected(userIdList);
+    }
+
+    @Transactional
+    @Override
+    public PageInfoVo<ListUserVo> listAuditUser(ListUserParam param) {
+        new PageHelper().startPage(param.getPageNum(), param.getPageSize());
+        //得到当前步骤的id
+        Integer stepId = param.getStepId();
+        //获取当前步骤的下一个步骤服务的对象id
+        Integer roleId = processStepsMapper.selectRoleIdByPreStepId(stepId);
+        param.setRoleId(roleId);
+        System.out.println("获取审核人的参数" + param);
+        List<ListUserVo> voList = userMapper.listAuditUser(param);
+        //将电话号码做隐秘处理
+        for (ListUserVo vo : voList) {
+            String phone = vo.getPhone();
+            vo.setPhone(phone.substring(0, 3) + "****" + phone.substring(7, phone.length()));
+            vo.setIsSelected(false);
+        }
+        PageInfo<ListUserVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Override
+    public Set<String> getRoles(SecurityUser securityUser) {
+        // 用户名
+        String userName = securityUser.getUserName();
+        // 获取用户保存角色集合的key
+        String redisRoleKey = User.getRedisRoleKey(userName);
+        // 角色集合,是以key为“securityUser:userName”的Set类型数据
+        Set<String> roles = new HashSet<String>();
+        // 若redis存在当前key
+        if (redisService.hasKey(redisRoleKey)) {
+            // 从redis中获取集合
+            roles = redisService.sGetString(redisRoleKey);
+        } else {
+            // redis不存在角色key，从mysql读取，并放在redis中,设置为1小时
+            roles = roleMapper.listRoleKeyByUserId(securityUser.getId());
+            long result = redisService.sSetBySet(redisRoleKey, roles, 60 * 60 * 1);
+            log.debug("{} 成功存放了 {} 个角色", redisRoleKey, result);
+        }
+        return roles;
+    }
+
+    @Override
+    public Set<String> getPermissionURIs(Set<String> roles) {
+        // 将Set类型的用户角色转为List
+        List<String> roleList = new ArrayList<>(roles);
+
+        // 获取用户的请求路径集合：用户所拥有的系统接口路径集合
+        Set<String> urls = new HashSet<String>();
+
+        // 每一个role的permisson都会在redis中存储，key为 roleKey(如 ROLE_ADMIN)
+        switch (roles.size()) {
+            case 0: // 用户没有角色
+                urls = null;
+                System.out.println("用户没有角色：" + urls);
+                break;
+            case 1: // 用户只有一个角色
+                urls = redisService.sGetString(roleList.get(0));
+                System.out.println("只有一个角色：" + urls);
+                break;
+            case 2: // 用户有两个角色
+                urls = redisService.sUnionString(roleList.get(0), roleList.get(1));
+                System.out.println("用户有两个角色：" + urls);
+                break;
+            default: // 超过两个角色
+                String firstRoleKey = roleList.get(0);// 获取第一个role
+                Set<String> otherRoleKeys = roles;
+                otherRoleKeys.remove(firstRoleKey);// 从集合中删除第一个role
+                urls = redisService.sUnionString(firstRoleKey, otherRoleKeys);
+                System.out.println("超过两个角色：" + urls);
+                break;
+        }
+        return urls;
+    }
+
+    @Override
+    public Set<String> getPermissionURIs(Set<String> roles, String refererUri) {
+        // 根据角色key和页面路径获取所有权限key
+        Set<String> permissionsKeys = new HashSet<>();
+        roles.forEach(roleKey -> {
+            String permissionsKey = MenuBack.getRedisPermissionsKey(roleKey, refererUri);
+            permissionsKeys.add(permissionsKey);
+        });
+
+        // 获取用户的请求路径集合：用户所拥有的系统接口路径集合
+        Set<String> urls = new HashSet<>();
+
+        // 每个角色对应的 页面 的 请求权限 都会在redis中存储
+        switch (permissionsKeys.size()) {
+            case 0: // 没有权限key
+                urls = null;
+                break;
+            case 1: // 只有一个权限key
+                urls = redisService.sGetString(permissionsKeys.iterator().next());
+                break;
+            default: // 权限key数量大于或等于两个
+                String firstPermissionsKey = permissionsKeys.iterator().next();
+                Set<String> otherPermissionsKeys = permissionsKeys;
+                otherPermissionsKeys.remove(firstPermissionsKey);// 从集合中删除第一个role
+                urls = redisService.sUnionString(firstPermissionsKey, otherPermissionsKeys);
+                break;
+        }
+        return urls;
+    }
+
+    @Override
+    public PageInfoVo<UserVo> selectPageInfo(String userName, Integer pageNum, Integer pageSize) {
+        new PageHelper().startPage(pageNum, pageSize);
+        List<UserVo> userRoleVoList = userMapper.listUser(userName);
+        PageInfo<UserVo> pageInfo = new PageInfo<>(userRoleVoList);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Override
+    public int register(User record) {
+        return userMapper.register(record);
+    }
+
+    @Override
+    public User selectByOpenid(String openid) {
+        return userMapper.selectByOpenid(openid);
+    }
+
+    @Override
+    public List<ListUserVo> listUserByName(String userName) {
+        return userMapper.listUserByName(userName);
+    }
+
+    @Transactional
+    @Override
+    public List<Integer> getRoleIdList(SecurityUser securityUser) {
+        Set<String> roleKeySet = userService.getRoles(securityUser);
+        //根据Set<String>的roleKeySet查询对应的roleIdList
+        List<Integer> roleIdList = roleMapper.translateKeyToId(roleKeySet);
+        return roleIdList;
+    }
+
+    @Transactional
+    @Override
+    public void insert(User user) {
+        userMapper.insert(user);
+        userInfoMapper.insert(new UserInfo(user.getId()));
+    }
+
+    @Override
+    public List<ListAuditUserVo> listAuditUserByRoleKey(String roleKey) {
+        return userMapper.listAuditUserByRoleKey(roleKey);
+    }
+
+}
