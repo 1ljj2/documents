@@ -30,7 +30,7 @@ public class TxtReadServiceImpl implements TxtReadService {
         Map<String,String> systemInfo = new HashMap<>();
 //        String path = "C:\\FruitCake\\proj\\document\\systemInfo.txt";
 //        String path = "D:\\proj\\document\\systemInfo.txt";
-        String path = "E:\\研\\documents\\systemInfo.txt";
+        String path = "D:\\防篡改文档系统\\systemInfo.txt";
         File file = new File(path);
 //        System.out.println("systemInfoUrl:" + systemInfoUrl);
 //        File file = new File(systemInfoUrl);
