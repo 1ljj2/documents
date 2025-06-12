@@ -1,36 +1,42 @@
+/* 全局样式，设置页面和主体的高度、宽度，去除默认的外边距和内边距，隐藏溢出内容 */
 html, body, .layout-body {
     height: 100%;
     width: 100%;
     overflow: hidden;
     margin: 0;
     padding: 0;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; /* 企业常用字体 */
+    color: #f8fafc; /* 浅色文本，确保在深色背景下可读 */
 }
 
+/* 主包裹容器，设置高度并允许垂直滚动 */
 #wrap {
     height: 84%;
     overflow: auto;
 }
 
+/* 整体布局容器，修改为深色背景 */
 .layout {
     width: 100%;
-    /*background: #f5f9f9;*/
-    background: #242831;
+    background: #1e293b; /* 深蓝色背景，替代原浅灰色 */
     position: relative;
 }
 
+/* 侧边栏布局，保持原有深蓝色背景 */
 #layout-sider {
     display: inline;
     float: left;
     width: 13%;
     height: 100%;
-    background: #242831;
+    background: #2c3e50; /* 深蓝色背景 */
     overflow-x: hidden;
     overflow-y: scroll;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE 10+ */
+    scrollbar-width: none; /* Firefox 隐藏滚动条 */
+    -ms-overflow-style: none; /* IE 10+ 隐藏滚动条 */
     padding-top: 2%;
 }
 
+/* 修改侧边栏的宽度相关属性 */
 .ivu-layout-sider {
     width: 100% !important;
     min-width: 100% !important;
@@ -38,114 +44,131 @@ html, body, .layout-body {
     flex: 100% !important;
 }
 
+/* Chrome 隐藏滚动条 */
 .ivu-layout-sider::-webkit-scrollbar {
-    width: 0; /* Chrome隐藏滚动条 */
+    width: 0;
 }
 
+/* 主内容区域布局，修改为深色背景 */
 .layout-main {
     float: right;
     width: 87%;
     height: 100%;
-    /*background: #242831;*/
-    border: 24px solid #242831;
-    /*border: 24px solid #FFF5EE;*/
+    background: #111827; /* 深灰色背景，替代原白色 */
+    border: 24px solid #1e293b; /* 深色边框，与整体背景协调 */
     overflow-x: hidden;
     overflow-y: scroll;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE 10+ */
+    scrollbar-width: none; /* Firefox 隐藏滚动条 */
+    -ms-overflow-style: none; /* IE 10+ 隐藏滚动条 */
 }
 
+/* Chrome 隐藏滚动条 */
 .layout-main::-webkit-scrollbar {
-    width: 0; /* Chrome隐藏滚动条 */
+    width: 0;
 }
 
+/* logo 图片样式，保持原有设置 */
 .layout-logo-img {
     width: 45%;
     height: 64px;
     float: left;
 }
 
+/* logo 图片的具体样式，保持原有设置 */
 .layout-logo-img img {
     width: 100%;
     height: 100%;
     border-radius: 5px;
 }
 
+/* logo 容器样式，保持原有深蓝色背景 */
 .layout-logo {
     width: 365px;
     height: 50px;
-    /*background: #01467f;*/
-    background: #242831;
+    background: #2c3e50; /* 深蓝色背景 */
     border-radius: 3px;
     float: left;
     position: relative;
     top: 7px;
     left: 20px;
-    color: #fff;
+    color: #fff; /* 白色文字 */
     line-height: 48px;
     font-size: 40px;
+    font-weight: bold; /* 加粗字体 */
+    letter-spacing: 1px; /* 增加字母间距 */
 }
 
+/* 导航栏样式，保持白色文字 */
 .layout-nav {
     width: 420px;
     margin: 0 auto;
     margin-right: 20px;
-    color: #fff;
+    color: #fff; /* 白色文字 */
 }
 
+/* 当前时间样式，保持原有设置 */
 .nowTime {
     font-size: 12px;
     margin-left: 20px;
 }
 
+/* Chrome 隐藏侧边栏滚动条 */
 #layout-sider::-webkit-scrollbar {
     width: 0;
     height: 0;
 }
 
+/* 页脚布局，保持深蓝色背景 */
 #layout-foot {
     height: 12%;
-    background: #242831;
-    border-top: 1px solid #d7dde4;
+    background: #2c3e50; /* 深蓝色背景 */
+    border-top: 1px solid #334155; /* 深灰色边框 */
     text-align: center;
 }
 
+/* 页脚文字样式，保持白色文字 */
 .footerSpan {
-    font: 25px "Microsoft Yahei", "Helvetica Neue";
+    font: 25px "Segoe UI", "Helvetica Neue", Arial, sans-serif; /* 企业常用字体 */
     line-height: 60px;
-    font-weight: 15;
+    font-weight: 300; /* 调整字体粗细 */
     color: #FFFFFF;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -moz-font-feature-settings: "liga", "kern";
 }
 
+/* 外部容器样式，保持原有设置 */
 .outer-container {
     position: relative;
     overflow: hidden;
 }
 
+/* 菜单主要样式，加深背景颜色 */
 .ivu-menu-primary {
-    background: #01467f;
+    background: #1e293b; /* 深蓝色背景，替代原稍浅深蓝色 */
 }
 
+/* 布局头部样式，保持原有深蓝色背景 */
 .ivu-layout-header {
-    background: #242831;
+    background: #2c3e50; /* 深蓝色背景 */
 }
 
+/* 深色菜单样式，保持原有深蓝色背景 */
 .ivu-menu-dark {
-    background: #242831;
+    background: #2c3e50; /* 深蓝色背景 */
 }
 
+/* 待办事项计数样式，保持红色文字 */
 #todo_affair_count {
-	color: #DF1B20;
-} 
+    color: #f87171; /* 亮红色文字，在深色背景下更醒目 */
+}
 
+/* 列表项样式，保持原有设置 */
 .item {
-  margin-left: 10px;
+    margin-left: 10px;
 }
 
+/* 徽章内容样式，保持原有设置 */
 .el-badge__content.is-fixed {
-	top: 15px !important;
+    top: 15px !important;
 }
-
