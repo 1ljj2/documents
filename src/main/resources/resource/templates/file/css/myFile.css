@@ -20,7 +20,8 @@ body {
     float: right;
     width: 87%;
     height: 100%;
-    border: 24px solid #FFF5EE;
+    /*border: 24px solid #FFF5EE;*/
+    border: 24px solid #051e42;
     overflow-x: hidden;
     overflow-y: scroll;
     background: #FFF5EE;

@@ -15,7 +15,7 @@
         <div class="layout-main">
             <el-row :gutter="1">
                 <el-col :span="16">
-                    <!-- **通知公告** - 关键修改：添加卡片阴影和边框样式 -->
+                    <!-- **通知公告** 添加卡片阴影和边框样式 -->
                     <el-card class="box-card noti" style="position:relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 4px; border: 1px solid #e5e7eb;background-color: #fff">
                         <div slot="header" class="clearfix">
                             <i class="el-icon-chat-line-round"></i> <span>通知公告</span>
@@ -42,9 +42,9 @@
                                     <div style="padding: 0 10px 0 10px;" v-show="item.fileName!=null"
                                          @click="downloadNoticeFile(item.fileId)"><a>{{'附件:'+item.fileName}}</a></div>
                                     <div style="float:right;color: #333;margin-right: 10px;padding-left:10px">
-                                        <span>发布人:</span><span>{{' '+item.departmentNameStr+'  '+item.userName}}</span>
+                                        <span>发布人:</span><span>{{' ' + item.departmentNameStr + '  ' + item.userName}}</span>
                                         <br>
-                                        <span>发布日期:</span><span>{{' '+item.stateTimeString}}</span>
+                                        <span>发布日期:</span><span>{{' ' + item.stateTimeString}}</span>
                                     </div>
                                 </el-collapse-item>
                             </el-collapse>

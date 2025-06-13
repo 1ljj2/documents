@@ -3,7 +3,7 @@
 .login {
     width: 100%;
     height: 100%;
-    background-image: url(../img/DKKJ-log.png);
+    background-image: url(../img/DKKJ-logo.png);
     background-size: cover;
     background-position: center;
     position: absolute;
@@ -34,7 +34,7 @@
 }
 
 .a {
-    text-align: center;
+    text-align: right;
     vertical-align: middle;
 }
 

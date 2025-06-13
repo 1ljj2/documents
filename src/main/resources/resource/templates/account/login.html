@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>欢迎登录公文处理系统</title>
+    <title>欢迎登录系统</title>
     <script type="text/javascript" src="/public/common.js"></script>
     <script type="text/javascript" src="/public/sose/js/cookieUtil.js"></script>
     <script type="text/javascript" src="/templates/account/js/vue-qriously.js"></script>
@@ -16,7 +16,7 @@
     <div class="login-con" id="login" @keydown.enter="loginSubmit" v-cloak>
         <Card :bordered="false">
             <div slot="title" class="card-title">
-                <span v-show="loginType == 'account'">账号登录</span>
+                <span style="color: #0d47a1" v-show="loginType == 'account'">账号登录</span>
                 <span v-show="loginType == 'phone'">手机登录</span>
                 <span v-show="loginType == 'wx_login'">微信小程序登录</span>
             </div>
@@ -59,7 +59,7 @@
                         </form-item>
 
                         <form-item>
-                            <i-button @click="loginSubmit" type="primary" long>登录
+                            <i-button @click="loginSubmit" type="primary" long>登 录
                             </i-button>
                         </form-item>
 

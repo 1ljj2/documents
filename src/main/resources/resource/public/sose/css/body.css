@@ -101,6 +101,7 @@
 
 /* 选择框和输入框总体样式 */
 .juinline {
+    color:black;
     padding-left: 20px;
     padding-right: 0;
     padding-bottom: 5px;
