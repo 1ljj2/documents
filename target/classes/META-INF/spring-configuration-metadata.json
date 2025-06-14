@@ -4,7 +4,7 @@
       "name": "spring.datasource",
       "type": "javax.sql.DataSource",
       "sourceType": "org.jit.sose.web.config.DruidConfig",
-      "sourceMethod": "druid()"
+      "sourceMethod": "public javax.sql.DataSource druid() "
     }
   ],
   "properties": [],

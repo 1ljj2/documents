@@ -2,6 +2,16 @@
 /**
 自定义样式
  */
+
+.layout-main{
+     background-color： #051e42;
+     /*float: right;
+     width: 87%;
+     height: 100%;
+     border: 24px solid #FFF5EE;
+     overflow-x: hidden;*/
+}
+
 .panel-card {
     height: 50px;
 }
@@ -110,7 +120,7 @@
 .el-col{
     border: 1px solid transparent;
     min-height: 40%;
-    background-color: white; /* 卡片背景改为浅灰色 */
+    /*background-color: white;  卡片背景改为浅灰色 */
 }
 .el-divider--horizontal {
     display: block;

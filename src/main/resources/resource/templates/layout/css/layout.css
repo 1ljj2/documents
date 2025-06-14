@@ -57,10 +57,9 @@ html, body, .layout-body {
     width: 87%;
     height: 100%;
     padding-top: 2%;
-    padding-left: 2%;
+    padding-left: 1%;
     /*background: #2c3e50; /* 深蓝色背景，替代原白色 */
-    background: #051e42; /* 深蓝色背景，替代原白色 */
-    /*border: 24px solid #1e293b; /* 深色边框，与整体背景协调 */
+    background: #051e42; /* 深蓝色背景，替代原白色
     /*border: 1px solid #051e42; /* 深色边框，与整体背景协调 */
     overflow-x: hidden;
     overflow-y: scroll;

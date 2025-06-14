@@ -83,14 +83,16 @@
 .qry {
     /* height: 100px; */
     position: relative;
-    background-color: #FFF5EE;
+    /*background-color: #FFF5EE;*/
+    background-color: #051e42;
 }
 
 /* 条件查询第一行样式 */
 .first {
     width: 100%;
     margin-bottom: 10px;
-    border-bottom: 1px solid #e5e5e5;
+    /*border-bottom: 1px solid #e5e5e5;*/
+    background-color: #051e42;
 }
 
 .first:after {
@@ -101,10 +103,11 @@
 
 /* 选择框和输入框总体样式 */
 .juinline {
-    color:black;
-    padding-left: 20px;
+    /*color:black;*/
+    color:white;
+    /*padding-left: 20px;*/
     padding-right: 0;
-    padding-bottom: 5px;
+    padding-bottom: 20px;
     float: left;
 }
 
@@ -122,7 +125,8 @@
 /* 搜索按钮样式 */
 .butLeft {
     text-align: left;
-    padding-bottom: 10px;
+    padding-bottom: 20px;
+    background-color: #051e42;
 }
 
 .butRight {

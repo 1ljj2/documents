@@ -24,7 +24,8 @@ body {
     border: 24px solid #051e42;
     overflow-x: hidden;
     overflow-y: scroll;
-    background: #FFF5EE;
+    /*background: #FFF5EE;*/
+    background: #051e42;
 }
 
 .ivu-tabs-nav .ivu-tabs-tab {
