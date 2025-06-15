@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>流程查询</title>
+    <script type="text/javascript" src="/public/common.js"></script>
+    <script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+    <link rel="stylesheet" type="text/css" href="/templates/process/css/proQuery.css">
+</head>
+
+<body>
+<div class="layout-body" id="proQuery" v-cloak>
+    <layout-header></layout-header>
+    <div id="wrap">
+        <layout-sider></layout-sider>
+        <div class="layout-main">
+            <!-- 多条件查询及操作 -->
+            <div class="qry">
+                <!--搜索框及搜索、清空按钮-->
+                <div class="first">
+                    <div class="juinline">
+                        <span>
+                            流程名称:
+                            <el-input class="input" type="text" v-model.trim="sConditions.processName"
+                                      placeholder="请输入名称" :size="componentSize"
+                                      prefix-icon="el-icon-search"></el-input>
+                        </span>
+                        <span>
+                            分类:
+                            <el-select class="input" v-model="sConditions.categoryId"
+                                       placeholder="请选择" :size="componentSize">
+                                <el-option v-for="item in categoryList"
+                                           :key="item.id"
+                                           :label="item.categoryName"
+                                           :value="item.id">
+                                    <span style="float: left">{{ item.categoryName }}</span>
+                                </el-option>
+                            </el-select>
+                        </span>
+                    </div>
+                    <div class="butRight">
+                        <el-button type="primary" @click="filter" :size="componentSize">搜索</el-button>
+                        <el-button @click="clearSConditions" :size="componentSize">清空</el-button>
+                    </div>
+                </div>
+            </div>
+            <!-- 表格 -->
+            <div>
+                <!--流程card列表-->
+                <el-row :gutter="8">
+                    <el-col :span="8" v-for="(o, index) in nowData" :key="o">
+                        <el-card :body-style="{ padding: '0px' }" shadow="always" class="card-item">
+                            <!--流程名称+服务对象-->
+                            <div class="card-list-introduce">
+                                <span class="card-list-processName">{{o.processName}}</span>
+                                <span class="card-list-roleName">{{o.roleName}}</span>
+                            </div>
+                            <!--分类-->
+                            <div class="card-list-category"><span class="card-list-categoryName">{{o.categoryName}}</span>
+                            </div>
+                            <!--更新时间+备注-->
+                            <div class="card-list-otherInfo">
+                                <div>更新时间：{{o.stateTimeString}}</div>
+                                <div>备注：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{o.remark}}</div>
+                            </div>
+                            <!--查看流程图按钮-->
+                            <div class="bottom clearfix"  style="padding: 14px;">
+                                <el-button type="text" class="button" @click="openViewStepModal(o)">查看流程步骤图</el-button>
+                            </div>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <!--表格主体-->
+                <!--                <i-table row-key="id" class="table" border height="auto" highlight-row="true"-->
+                <!--                         size='small' :columns="column" :data="nowData" :loading="loading">-->
+                <!--                    <template slot-scope="{ row, index }" slot="action">-->
+                <!--                        <el-button type="primary" size="mini" @click="openViewStepModal(index)">查看流程步骤图</el-button>-->
+                <!--                    </template>-->
+                <!--                </i-table>-->
+                <!--底部分页功能-->
+                <div class="div-inline-right">
+                    <Page :current="pageNum" :total="totalNum" :page-size="pageSize"
+                          @on-change="onPageChange" @on-page-size-change="onPageSizeChange"
+                          show-total show-elevator show-sizer>
+                    </Page>
+                </div>
+            </div>
+
+            <!--查看【流程步骤图】模态框-->
+            <Modal v-model="viewProcessStepModal" @on-ok="exitViewStep" :width="350">
+                <div class="stepsTitle">
+                    <div style="color:#2D8CF0;font-size: 18px" class="step-name "><b>{{process.processName}} 步骤图</b>
+                    </div>
+                </div>
+                <!--步骤图部分-->
+                <div class="stepsBody">
+                    <el-steps direction="vertical" :space="100" :active="999999" finish-status="process">
+                        <el-step v-for="item in processStepsList" :id="item.id" :title="item.stepName">
+                            <!--插槽——显示步骤剩余信息-->
+                            <template slot="description">
+                                <el-card class="step-row class-float-left"
+                                         :body-style="{ padding: '0px 0px 0px 10px' }">
+                                    <div><i>服务角色名称：</i>{{item.roleName}}</div>
+                                    <div><i>签章情况：</i>{{item.isSignName}}</div>
+                                    <div><i>备注：</i>{{item.remark}}</div>
+                                </el-card>
+                            </template>
+                        </el-step>
+                    </el-steps>
+                </div>
+                <div slot="footer">
+                    <i-button size="small" @click="exitViewStep">退出</i-button>
+                </div>
+            </Modal>
+
+        </div>
+        <div style="clear:both"></div>
+    </div>
+    <layout-footer></layout-footer>
+</div>
+<script type="text/javascript" src="/templates/process/js/proQuery.js"></script>
+</body>
+</html>

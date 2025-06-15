@@ -1,0 +1,17 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ArchiveTemplate;
+
+public interface ArchiveTemplateMapper {
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ArchiveTemplate record);
+
+    int insertSelective(ArchiveTemplate record);
+
+    ArchiveTemplate selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ArchiveTemplate record);
+
+    int updateByPrimaryKey(ArchiveTemplate record);
+}

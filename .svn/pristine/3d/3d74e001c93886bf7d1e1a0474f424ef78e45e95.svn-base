@@ -1,0 +1,119 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.ArchiveAudit;
+import org.jit.sose.domain.entity.ArchiveExampleProcess;
+import org.jit.sose.domain.param.ForReviewArcToNextParam;
+import org.jit.sose.domain.param.MyArchiveForReviewParam;
+import org.jit.sose.domain.vo.ListAuditArchiveVo;
+import org.jit.sose.domain.vo.NextStepVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.domain.vo.UserStepArcVo;
+import org.jit.sose.mapper.ArchiveAuditMapper;
+import org.jit.sose.mapper.ArchiveExampleProcessMapper;
+import org.jit.sose.mapper.ProcessStepsMapper;
+import org.jit.sose.service.ArchiveAuditService;
+import org.jit.sose.service.ProcessStepsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @Author: LJH
+ * @Date: 2020/10/17 16:20
+ */
+@Service
+public class ArchiveAuditServiceImpl implements ArchiveAuditService {
+
+    @Autowired
+    private ArchiveAuditMapper archiveAuditMapper;
+
+    @Autowired
+    private ArchiveExampleProcessMapper archiveExampleProcessMapper;
+
+    @Autowired
+    private ProcessStepsService processStepsService;
+
+    @Autowired
+    private ProcessStepsMapper processStepsMapper;
+
+
+    @Transactional
+    @Override
+    public void forReviewArcToNext(ForReviewArcToNextParam param) {
+        System.out.println(param);
+        //更新当前文档审核运转实例的数据
+        archiveAuditMapper.updateAuditById(param.getArcAuditId(), param.getAuditState(), param.getOpinion());
+        if ( "C".equals(param.getAuditState()) &&  param.getStepId()==null){
+            ArchiveExampleProcess example = new ArchiveExampleProcess();
+            example.setAuditState("C");
+            example.setId(param.getExampleId());
+            archiveExampleProcessMapper.updateByPrimaryKeySelective(example);
+        }
+        //检验审核状态
+        if ("C".equals(param.getAuditState()) && param.getStepId()!=null){
+            //通过-生成下一条记录
+            archiveAuditMapper.addAuditRecord(param.getArcAuditId(), param.getExampleId(), param.getUserId(), param.getStepId(), "B");
+        }else if("D".equals(param.getAuditState())){
+            //不通过-更新实例表的信息
+            ArchiveExampleProcess example = new ArchiveExampleProcess();
+            example.setAuditState("D");
+            archiveExampleProcessMapper.updateByPrimaryKeySelective(example);
+        }
+
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> getAuditArchiveModalInfo(Integer exampleId, Integer processId, Integer nowStepId) {
+        //流程步骤条
+        List<UserStepArcVo> userStepVos = processStepsService.checkArchiveAuditStepInfo(exampleId, processId);
+        System.out.println(userStepVos);
+        //下一个步骤的信息
+        NextStepVo nextStepVo = processStepsMapper.selectNextStepByNowStep(nowStepId);
+        System.out.println(nextStepVo);
+        Map<String, Object> map = new HashMap<>();
+        map.put("userStepVos", userStepVos);
+        map.put("nextStepVo", nextStepVo);
+        return map;
+    }
+
+    @Override
+    public PageInfoVo<ListAuditArchiveVo> listAuditArchiveMyRemind(Integer userId, Integer pageNum, Integer pageSize) {
+        // 设置分页参数
+        PageHelper.startPage(pageNum, pageSize);
+        List<ListAuditArchiveVo> resultVo = archiveAuditMapper.listAuditArchiveMyRemind(userId);
+        PageInfo<ListAuditArchiveVo> pageInfo = new PageInfo<>(resultVo);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Override
+    public int insertSelective(ArchiveAudit record) {
+        return archiveAuditMapper.insertSelective(record);
+    }
+
+    @Transactional
+    @Override
+    public int myArchiveForReview(MyArchiveForReviewParam param) {
+        ArchiveExampleProcess archiveExampleProcessParam = new ArchiveExampleProcess();
+        archiveExampleProcessParam.setUserId(param.getNowUserId());
+        archiveExampleProcessParam.setArchiveTemplateId(param.getArchiveTemplateId());
+        ArchiveExampleProcess archiveExampleProcessResult = archiveExampleProcessMapper.selectByUserIdAndArchiveTemplateId(archiveExampleProcessParam);
+        archiveExampleProcessResult.setProcessId(param.getProcessId());
+        archiveExampleProcessResult.setAuditState("B");
+        archiveExampleProcessMapper.updateById(archiveExampleProcessResult);
+        ArchiveAudit archiveAudit = new ArchiveAudit();
+        archiveAudit.setAuditUserId(param.getUserId());
+        archiveAudit.setExampleId(archiveExampleProcessResult.getId());
+        //要获取param.getStepId()的下一步stepId
+        int pStepId = param.getStepId();
+        int stepId = processStepsMapper.listStepIdByPStepId(pStepId);
+        archiveAudit.setStepId(stepId);
+        return archiveAuditMapper.insertSelective(archiveAudit);
+    }
+}

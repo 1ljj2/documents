@@ -1,0 +1,200 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.FileAudit;
+import org.jit.sose.domain.entity.FileExampleProcess;
+import org.jit.sose.domain.entity.FileInfo;
+import org.jit.sose.domain.param.ForReviewToNextParam;
+import org.jit.sose.domain.vo.ListAuditFileVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.FileAuditMapper;
+import org.jit.sose.mapper.FileExampleProcessMapper;
+import org.jit.sose.mapper.FileInfoMapper;
+import org.jit.sose.mapper.ProcessStepsMapper;
+import org.jit.sose.redis.RedisService;
+import org.jit.sose.service.FileAuditService;
+import org.jit.sose.util.EncryptionUtil;
+import org.jit.sose.util.MD5Util;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import sun.misc.BASE64Encoder;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Base64;
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-10-16 10:44:26
+ */
+@Service
+public class FileAuditServiceImpl implements FileAuditService {
+
+    @Autowired
+    private FileAuditMapper fileAuditMapper;
+
+    @Autowired
+    private FileExampleProcessMapper fileExampleProcessMapper;
+
+    @Autowired
+    private ProcessStepsMapper processStepsMapper;
+
+    @Autowired
+    RedisService redisService;
+
+    @Autowired
+    FileInfoMapper fileInfoMapper;
+
+    @Transactional
+    @Override
+    public void forReviewToNext(ForReviewToNextParam param) throws Exception {
+        System.out.println("    a===___"+param.getFileUserId());
+        System.out.println("  =="+param.getUserId());
+        System.out.println("zolknglk"+param.getApplyUserId());//申请人 id
+        ////通过
+        if ("C".equals(param.getAuditState())) {
+
+
+            //通过
+            //如果需要签章
+            if (param.getIsSign()) {
+                FileInfo fileInfo = new FileInfo();
+                if (param.getFlag() != null){ //微信小程序 送审的文档处理
+                    File file = new File("D://temp//"+param.getFileName());
+                    FileInputStream fileInputStream = new FileInputStream(file);
+                    byte[] bytes=new byte[(int)file.length()];
+                    fileInputStream.read(bytes);
+                    fileInputStream.close();
+                    String base64 = new BASE64Encoder().encode(bytes);
+                    System.out.println("----------------------------");
+                    //System.err.println(base64);
+                    System.out.println("param.getFileUserId()" +param.getFileUserId());
+                    System.out.println("param.getFileUserId()" +param.getUserId());
+                    System.out.println("----------------------------");
+                    FileInfo f = fileInfoMapper.getFileCodeById(param.getFileId());//源文件
+                    f.setFileCode(bytes);
+                    fileInfoMapper.updateOfWx(f);
+                    //FileInfo fileInfo = new FileInfo();//新文件
+                    fileInfo.setFileName(param.getFileName());
+                    fileInfo.setSuffix(f.getSuffix());
+                    fileInfo.setPrefix(f.getPrefix());
+                    fileInfo.setFileCode(bytes);
+                    fileInfo.setUserId(param.getUserId());
+                    fileInfo.setHashCode(MD5Util.getMD5(base64));
+                    fileInfo.setType("C1");
+                    fileInfoMapper.insertSelective(fileInfo);
+                }
+
+                //web端文档的处理
+                else{
+                   // FileInfo fileInfo = new FileInfo();
+                    Integer userId = param.getFileUserId();//获取用户信息userId
+                    String aesKey = EncryptionUtil.rsaDecrypt(param.getAesKeyEncrypt(),
+                            (String) redisService.get(String.valueOf(userId)));//解密被非对称加密加密的对称加密秘钥
+                    String base64 = EncryptionUtil.aesDecrypt(param.getFileCodeStr(), aesKey);//文件base64编码解密
+                    fileInfo.setBase64(base64);
+                    fileInfo.setHashCode(MD5Util.getMD5(base64));//获取文件base64编码哈希值
+//                    fileInfo.setUserId(userId);
+//                    fileInfo.setType("C1");
+                    fileInfo.setFileCode(Base64.getDecoder().decode(fileInfo.getBase64().split(",")[1]));
+                    fileInfo.setId(param.getApplyFileId());
+//                    fileInfo.setPrefix("data:application/pdf;base64,");//前缀
+//                    fileInfo.setFileName(param.getFileName());
+//                    fileInfo.setSuffix("pdf");
+//            System.out.println(fileInfo.getFileName());
+//                    fileInfoMapper.insertSelective(fileInfo);
+                    fileInfoMapper.updateByApplyUserId(fileInfo);
+                }
+
+//                FileAudit fileAudit = new FileAudit();
+//                fileAudit.setAuditOpinion(param.getOpinion());
+//                fileAudit.setId(param.getFileAuditId());
+//                fileAudit.setAuditState(param.getAuditState());
+//                fileAudit.setFileId(fileInfo.getId());
+                //更新当前文档审核运转实例的数据
+                fileAuditMapper.updateAuditById(param.getFileAuditId(), param.getAuditState(), param.getOpinion());
+                if (param.getStepId() == null) {
+                    FileExampleProcess fileExampleProcess = new FileExampleProcess();
+                    fileExampleProcess.setId(param.getExampleId());
+                    fileExampleProcess.setAuditState("C");
+                    fileExampleProcessMapper.updateByPrimaryKeySelective(fileExampleProcess);
+                } else {
+                    //生成下一条记录
+//            fileAuditMapper.addAuditRecord(param.getFileAuditId(),param.getExampleId(), param.getUserId(), param.getStepId(), "B");
+                    FileAudit fileAudit1 = new FileAudit();
+                    fileAudit1.setAuditState("B");
+                    fileAudit1.setParId(param.getFileAuditId());
+                    fileAudit1.setExampleId(param.getExampleId());
+                    fileAudit1.setAuditUserId(param.getUserId());
+                    fileAudit1.setStepId(param.getStepId());
+                    fileAudit1.setFileId(fileInfo.getId());
+                    fileAuditMapper.insertSelective(fileAudit1);
+                }
+            }
+
+            //通过
+            //如果不需要签章
+            else {
+                //更新当前文档审核运转实例的数据
+                fileAuditMapper.updateAuditById(param.getFileAuditId(), param.getAuditState(), param.getOpinion());
+                if (param.getStepId() == null) {
+                    FileExampleProcess fileExampleProcess = new FileExampleProcess();
+                    fileExampleProcess.setId(param.getExampleId());
+                    fileExampleProcess.setAuditState("C");
+                    fileExampleProcessMapper.updateByPrimaryKeySelective(fileExampleProcess);
+                } else {
+                    //生成下一条记录
+                    fileAuditMapper.addAuditRecord(param.getFileAuditId(), param.getExampleId(), param.getUserId(), param.getStepId(), "B");
+                }
+            }
+
+
+        }
+
+        //不通过
+        else if ("D".equals(param.getAuditState())) {
+            //不通过-更新t_file_example_process中的审核状态
+            FileExampleProcess example = new FileExampleProcess();
+            example.setAuditState("D");
+            fileExampleProcessMapper.updateByPrimaryKeySelective(example);
+        }
+
+
+    }
+
+    @Override
+    public PageInfoVo<ListAuditFileVo> listAuditFileMyRemind(Integer userId, Integer pageNum, Integer pageSize) {
+        // 设置分页参数
+        PageHelper.startPage(pageNum, pageSize);
+        List<ListAuditFileVo> resultVo = fileAuditMapper.listAuditFileMyRemind(userId);
+        PageInfo<ListAuditFileVo> pageInfo = new PageInfo<>(resultVo);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    @Transactional
+    @Override
+    public void myFileForReview(Integer processId, Integer stepId, Integer userId, Integer fileId) {
+        //t_file_example_process 文档实例流程表新增
+        FileExampleProcess example = new FileExampleProcess();
+        example.setFileId(fileId);
+        example.setProcessId(processId);
+        //A:未审核；B:审核中；C:审核通过；D:审核不通过
+        example.setAuditState("B");
+        fileExampleProcessMapper.addExample(example);
+        //获取新增返回的主键 当前审核的实例的第一个id
+        Integer exampleId = example.getId();
+        //根据当前选择流程的第一个步骤标识，查询下一个步骤标识
+        Integer auditStepId = processStepsMapper.selectNextStepIdById(stepId);
+        //t_file_audit 用户文档审核过程 新增审核中的记录
+        fileAuditMapper.addAuditRecord(0, exampleId, userId, auditStepId, "B");
+    }
+
+    @Override
+    public int getProcessIdByFileId(Integer fileId) {
+
+       return fileExampleProcessMapper.getProcessIdByFileId(fileId);
+    }
+}

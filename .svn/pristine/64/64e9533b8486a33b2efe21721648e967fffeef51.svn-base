@@ -1,0 +1,157 @@
+@CHARSET "UTF-8";
+/**
+自定义样式
+ */
+.panel-card {
+    height: 50px;
+}
+
+.panel-card-submitter {
+
+}
+
+.panel-card-submitTime {
+    font-size: 12px;
+}
+
+.class-float-left {
+    float: left;
+}
+
+.panel-title {
+    width: 82%;
+    height: 80px;
+    margin-left: 18px;
+    position: relative;
+}
+
+.panel-title-name {
+    font-size: 16px;
+    margin-top: 26px;
+    margin-left: -10px;
+    font-weight: 600;
+}
+
+.panel-title-time {
+    font-size: 8px;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+
+.panel-title-quantity {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+.panel-title-quantity .el-badge__content.is-fixed {
+    margin-top: -12px;
+}
+
+/**
+修改原生样式
+ */
+
+.ivu-card-body {
+    padding: 7px;
+    background: #ffffff;
+}
+
+.ivu-collapse > .ivu-collapse-item > .ivu-collapse-header > {
+    background: #a09e9e;
+}
+
+.ivu-collapse-content > .ivu-collapse-content-box {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.ivu-collapse-header .ivu-icon {
+    line-height: 5;
+    float: left;
+    width: 4px;
+}
+
+.ivu-collapse > .ivu-collapse-item > .ivu-collapse-header {
+    height: 80px;
+    line-height: 20px;
+}
+
+.el-icon-chat-line-round:before {
+    content: "\e731";
+    color: blue;
+    font-size: 16px;
+    font-weight: bolder;
+}
+
+.el-icon-bell:before {
+    content: "\e725";
+    color: orangered;
+    font-size: 16px;
+    font-weight: bolder;
+}
+
+.el-icon-warning-outline:before {
+    content: "\e6c9";
+    color: forestgreen;
+    font-size: 16px;
+    font-weight: bolder;
+}
+
+.el-card.noti.is-always-shadow, .el-card.noti.is-hover-shadow:focus, .el-card.noti.is-hover-shadow:hover {
+    width: 73%;
+    float: left;
+    margin: 5px 5px 0px 5px;
+    min-height: 52%;
+}
+
+.el-card.todoaff.is-always-shadow, .el-card.todoaff.is-hover-shadow:focus, .el-card.todoaff.is-hover-shadow:hover {
+    width: 25%;
+    float: right;
+    margin: 5px 5px 5px 0px;
+    min-height: 98%;
+}
+
+.el-card.mess.is-always-shadow, .el-card.mess.is-hover-shadow:focus, .el-card.mess.is-hover-shadow:hover {
+    width: 73%;
+    float: left;
+    margin: 5px;
+    min-height: 45%;
+}
+
+.el-divider--horizontal {
+    display: block;
+    height: 1px;
+    width: 100%;
+    margin: 5px 0;
+}
+
+.el-card__body {
+    padding: 0 20px 0 20px;
+}
+
+.el-collapse-item__header {
+    display: flex;
+    -webkit-box-align: center;
+    align-items: center;
+    height: 40px;
+    line-height: 48px;
+    background-color: rgb(247, 247, 247);
+    color: rgb(48, 49, 51);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid rgb(235, 238, 245);
+    transition: border-bottom-color 0.3s ease 0s;
+    outline: 0px;
+}
+.el-icon-s-flag:before {
+    content: "\e7b0";
+    color: red;
+}
+
+.el-icon-star-on:before{
+	content: "\e797";
+    color: #FF6633;
+}

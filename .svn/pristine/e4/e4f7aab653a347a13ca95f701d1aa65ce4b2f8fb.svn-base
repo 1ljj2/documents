@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>文档审核</title>
+    <script type="text/javascript" src="/public/common.js"></script>
+    <script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+    <link rel="stylesheet" type="text/css" href="/templates/file/css/fileMan.css">
+</head>
+<body>
+<div class="layout-body" id="fileAudited" v-cloak>
+    <layout-header></layout-header>
+    <div id="wrap">
+        <layout-sider></layout-sider>
+        <div class="layout-main">
+            <!--页面Tabs部门-->
+            <template>
+                <el-tabs value="fileTemMan" @tab-click="handleClick">
+                    <!--文档模板管理-->
+                    <el-tab-pane label="文档模板管理" name="fileTemMan">
+                        <!-- 多条件查询及操作 -->
+                        <div class="qry">
+                            <!--搜索框及搜索、清空按钮-->
+                            <div class="first">
+                                <div class="juinline">
+                                    <span>
+                                        文档模板名称:
+                                        <el-input class="input" type="text" v-model.trim="temConditions.fileTemName"
+                                                  placeholder="请输入名称" :size="componentSize"></el-input>
+                                    </span>
+                                    <span>
+                                        学期:
+                                        <el-select class="input" v-model="temConditions.termId"
+                                                   placeholder="2019-2020-1" size="medium"
+                                                   filterable remote :remote-method="listTermByName">
+                                                <el-option v-for="item in termList"
+                                                           :key="item.id"
+                                                           :label="item.name"
+                                                           :value="item.id">
+                                                    <span style="float: left">{{ item.name }}</span>
+                                                </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        分类:
+                                        <el-select class="input" v-model="temConditions.categoryId"
+                                                   placeholder="请选择" :size="componentSize">
+                                            <el-option v-for="item in categoryList"
+                                                       :key="item.id"
+                                                       :label="item.categoryName"
+                                                       :value="item.id">
+                                                <span style="float: left">{{ item.categoryName }}</span>
+                                            </el-option>
+                                        </el-select>
+                                    </span>
+                                </div>
+                                <div class="butRight">
+                                    <el-button type="primary" @click="getFileTemTableData" :size="componentSize">搜索
+                                    </el-button>
+                                    <el-button @click="clearTemConditions" :size="componentSize">清空</el-button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 表格 -->
+                        <div>
+                            <!--表格主体-->
+                            <i-table row-key="id" class="table" border height="auto" highlight-row="true"
+                                     size='small' :columns="temColumn" :data="temTableData" :loading="temLoading">
+                                <template slot-scope="{ row, index }" slot="action">
+                                    <el-button type="primary" size="mini" @click="openDownFileTemModal(index)">下载
+                                    </el-button>
+                                </template>
+                            </i-table>
+                            <!--底部分页功能-->
+                            <div class="div-inline-right">
+                                <Page :current="temPageNum" :total="temTotalNum" :page-size="temPageSize"
+                                      @on-change="onTemPageChange" @on-page-size-change="onTemPageSizeChange"
+                                      show-total show-elevator show-sizer>
+                                </Page>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    <!--系统文档监管-->
+                    <el-tab-pane label="系统文档监管" name="fileCharge">
+                        <!-- 多条件查询及操作 -->
+                        <div class="qry">
+                            <!--搜索框及搜索、清空按钮-->
+                            <div class="first file-charge-css">
+                                <div>
+                                    <span>
+                                        文档名称:
+                                        <el-input class="input" type="text" v-model.trim="fileConditions.fileName"
+                                                  placeholder="请输入名称" size="small"></el-input>
+                                    </span>
+                                    <span>
+                                        学期:
+                                        <el-select class="input" v-model="fileConditions.termId"
+                                                   placeholder="2019-2020-1" size="small"
+                                                   filterable remote :remote-method="listTermByName">
+                                                <el-option v-for="item in termList"
+                                                           :key="item.id"
+                                                           :label="item.name"
+                                                           :value="item.id">
+                                                    <span style="float: left">{{ item.name }}</span>
+                                                </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        分类:
+                                        <el-select class="input" v-model="fileConditions.categoryId"
+                                                   placeholder="请选择" size="small">
+                                            <el-option v-for="item in categoryList"
+                                                       :key="item.id"
+                                                       :label="item.categoryName"
+                                                       :value="item.id">
+                                                <span style="float: left">{{ item.categoryName }}</span>
+                                            </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        状态:
+                                        <el-select class="input" v-model="fileConditions.state"
+                                                   placeholder="请选择" size="small">
+                                            <el-option v-for="item in stateList"
+                                                       :key="item.state"
+                                                       :label="item.stateName"
+                                                       :value="item.state">
+                                                <span style="float: left">{{ item.stateName }}</span>
+                                            </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        创建者:
+                                        <el-select class="input" v-model="fileConditions.userId"
+                                                   placeholder="请输入用户名" size="small"
+                                                   filterable remote :remote-method="listUserByName">
+                                                <el-option v-for="item in userList"
+                                                           :key="item.id"
+                                                           :label="item.userName"
+                                                           :value="item.id">
+                                                    <span style="float: left">{{ item.userName }}</span>
+                                                </el-option>
+                                        </el-select>
+                                    </span>
+                                </div>
+                                <div class="file-charge-search-button">
+                                    <el-button type="primary" @click="getChargingFileTableData" size="small ">搜索
+                                    </el-button>
+                                    <el-button @click="clearFileConditions" size="small ">清空</el-button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 表格 -->
+                        <div>
+                            <!--表格主体-->
+                            <i-table row-key="id" class="table" border height="auto" highlight-row="true"
+                                     size='small' :columns="fileColumn" :data="fileTableData" :loading="fileLoading">
+                                <template slot-scope="{ row, index }" slot="action">
+                                    <el-button type="primary" size="mini" @click="openDownChargingFileModal(index)">下载
+                                    </el-button>
+                                    <el-button v-if="!fileTableData[index].isEnable" type="success" size="mini"
+                                               @click="changeFileEnable(index)">启用
+                                    </el-button>
+                                    <el-button v-else type="warning" size="mini" @click="changeFileEnable(index)">禁用
+                                    </el-button>
+                                </template>
+                            </i-table>
+                            <!--底部分页功能-->
+                            <div class="div-inline-right">
+                                <Page :current="filePageNum" :total="fileTotalNum" :page-size="filePageSize"
+                                      @on-change="onFilePageChange" @on-page-size-change="onTemPageSizeChange"
+                                      show-total show-elevator show-sizer>
+                                </Page>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                </el-tabs>
+            </template>
+        </div>
+
+        <!--所有模态框区域-->
+        
+
+
+    </div>
+    <div style="clear: both"></div>
+    <layout-footer></layout-footer>
+</div>
+<script type="text/javascript" src="/templates/file/js/fileAudited.js"></script>
+</body>
+</html>

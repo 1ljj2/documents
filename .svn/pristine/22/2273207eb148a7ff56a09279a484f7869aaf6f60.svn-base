@@ -1,0 +1,33 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.vo.ListArchiveTemVo;
+import org.jit.sose.domain.vo.ListFilePoolVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.ArchiveTemplateEmpFileMapper;
+import org.jit.sose.service.ArchiveTemplateEmpFileService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-10-08 16:08:19
+ */
+@Service
+public class ArchiveTemplateEmpFileServiceImpl implements ArchiveTemplateEmpFileService {
+
+    @Autowired
+    private ArchiveTemplateEmpFileMapper archiveTemplateEmpFileMapper;
+
+    @Override
+    public PageInfoVo<ListFilePoolVo> getFilePool(Integer archiveTemId, Integer pageNum, Integer pageSize) {
+        // 设置分页参数
+        PageHelper.startPage(pageNum,pageSize);
+        List<ListFilePoolVo> voList = archiveTemplateEmpFileMapper.getFilePool(archiveTemId);
+        PageInfo<ListFilePoolVo> pageInfo = new PageInfo<>(voList);
+        return new PageInfoVo<>(pageInfo);
+    }
+}

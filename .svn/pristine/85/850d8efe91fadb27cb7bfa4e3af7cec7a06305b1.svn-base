@@ -1,0 +1,31 @@
+### 如果要使用默认配置，将此文件中的相关配置注释即可
+
+spring:
+  ## mysql数据库配置
+  datasource:
+    url: jdbc:mysql://112.80.133.142:3306/documents?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    username: root
+    password: P@ssw0rdjkgs
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 配置druid数据源
+    type: com.alibaba.druid.pool.DruidDataSource
+
+
+# redis数据库配置
+#若没有设置密码，则不需要设置(直接注释，并且需要把application.yml里的也注释)，否则会报错ERR Client sent AUTH, but no password is set
+  redis:
+    host: 112.86.129.73
+    port: 50000
+    #redis密码,若没有设置密码，则不需要设置(直接注释)，否则会报错ERR Client sent AUTH, but no password is set
+    password: P@ssw0rdJit1230
+    database: 2
+    #redis超时时间（毫秒），如果不设置，取默认值2000
+    timeout: 10000
+    #最大空闲数
+    jedis:
+      #    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0

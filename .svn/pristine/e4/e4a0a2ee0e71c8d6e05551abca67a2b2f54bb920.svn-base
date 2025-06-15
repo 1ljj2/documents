@@ -1,0 +1,17 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.FileAudit;
+
+public interface FileAuditMapper {
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(FileAudit record);
+
+    int insertSelective(FileAudit record);
+
+    FileAudit selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(FileAudit record);
+
+    int updateByPrimaryKey(FileAudit record);
+}

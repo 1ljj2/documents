@@ -1,0 +1,66 @@
+package org.jit.sose.domain.entity;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.activerecord.Model;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+import java.util.Date;
+
+@Data
+@NoArgsConstructor
+@TableName(value = "a_user_info")
+@EqualsAndHashCode(callSuper=true)
+public class UserInfo extends Model<UserInfo> {
+
+    private static final long serialVersionUID = -5761446386325061573L;
+
+    public UserInfo(Integer userId) {
+        super();
+        this.userId = userId;
+    }
+
+
+
+    private String userName;
+    private String phone;
+
+    private Integer id;
+
+    private Integer userId;
+
+    /**
+     * 年龄
+     */
+    private Integer age;
+
+    private String openid;
+
+    private String weixinName;
+
+    /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
+     * 性别
+     */
+    private String sex;
+
+    private Integer integral;
+
+    private Date createdDate;
+
+    private Date updateDate;
+
+    private String state;
+
+    private String code;
+
+    private Integer departId;
+    private String departName;
+
+    private char tempState;
+}

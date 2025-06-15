@@ -1,0 +1,127 @@
+package org.jit.sose.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.SecurityUser;
+import org.jit.sose.domain.entity.User;
+import org.jit.sose.domain.param.ListUserParam;
+import org.jit.sose.domain.vo.ListAuditUserVo;
+import org.jit.sose.domain.vo.ListUserVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.domain.vo.UserVo;
+
+import java.util.List;
+import java.util.Set;
+
+public interface UserService extends IService<User> {
+
+    /**
+     * 根据【所属部门、姓名、电话号码、分页】条件查询用户列表
+     *
+     * @param param
+     * @return
+     */
+    PageInfoVo<ListUserVo> listAuditUser(ListUserParam param);
+
+    /**
+     * 根据nameList获取用户idList
+     *
+     * @param userNameList
+     * @return
+     */
+    List<Integer> translateNameToId(List<String> userNameList);
+
+    /**
+     * 根据idList获取用户名称List
+     *
+     * @param userIdList
+     * @return
+     */
+    List<String> showUserSelected(List<Integer> userIdList);
+
+    /**
+     * 根据用户名称模糊查询用户对象集合
+     *
+     * @param userName
+     * @return
+     */
+    List<ListUserVo> listUserByName(String userName);
+
+    /**
+     * 获取用户对应的角色标识集合
+     */
+    List<Integer> getRoleIdList(SecurityUser securityUser);
+
+    /**
+     * 获取用户对应的角色集合<br>
+     * 从redis中获取，若不存在，先从mysql查询再放入redis
+     *
+     * @param securityUser SecurityUser
+     * @return 角色集合
+     */
+    Set<String> getRoles(SecurityUser securityUser);
+
+    /**
+     * 根据角色集合获取对应的全部请求权限集合
+     *
+     * @param roles 角色集合
+     * @return 请求路径集合
+     */
+    Set<String> getPermissionURIs(Set<String> roles);
+
+    /**
+     * 根据角色集合和页面路径获取对应的全部请求权限集合
+     *
+     * @param roles      角色集合
+     * @param refererUri 页面路径
+     * @return 请求路径集合
+     */
+    Set<String> getPermissionURIs(Set<String> roles, String refererUri);
+
+    /**
+     * 查询用户信息分页列表
+     *
+     * @param userName 用户名
+     * @param pageNum  当前页索引
+     * @param pageSize 当前页大小
+     * @return UserVo 用户分页信息
+     */
+    PageInfoVo<UserVo> selectPageInfo(String userName, Integer pageNum, Integer pageSize);
+
+    /**
+     * 注册用户
+     *
+     * @param record
+     * @return
+     */
+    int register(User record);
+
+    /**
+     * 获取详细用户信息
+     *
+     * @param openid
+     * @return
+     */
+    User selectByOpenid(@Param("openid") String openid);
+
+    /**
+     * 插入
+     */
+    void insert(User user);
+
+    /**
+     * 获取审核角色是公告审核人的user集合
+     *
+     * @param roleKey
+     * @return
+     */
+    List<ListAuditUserVo> listAuditUserByRoleKey(String roleKey);
+
+    /**
+     * 根据用户id获取用户手机号
+     * @param userId
+     * @return
+     */
+	String getPhoneByUserId(Integer id);
+
+}

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.FileExampleProcessMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.FileExampleProcess" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="file_id" property="fileId" jdbcType="INTEGER" />
+    <result column="process_id" property="processId" jdbcType="INTEGER" />
+    <result column="audit_state" property="auditState" jdbcType="CHAR" />
+    <result column="audit_opinion" property="auditOpinion" jdbcType="VARCHAR" />
+    <result column="state" property="state" jdbcType="CHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="state_time" property="stateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, file_id, process_id, audit_state, audit_opinion, state, create_time, state_time
+  </sql>
+
+  <insert id="addExample" parameterType="org.jit.sose.domain.entity.FileExampleProcess"  useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+    insert into t_file_example_process
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="fileId != null" >
+        file_id,
+      </if>
+      <if test="processId != null" >
+        process_id,
+      </if>
+      <if test="auditState != null" >
+        audit_state,
+      </if>
+      <if test="auditOpinion != null" >
+        audit_opinion,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="fileId != null" >
+        #{fileId,jdbcType=INTEGER},
+      </if>
+      <if test="processId != null" >
+        #{processId,jdbcType=INTEGER},
+      </if>
+      <if test="auditState != null" >
+        #{auditState,jdbcType=CHAR},
+      </if>
+      <if test="auditOpinion != null" >
+        #{auditOpinion,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from t_file_example_process
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from t_file_example_process
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.FileExampleProcess" >
+    insert into t_file_example_process (id, file_id, process_id, 
+      audit_state, audit_opinion, state, 
+      create_time, state_time)
+    values (#{id,jdbcType=INTEGER}, #{fileId,jdbcType=INTEGER}, #{processId,jdbcType=INTEGER}, 
+      #{auditState,jdbcType=CHAR}, #{auditOpinion,jdbcType=VARCHAR}, #{state,jdbcType=CHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{stateTime,jdbcType=TIMESTAMP})
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.FileExampleProcess" >
+    update t_file_example_process
+    <set >
+      <if test="fileId != null" >
+        file_id = #{fileId,jdbcType=INTEGER},
+      </if>
+      <if test="processId != null" >
+        process_id = #{processId,jdbcType=INTEGER},
+      </if>
+      <if test="auditState != null" >
+        audit_state = #{auditState,jdbcType=CHAR},
+      </if>
+      <if test="auditOpinion != null" >
+        audit_opinion = #{auditOpinion,jdbcType=VARCHAR},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null" >
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stateTime != null" >
+        state_time = #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.FileExampleProcess" >
+    update t_file_example_process
+    set file_id = #{fileId,jdbcType=INTEGER},
+      process_id = #{processId,jdbcType=INTEGER},
+      audit_state = #{auditState,jdbcType=CHAR},
+      audit_opinion = #{auditOpinion,jdbcType=VARCHAR},
+      state = #{state,jdbcType=CHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

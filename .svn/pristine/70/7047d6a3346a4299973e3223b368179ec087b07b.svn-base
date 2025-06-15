@@ -1,0 +1,22 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.domain.entity.UserRole;
+import org.jit.sose.mapper.UserRoleMapper;
+import org.jit.sose.service.UserRoleService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+/**
+ * @author 小红
+ * @Date 2020/7/9 17:23
+ */
+@Service
+public class UserRoleServiceImpl implements UserRoleService {
+    @Autowired
+    UserRoleMapper userRoleMapper;
+
+    @Override
+    public int register(UserRole record) {
+        return userRoleMapper.register(record);
+    }
+}

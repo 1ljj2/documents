@@ -1,0 +1,85 @@
+package org.jit.sose.mapper;
+
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.Department;
+import org.jit.sose.domain.vo.ListDepartmentVo;
+import org.jit.sose.domain.vo.ListIdNameVo;
+
+import java.util.List;
+
+public interface DepartmentMapper {
+
+
+    /**
+     * 查询par_id为1(软件工程学院)的部门name和id集合
+     *
+     * @return
+     */
+    List<ListIdNameVo> getDepartmentList();
+
+    /**
+     * 父部门查询
+     * @return
+     */
+    List<Department> getParIdList( Integer id);
+
+    /**
+     * 根据id获取部门名称及其父部门名称    @Param("id")
+     *
+     * @param id
+     * @return
+     */
+    ListDepartmentVo selectDepartmentById(Integer id);
+
+    /**
+     * 根据nameList获取部门idList
+     *
+     * @param departmentNameList
+     * @return
+     */
+    List<Integer> translateNameToId(List<String> departmentNameList);
+
+    /**
+     * 根据idList获取部门名称List
+     *
+     * @param departmentIdList
+     * @return
+     */
+    List<String> showDepartmentSelected(List<Integer> departmentIdList);
+
+    /**
+     * 根据id获取名称
+     *
+     * @param id
+     * @return
+     */
+    String selectNameById(Integer id);
+
+    List<ListDepartmentVo> listDepartmentByName(@Param("departmentName") String departmentName);
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(Department record);
+
+    int insertSelective(Department record);
+
+    Department selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(Department record);
+
+    int updateByPrimaryKey(Department record);
+
+    List<Department> listPage();
+
+  Integer deleteOneDepartment(Integer id);
+
+    Integer edit(Department department);
+
+    Integer delete(int [] idList);
+
+    Integer insertOneDepartment(Department department);
+
+    List<Department> listByDepartment(Department department);
+
+    Integer selectLevelById(int id);
+}

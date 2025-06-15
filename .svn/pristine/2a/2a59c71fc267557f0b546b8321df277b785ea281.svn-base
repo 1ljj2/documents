@@ -1,0 +1,597 @@
+var vnoticeMan = new Vue({
+	el: '#noticeMan',
+	data: function(){
+		return{
+			 noticePath:'/noticeMan',
+			 departmentPath:'/account/department',
+			 userPath:'/account/user',
+			 categoryPath: '/config/category',
+			 componentSize: 'medium',// 组件尺寸
+			 nowData: [], loading: true, selection: [],// 表格参数
+			 //A:未审核；B:审核中；C:审核通过/已发布；D:审核不通过；
+			 column: [
+				 	{title: '附件', key: 'fileName', minWidth: 200,
+				 		render: (h, params) => {
+	                    	let dName = params.row.fileName;
+	                    	let isEnable = params.row.isEnable;
+							if (dName!=null&&isEnable=='1') {
+	                    		return h('a', {
+	                                style: {
+	                                    color: '#3A5FCD',
+	                                },on: {
+	                                	click: () => {
+	                                		this.downloadFile(params.row.fileId)
+	                                		console.log('params.row.fileId',params.row.fileId)
+	                                		}
+	                                },order:'1'
+	                            }, dName+'  (可下载)')
+							};
+							if (dName!=null&&isEnable=='0') {
+	                    		return h('a', {
+	                                style: {
+	                                    color: '#838B8B',
+	                                },order:'2'
+	                            }, dName+'  (禁用)')
+							};
+	                    }},
+				 	{title: '分类', key: 'categoryName', minWidth: 100},
+				 	{title: '发布部门', key: 'departmentNameStr', minWidth: 200},
+				 	{title: '发布人', key: 'userName', minWidth: 100},
+	                {title: '发布时间', key: 'stateTimeString', minWidth: 200},
+	                {title: '发布状态', key: 'auditState', minWidth: 150,
+	                	render: (h, params) => {
+	                    	let dName = params.row.auditState;
+	                    	if (dName=='A') {
+	                    		return h('span', {
+	                                style: {
+	                                    color: '#838B8B'
+	                                },order:'1'
+	                            },  '未审核')
+							};
+							if (dName=='B') {
+								return h('span', {
+		                            style: {
+		                                color: '#3A5FCD'
+		                            },order:'2'
+		                        },  '审核中')
+							};
+							if (dName=='C') {
+	                    		return h('span', {
+	                                style: {
+	                                    color: '#00FF00'
+	                                },order:'3'
+	                            },  '已发布')
+							};
+							if (dName=='D') {
+								return h('span', {
+		                            style: {
+		                                color: '#FF0000'
+		                            },order:'4'
+		                        },  '审核不通过/禁用')
+							};
+	                    }},
+             ],// 表头
+             totalNum: 0, pageNum: 1, pageSize: 8,  // 公告分页参数
+             sConditions:{ title:'',departmentId:'',userId:'',categoryId:'' },// 搜索信息参数
+             loadingMsg: '',// 加载提示
+             notice: '',// 提醒对象
+             sNotice:{
+            	 id:'',title:'',content:'',
+            	 categoryName:'',categoryId:'',
+            	 seq:'',state:'',auditState:'',isEnable:'',
+            	 createTime:'',createTimeString:'',stateTime:'',stateTimeString:'',
+            	 departmentId:[],departmentName:'',departmentParName:'',departmentNameStr:'',
+            	 userId:[],userName:'',
+            	 roleId:[],roleName:'',
+            	 fileId:'',fileName:'',accessUrl:'',
+            	 auditName:'',auditId:'',
+             },// 公告信息
+             //------------Flag-------------
+             NoticeAudit:'1',//公告审核开关
+             // -------------------------------------下拉框参数---------------------
+             departmentList: [],// 部门对象集合
+             userList: [],// 用户对象集合
+             categoryList: [],//分类对象集合
+             auditList: [],//公告审核人的集合
+             // --------------------------------------模态框-------------------------
+             removeNoticeModal:false,  //删除单个公告模态框
+             removeNoticeSelectModal:false,  //删除选中公告模态框
+             editNoticeModal:false,  //编辑公告
+             addNoticeModal:false,  //新增公告
+             auditNoticeModal:false,  //审核公告
+             //--------------------------------------附件上传参数---------------------------------
+             fileList: [],// 文件列表
+		}
+	},
+	components: {
+		'layout-header': httpVueLoader(PROJECT_NAME+'/templates/layout/layout-header.vue'),
+		'layout-sider': httpVueLoader(PROJECT_NAME+'/templates/layout/layout-sider.vue'),
+		'layout-footer': httpVueLoader(PROJECT_NAME+'/templates/layout/layout-footer.vue'),
+	},
+    beforeCreate: function () {
+        CheckPermissions();
+    },
+	mounted(){
+		this.initPage();
+		this.filter();
+		//获取公告审核人的列表
+		this.getAuditNotice()
+        //获取分类列表
+        this.geCategoryList();
+	},
+	methods:{
+		 /**
+		 * 页面初始化加载项 表格表头
+		 */
+        initPage() {
+            // 设置表头
+            this.setTableTitle();
+        },
+        /**
+		 * 设置表头
+		 */
+        setTableTitle() {
+            //添加“内容”所在列信息
+              this.column.unshift(HeadTooltip('content', '内容'));
+        	//添加“标题”所在列信息
+            this.column.unshift(HeadTooltip('title', '标题'));
+            // 添加自定义slot-scope(操作栏)
+            this.column.push(HeadActionSlot(true, 400));
+            // 添加序号
+            this.column.unshift(HeadIndex(true));
+            // 添加多选
+            this.column.unshift(HeadSelection(true));
+            console.log(this.column);
+        },
+        /**
+		 * 改变页码
+		 * 
+		 * @param pageNum
+		 *            改变后的页码
+		 */
+        onPageChange(pageNum) {
+            this.pageNum = pageNum;
+            this.filter();
+        },
+        /**
+		 * 切换每页条数
+		 * 
+		 * @param pageSize
+		 *            换后的每页条数
+		 */
+        onPageSizeChange(pageSize) {
+            this.pageSize = pageSize;
+            this.filter();
+        },
+        /**
+		 * 在多选模式下有效，只要选中项发生变化时就会触发
+		 * 
+		 * @param selection
+		 *            已选项数据
+		 */
+        onSelectionChange(selection) {
+            this.selection = selection;
+        },
+       //-------------------搜 索----------------------------
+        /**
+         *  TODO  获取所有的用户对象集合
+         */
+        getUserList(userName) {
+            if (IsNotEmpty(userName)) {
+                setTimeout(() => {
+                    let url = this.userPath + '/listUserByName';
+                    let data = {
+                        userName: userName
+                    };
+                    CallAjaxPost(url, data, this.getUserListSuc);
+                }, 200);
+            }
+        },
+        getUserListSuc(data) {
+            this.userList = data.obj;
+        },
+        /**
+         * 获取选择框中的用户的id值，并赋值给过滤参数
+         */
+        getUserId(userId) {
+            this.sNotice.userId.push(userId);
+        },
+        /**
+         * 清除用户信息
+         */
+        clearUser() {
+            this.userList = [];
+            this.sNotice.userId = [];
+        },
+        /**
+         *  TODO  获取所有的部门对象集合
+         */
+        getDepartmentList(departmentName) {
+            if (IsNotEmpty(departmentName)) {
+                setTimeout(() => {
+                    let url = this.departmentPath + '/listDepartmentByName';
+                    let data = {
+                    		departmentName: departmentName
+                    };
+                    CallAjaxPost(url, data, this.getDepartmentListSuc);
+                }, 200);
+            }
+        },
+        getDepartmentListSuc(data) {
+            this.departmentList = data.obj;
+        },
+        /**
+         * 获取选择框中的部门的id值，并赋值给过滤参数
+         */
+        getDepartmentId(departmentId) {
+            this.sNotice.departmentId.push(departmentId);
+        },
+        /**
+         * 清除用户信息
+         */
+        clearDepartment() {
+            this.departmentList = [];
+            this.sNotice.departmentId = [];
+        },
+        /**
+         * 分类的查询
+         */
+        geCategoryList() {
+            setTimeout(() => {
+                let url = this.categoryPath + '/listNoticeCategory';
+                CallAjaxGetNoParam(url, this.geCategoryListSuc);
+            }, 200);
+        },
+        geCategoryListSuc(data) {
+            console.log("geCategoryListSuc", data)
+            this.categoryList = data.obj;
+        },
+        /**
+         * 获取公告审核人列表
+         */
+        getAuditNotice(){
+        	//获取公告审核人集合
+    		let url = this.userPath+'/listAuditUser';
+    		CallAjaxGetNoParam(url,this.getAuditUserSuc);
+        },
+        getAuditUserSuc(data){
+        	console.log("getAuditUserSuc:",data)
+        	this.auditList = data.obj;
+        },
+       //-------------------查询表格--------------------------
+        /**
+		 * TODO 表格查询
+		 */
+        filter() {
+            let data = {
+            	title:this.sConditions.title,
+            	departmentId:this.sConditions.departmentId,
+            	userId:this.sConditions.userId,
+            	categoryId:this.sConditions.categoryId,
+                pageNum: this.pageNum,
+                pageSize: this.pageSize,
+            };
+            let url = this.noticePath + '/listNotice';
+            console.log("/listNotice参数",data)
+            CallAjaxPost(url, data, this.filterSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        filterSuc(data) {
+        	console.log("/listNotice返回值",data.obj)
+            // 取消显示加载
+            this.loading = false;
+        	//部门一二级展示
+        	for(let i =0;i<data.obj.list.length;i++){
+        		data.obj.list[i].departmentNameStr=data.obj.list[i].department.departmentParName+'  '+data.obj.list[i].department.departmentName;
+        	}
+            this.nowData = data.obj.list;
+            this.totalNum = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        /**
+		 * TODO 清空搜索条件-标题、发布部门、发布人、分类
+		 */
+        clearSConditions() {
+        	this.sConditions.title = '';
+            this.sConditions.departmentId = '';
+            this.sConditions.userId = '';
+            this.sConditions.categoryId = '';
+            // 重新查询表格数据
+            this.filter();
+        },
+        //------------------------删除信息-----------------------------
+        /**
+		 * TODO 打开批量删除公告模态框
+		 */
+        openRemoveNoticeSelectModal() {
+            // 判断当前多选是否勾选
+            if (this.selection.length === 0) {
+                MessageWarning('请先勾选数据，再批量删除');
+                return;
+            }
+            // 打开模态框
+            this.removeNoticeSelectModal = true;
+        },
+        /**
+		 * 批量删除公告
+		 */
+        removeNoticeSelect() {
+            // 关闭模态框
+            this.removeNoticeSelectModal = false;
+            // 获取索引集合
+            let idList = [];
+            for (let i = 0; i < this.selection.length; i++) {
+                idList[i] = this.selection[i].id;
+            }
+            let data = idList;
+            let url = this.noticePath + '/removeNoticeSelect';
+            CallAjaxPost(url, data, this.removeMessSelectSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        removeNoticeSelectSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('成功删除 ' + this.selection.length + ' 条公告');
+            // 清除多选列表
+            this.selection = [];
+            // 加载表格数据
+            this.filter();
+        },
+        /**
+		 * TODO 打开单个删除公告模态框
+		 * 
+		 * @param index
+		 *            索引
+		 */
+        openRemoveNoticeModal(index) {
+            // 获取索引值
+            this.sNotice.id = this.nowData[index].id;
+            // 打开模态框
+            this.removeNoticeModal = true;
+        },
+        /**
+		 * 单个删除公告
+		 */
+        removeNotice() {
+            // 关闭模态框
+            this.removeNoticeModal = false;
+            let data = this.sNotice.id;
+            let url = this.noticePath + '/removeNotice';
+            CallAjaxPost(url, data, this.removeNoticeSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        removeNoticeSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('公告删除成功');
+            // 重新查询数据
+            this.filter();
+        },
+        //---------------------禁用-----------------------
+        checkDisabled(index){
+        	this.sNotice.id = this.nowData[index].id;
+        	let data = this.sNotice.id;
+        	let url = this.noticePath + '/disableNotice';
+        	console.log("disableNotice参数:"+data)
+        	CallAjaxPost(url, data, this.disableNoticeSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        disableNoticeSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('公告禁用成功');
+            // 重新查询数据
+            this.filter();
+        },
+        //--------------------置顶-------------------------
+        checkTop(index){
+        	this.sNotice.id = this.nowData[index].id;
+        	let data = this.sNotice.id;
+        	let url = this.noticePath + '/setTopNotice';
+        	console.log("setTopNotice参数:"+data)
+        	CallAjaxPost(url, data, this.setTopNoticeSuc);
+            // 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        setTopNoticeSuc(data) {
+            // 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('公告置顶成功');
+            // 重新查询数据
+            this.filter();
+        },
+        //---------------------选择审核人------------------------
+        openAuditNoticeModal(index){
+        	this.sNotice.auditId = this.nowData[index].auditId;
+        	this.sNotice.id = this.nowData[index].id;
+        	this.index = index;
+        	//打开模态框
+        	this.auditNoticeModal=true;
+        },
+        auditNotice(){
+        	let data = {
+    			userId: this.sNotice.auditId,
+    			noticeId: this.sNotice.id,
+        	}
+        	console.log("/addAuditNoticeCon参数：",data)
+        	let url = this.noticePath + '/addAuditNoticeCon';
+        	CallAjaxPost(url, data, this.auditNoticeSuc);
+        },
+        auditNoticeSuc(data){
+        	console.log("/addAuditNoticeCon返回参数：",data)
+            // 关闭模态框
+            this.auditNoticeModal = false;
+            MessageSuccess("选责审核人成功");
+            // 重新查询数据
+            this.filter();
+            // 清空编辑
+            this.clearAuditNotice();
+        },
+        cancelAuditNotice(){
+        	// 关闭模态框
+        	this.auditNoticeModal=false;
+        	// 清空编辑
+            this.clearAuditNotice();
+        },
+        clearAuditNotice(){
+        	this.sNotice.auditId = '';
+        },
+        //---------------------编辑-----------------------------
+        /**
+         * 清空Notice信息
+         */
+         clearNotice(){
+        	this.sNotice.title = '';
+        	this.sNotice.content = '';
+        	this.sNotice.categoryId = '';
+         },
+        openEditNoticeModal(index){
+        	console.log("nowData:", this.nowData[index]);
+        	this.sNotice.id =this.nowData[index].id;
+         	this.sNotice.title =this.nowData[index].title;
+         	this.sNotice.content = this.nowData[index].content;
+         	this.sNotice.userId = this.nowData[index].userId;
+         	this.sNotice.departmentId = this.nowData[index].departmentId;
+         	this.sNotice.categoryId = this.nowData[index].categoryId;
+        	//打开模态框
+        	this.editNoticeModal=true;
+        },
+        editNotice(){
+        	//编辑确认前的对得到的数据进行校验
+            if (this.checkNotice()) {
+                return;
+            }
+            let data = {
+            	id:this.sNotice.id,
+        		title: this.sNotice.title,
+        		content: this.sNotice.content,
+        		categoryId: this.sNotice.categoryId,
+            };
+            console.log("editNotice参数：",data)
+            let url = this.noticePath + '/editNotice';
+            CallAjaxPost(url, data, this.editNoticeSuc);
+        },
+        editNoticeSuc(data) {
+        	console.log("editNotice返回参数：",data)
+            // 关闭模态框
+            this.editNoticeModal = false;
+            MessageSuccess("编辑成功");
+            // 重新查询数据
+            this.filter();
+            // 清空编辑
+            this.clearNotice();
+        },
+        cancelEditNotice(){
+        	// 关闭模态框
+        	this.editNoticeModal=false;
+        	// 清空编辑
+            this.clearNotice();
+        },
+        //--------------------新增-------------------------
+        /**
+         * TODO        校验是否为空以及长度限制
+         */
+        checkNotice() {
+            if (CheckEmpty(this.sNotice.title, '请填写标题') ||
+                CheckEmpty(this.sNotice.content, '请填写内容') ||
+                CheckEmpty(this.sNotice.categoryId, '请填写分类') ||
+                CheckLength(this.sNotice.title, '50', '请控制标题在50字以内')||
+                CheckLength(this.sNotice.content, '500', '请控制内容在500字以内')) {
+                return true;
+            }
+        },
+        /**
+         * 新增公告--发布用户直接绑定对应的user，部门是他的部门
+         */
+        openAddNoticeModal(){
+        	//打开模态框
+        	this.addNoticeModal=true;
+        	//清空信息
+        	this.clearAdd();
+        },
+        addNotice(){
+        	this.fileList[0].name = this.sNotice.fileName;
+            SubmitFileList(this.fileList, this.addFileNoticeSuc, "N")
+        	
+        },
+        addFileNoticeSuc(data){
+        	//新增前的对得到的数据进行校验
+            if (this.checkNotice()) {
+                return;
+            }
+            let sdata = {
+            		title: this.sNotice.title,
+            		content: this.sNotice.content,
+            		categoryId: this.sNotice.categoryId,
+            		fileId: data.obj,
+                };
+            console.log("addNotice参数：",sdata)
+            let url = this.noticePath + '/addNotice';
+            CallAjaxPost(url, sdata, this.addNoticeSuc);
+        },
+        addNoticeSuc(data) {
+        	console.log("addNotice返回参数：",data)
+            // 关闭模态框
+            this.addNoticeModal = false;
+            MessageSuccess("新增成功");
+            // 重新查询数据
+            this.filter();
+            // 清空新增
+            this.clearAdd();
+        },
+        cancelAddNotice(){
+        	// 关闭模态框
+        	this.addNoticeModal=false;
+        	// 清空新增
+            this.clearAdd();
+        },
+        // 清空新增
+        clearAdd(){
+        	this.sNotice.title = '';
+        	this.sNotice.content = '';
+        	this.sNotice.categoryId = '';
+        },
+        //------------附件上传--------------------------
+        /**
+         * 文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+         * @param file 当前文件
+         * @param fileList 文件列表
+         */
+        handleChange(file, fileList) {
+            this.fileList = fileList;
+            this.sNotice.fileName = this.fileList[0].raw.name;
+            console.log("this.fileList", this.fileList)
+        },
+        /**
+         * 文件列表移除文件时的钩子
+         * @param file 移除的文件
+         * @param fileList 文件列表
+         */
+        handleRemove(file, fileList) {
+            this.fileList = fileList;
+            this.sNotice.fileName = '';
+        },
+        /**
+         * 点击文件列表中已上传的文件时的钩子
+         * @param file 当前文件
+         */
+        handlePreview(file) {
+            console.log(file);
+        },
+        /**
+         * 文件超出个数限制
+         */
+        handleExceedLimit() {
+            MessageWarning('已超出最大文件个数');
+        },
+        //---------------附件下载----------------------
+        downloadFile(fileId){
+        	downloadFileEncrypt(fileId);
+        },
+	}
+});

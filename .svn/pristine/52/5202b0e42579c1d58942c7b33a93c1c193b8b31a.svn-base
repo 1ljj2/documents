@@ -1,0 +1,22 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.domain.entity.UserInfo;
+import org.jit.sose.mapper.UserInfoMapper;
+import org.jit.sose.service.UserInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+/**
+ * @author 小红
+ * @Date 2020/7/9 18:45
+ */
+@Service
+public class UserInfoServiceImpl implements UserInfoService {
+    @Autowired
+    UserInfoMapper userInfoMapper;
+
+    @Override
+    public int register(UserInfo record) {
+        return userInfoMapper.register(record);
+    }
+}

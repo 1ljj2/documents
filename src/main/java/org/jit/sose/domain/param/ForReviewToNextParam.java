@@ -1,0 +1,51 @@
+package org.jit.sose.domain.param;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * @author wufang
+ * @Date 2020-10-19 13:27:12
+ */
+@ApiModel(value = "ForReviewToNextParam", description = "文档审核送审下一个人审核的封装参数")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ForReviewToNextParam {
+
+    @ApiModelProperty(value = "用户标识", required = true)
+    private Integer fileAuditId;
+    @ApiModelProperty(value = "用户标识", required = true)
+    private Integer userId;
+    @ApiModelProperty(value = "发布用户标识", required = true)
+    private Integer stepId;
+    @ApiModelProperty(value = "发布用户标识", required = true)
+    private String  auditState;
+    @ApiModelProperty(value = "发布用户标识", required = true)
+    private String  opinion;
+    @ApiModelProperty(value = "发布用户标识")
+    private Integer  exampleId;
+
+    @ApiModelProperty(value = "非对称加密后的对称加密秘钥")
+    private String aesKeyEncrypt;
+    @ApiModelProperty(value = "非对称加密后的对称加密秘钥")
+    private String fileCodeStr;
+    @ApiModelProperty(value = "文件编码")
+    private String fileName;
+    @ApiModelProperty(value = "文件名后缀")
+    private String suffix;
+    @ApiModelProperty(value = "文件是否需要签署")
+    private Boolean isSign;
+    @ApiModelProperty(value = "文件是否需要签署")
+    private Integer fileUserId;
+    @ApiModelProperty(value = "送审标志")
+    private String flag;
+    @ApiModelProperty(value = "文件id")
+    private Integer fileId;
+
+    private Integer applyUserId;
+    private Integer applyFileId;
+}

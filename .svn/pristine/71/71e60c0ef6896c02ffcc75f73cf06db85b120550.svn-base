@@ -1,0 +1,22 @@
+package org.jit.sose.service;
+
+import org.jit.sose.TestAppDocument;
+import org.springframework.beans.factory.annotation.Autowired;
+
+/**
+ * @author wufang
+ * @Date 2020-07-05 11:31:50
+ */
+public class WufangServiceTest extends TestAppDocument {
+
+    @Autowired
+    private ProcessService processService;
+
+//    @Test
+//    public void test() {
+//        ListProcessParam param = new ListProcessParam(1,10,9,3,"请假");
+//        PageInfoVo<ListProcessVo> list  = processService.listByCondition(param);
+//        System.out.println(list);
+//    }
+
+}

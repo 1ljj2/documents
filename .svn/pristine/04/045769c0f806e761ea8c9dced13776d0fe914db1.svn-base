@@ -1,0 +1,24 @@
+package org.jit.sose;
+
+import lombok.extern.slf4j.Slf4j;
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+//@EnableTransactionManagement	// 启动事务注解
+@Slf4j
+@SpringBootApplication
+@MapperScan("org.jit.sose.mapper") // 配置需要扫描的mapper文件地址
+//@ComponentScan("org.jit.sose.web.config")//springboot2.x.x不需要手动
+public class AppDocument {
+
+	public static void main(String[] args) {
+		// Banner.Mode.OFF 关闭
+//		SpringApplication springApplication = new SpringApplication(Application.class);
+//		springApplication.setBannerMode(Banner.Mode.OFF);
+
+		SpringApplication.run(AppDocument.class, args);
+		log.info("========start success========");
+	}
+
+}

@@ -1,0 +1,87 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.domain.vo.ListStepsVo;
+import org.jit.sose.mapper.ProcessMapper;
+import org.jit.sose.mapper.ProcessStepsMapper;
+import org.jit.sose.service.ProcessStepsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-07-02 14:30:42
+ */
+@Service
+public class ProcessStepsServiceImpl implements ProcessStepsService {
+
+    @Autowired
+    private ProcessStepsMapper processStepsMapper;
+
+    @Autowired
+    private ProcessMapper processMapper;
+
+    @Override
+    public List<ListStepsVo> viewStepByIdList(List<Integer> idList) {
+        return processStepsMapper.viewStepByIdList(idList);
+    }
+
+    @Transactional
+    @Override
+    public void removeStepByProcessId(Integer processId, Integer stepId) {
+        //根据process表的id查询process对应的第一个步骤标识
+        Integer firstStepId = processMapper.selectStepIdById(processId);
+        System.out.println("firstStepId:" + firstStepId);
+        //查询该流程的上一个流程id  (假设删除的id为2 1)
+        Integer previousStepId = processStepsMapper.selectPStepIdById(stepId);
+        //查询出该流程的下一个流程id
+        Integer nextStepId = processStepsMapper.selectNextStepIdById(stepId);
+        //如果要删除的这个步骤下面还有步骤
+        if (nextStepId != null) {
+            //删除
+            processStepsMapper.removeStep(stepId);
+            //如果firstStepId和要删除的stepId相同（即删除的是第一个步骤，但是下面还有步骤），还需要更改process表
+            if (firstStepId == stepId) {
+                //更新process表中步骤标识
+                processMapper.updateStepId(processId, nextStepId);
+            }
+            //将processId对应的新的步骤的父步骤置为0
+            processStepsMapper.updatePStepIdTo0(nextStepId);
+            //更新要删除的步骤的下一个步骤 的父步骤 为要删除步骤的前一个步骤(把id为3的步骤的pStepId置为1)
+            processStepsMapper.updateNextStep(nextStepId, previousStepId);
+        }
+    }
+
+    @Transactional
+    @Override
+    public List<ListStepsVo> viewStepsByProcessId(Integer processId) {
+        //根据流程标识获取第一个流程步骤
+        ListStepsVo firstVo = processStepsMapper.selectFirStepByProcessId(processId);
+        firstVo.setIsSignName(firstVo.getIsSign().equals(0) ? "无需签章" : "需要签章");
+        //创建返回vo并赋值第一个
+        List<ListStepsVo> voList = new ArrayList<>();
+        voList.add(firstVo);
+        //定义父步骤id，并将第一个流程id作为第二个流程的p_step_id
+        Integer pStepId = 0;
+        pStepId = firstVo.getId();
+        //循环标识
+        Boolean flag = true;
+        while (flag) {
+            ListStepsVo nextStepsVo = processStepsMapper.selectStepByPStepId(pStepId);
+            //如果下一个对象不空，说明存在
+            if (nextStepsVo != null && !nextStepsVo.equals("")) {
+                nextStepsVo.setIsSignName(nextStepsVo.getIsSign().equals(0) ? "无需签章" : "需要签章");
+                //将步骤存入返回值，并获取下一个流程的p_step_id
+                voList.add(nextStepsVo);
+                pStepId = nextStepsVo.getId();
+            } else {
+                //否则停止循环
+                flag = false;
+            }
+        }
+        return voList;
+    }
+}

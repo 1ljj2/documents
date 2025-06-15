@@ -1,0 +1,17 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ArchiveExampleFile;
+
+public interface ArchiveExampleFileMapper {
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ArchiveExampleFile record);
+
+    int insertSelective(ArchiveExampleFile record);
+
+    ArchiveExampleFile selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ArchiveExampleFile record);
+
+    int updateByPrimaryKey(ArchiveExampleFile record);
+}

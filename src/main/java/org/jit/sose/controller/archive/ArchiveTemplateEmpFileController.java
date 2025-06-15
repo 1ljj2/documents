@@ -1,0 +1,55 @@
+package org.jit.sose.controller.archive;
+
+import com.alibaba.fastjson.JSONObject;
+import com.github.xiaoymin.knife4j.annotations.ApiSupport;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import org.jit.sose.domain.vo.ListArchiveFilePoolVo;
+import org.jit.sose.domain.vo.ListFilePoolVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.service.ArchiveTemplateEmpFileService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * @author wufang
+ * @Date 2020-10-08 16:07:06
+ */
+@ApiResponses({@ApiResponse(code = 200, message = "Request Success"),
+        @ApiResponse(code = 401, message = "Authentication Failure"),
+        @ApiResponse(code = 402, message = "Login Information Invalid"),
+        @ApiResponse(code = 403, message = "No Permission"), @ApiResponse(code = 500, message = "Request fail")})
+@Api(tags = "档案模板文件模板接口")
+@ApiSupport(author = "wufang")
+@RestController
+@RequestMapping("/archive/archiveTemEmpFile")
+public class ArchiveTemplateEmpFileController {
+
+    @Autowired
+    private ArchiveTemplateEmpFileService archiveTemplateEmpFileService;
+
+    @ApiOperation(value = "根据档案模板标识获取文档文件池")
+    @PostMapping("/getFilePool")
+    public PageInfoVo<ListFilePoolVo> getFilePool(@RequestBody JSONObject json) {
+        Integer archiveTemId = json.getInteger("archiveTemId");
+        Integer pageNum = json.getInteger("pageNum");
+        Integer pageSize = json.getInteger("pageSize");
+        return archiveTemplateEmpFileService.getFilePool(archiveTemId, pageNum, pageSize);
+    }
+
+    @ApiOperation(value = "根据档案模板标识获取文档文件池[包含用户上传的文件]")
+    @PostMapping("/getArchiveFilePool")
+    public PageInfoVo<ListArchiveFilePoolVo> getArchiveFilePool(@RequestBody JSONObject json) {
+        Integer archiveTemId = json.getInteger("archiveTemId");
+        Integer pageNum = json.getInteger("pageNum");
+        Integer pageSize = json.getInteger("pageSize");
+        return archiveTemplateEmpFileService.getArchiveFilePool(archiveTemId, pageNum, pageSize);
+    }
+
+
+}

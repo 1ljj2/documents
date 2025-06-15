@@ -1,0 +1,85 @@
+package org.jit.sose.web.filter;
+
+import io.jsonwebtoken.Claims;
+import lombok.extern.slf4j.Slf4j;
+import org.jit.sose.constant.JWTConstant;
+import org.jit.sose.domain.entity.SecurityUser;
+import org.jit.sose.enums.ResponseEnum;
+import org.jit.sose.properties.JWTProperties;
+import org.jit.sose.util.JWTUtil;
+import org.jit.sose.util.WebServletUtil;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * 通过JWT授权(访问控制), 控制用户可以做什么<br>
+ * 1.若请求在SecurityConfig中配置过权限，则按照配置的执行<br>
+ * 2.若请求没有配置，进入RbacAuthorityService中根据角色控制<br>
+ * 3.此过滤器从token中获取id,userName，将其放入上下文环境中，可直接引用
+ *
+ * @author wangyue
+ * @date 2020-04-21 01:05:05
+ */
+@Slf4j
+public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
+
+	public JwtAuthorizationFilter(AuthenticationManager authenticationManager) {
+		super(authenticationManager);
+	}
+
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+
+			throws ServletException, IOException {
+
+		System.out.println("执行到Jwt");
+
+		// 从请求头中获取token
+		final String token = request.getHeader(JWTProperties.TOKEN_KEY);
+
+		log.trace(request.getRequestURI() + ":" + token);
+
+		// token为空或者不符合格式
+		if (token == null || !token.startsWith(JWTProperties.TOKEN_PREFIX)) {
+			chain.doFilter(request, response);
+			return;
+		}
+
+		// 去掉token的前缀 "Bearer_",获取真正的token
+		String authToken = token.substring(JWTProperties.TOKEN_PREFIX.length());
+
+		// token有效
+		Claims claims = JWTUtil.isUseful(authToken);
+		if (claims != null) {
+			// 刷新token
+			authToken = JWTUtil.refreshToken(claims);
+			if (authToken != null) {
+				// 放入响应头中
+				response.setHeader(JWTConstant.RESPONSE_KEY, JWTProperties.TOKEN_PREFIX + authToken);
+			}
+
+			// 根据token获取用户信息
+			SecurityUser securityUser = JWTUtil.getSecurityUser(claims);
+
+			// 存入上下文环境中
+			UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(securityUser,
+					null, securityUser.getAuthorities());
+			SecurityContextHolder.getContext().setAuthentication(authentication);
+		} else {
+			log.trace(WebServletUtil.getClientIpAddress(request) + ":token过期");
+			// 将返回状态码设置为402，用户登录信息(token)失效
+			response.setStatus(ResponseEnum.LOGIN_INFORMATION_INVALID.code());
+		}
+
+		chain.doFilter(request, response);
+	}
+
+}

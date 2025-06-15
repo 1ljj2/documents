@@ -1,0 +1,17 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ArchiveAudit;
+
+public interface ArchiveAuditMapper {
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ArchiveAudit record);
+
+    int insertSelective(ArchiveAudit record);
+
+    ArchiveAudit selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ArchiveAudit record);
+
+    int updateByPrimaryKey(ArchiveAudit record);
+}

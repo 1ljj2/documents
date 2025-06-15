@@ -1,0 +1,206 @@
+@CHARSET "UTF-8";
+/**
+自定义样式
+ */
+
+.layout-main{
+     background-color: #051e42;
+     /*float: right;
+     width: 87%;
+     height: 100%;
+     border: 24px solid #FFF5EE;
+     overflow-x: hidden;*/
+}
+
+.panel-card {
+    height: 50px;
+}
+.panel-card-submitter {
+}
+.panel-card-submitTime {
+    font-size: 12px;
+}
+.class-float-left {
+    float: left;
+}
+.panel-title {
+    width: 82%;
+    height: 80px;
+    margin-left: 18px;
+    position: relative;
+}
+.panel-title-name {
+    font-size: 16px;
+    margin-top: 26px;
+    margin-left: -10px;
+    font-weight: 600;
+}
+.panel-title-time {
+    font-size: 8px;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+.panel-title-quantity {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+.panel-title-quantity .el-badge__content.is-fixed {
+    margin-top: -12px;
+}
+/**
+修改原生样式
+ */
+.ivu-card-body {
+    padding: 7px;
+    background: #f9fafb; /* 浅灰色背景 */
+}
+.ivu-collapse > .ivu-collapse-item > .ivu-collapse-header > {
+    background: #a09e9e;
+}
+.ivu-collapse-content > .ivu-collapse-content-box {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+.ivu-collapse-header .ivu-icon {
+    line-height: 5;
+    float: left;
+    width: 4px;
+}
+.ivu-collapse > .ivu-collapse-item > .ivu-collapse-header {
+    height: 40px;
+    line-height: 20px;
+}
+/* 自定义图标样式  */
+.el-icon-chat-line-round:before {
+    content: "\e731";
+    color: blue;
+    font-size: 16px;
+    font-weight: bolder;
+}
+.el-icon-bell:before {
+    content: "\e725";
+    color: orangered;
+    font-size: 16px;
+    font-weight: bolder;
+}
+.el-icon-warning-outline:before {
+    content: "\e6c9";
+    color: forestgreen;
+    font-size: 16px;
+    font-weight: bolder;
+}
+
+/* ------------------- 关键修改：卡片背景颜色 ------------------- */
+.el-card.noti.is-always-shadow,
+.el-card.noti.is-hover-shadow:focus,
+.el-card.noti.is-hover-shadow:hover,
+.el-card.mess.is-always-shadow,
+.el-card.mess.is-hover-shadow:focus,
+.el-card.mess.is-hover-shadow:hover,
+.el-card.noticeAudit.is-always-shadow,
+.el-card.noticeAudit.is-hover-shadow:focus,
+.el-card.noticeAudit.is-hover-shadow:hover,
+.el-card.fileAudit.is-always-shadow,
+.el-card.fileAudit.is-hover-shadow:focus,
+.el-card.fileAudit.is-hover-shadow:hover,
+.el-card.archiveAudit.is-always-shadow,
+.el-card.archiveAudit.is-hover-shadow:focus,
+.el-card.archiveAudit.is-hover-shadow:hover {
+    min-height: 250px;
+    background-color: #f9fafb; /* 将白色背景改为浅灰色 */
+    /*background-color: #2c3e50;   /* 将白色背景改为深蓝色 */
+    border: 1px solid #2c3e50; /* 添加浅灰色边框 */
+    border-radius: 4px; /* 添加圆角 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* 添加轻微阴影 */
+}
+/* --------------------------------------------------------- */
+
+.el-col{
+    border: 1px solid transparent;
+    min-height: 40%;
+    /*background-color: white;  卡片背景改为浅灰色 */
+}
+.el-divider--horizontal {
+    display: block;
+    height: 1px;
+    width: 100%;
+    margin: 5px 0;
+    background-color: #e5e7eb;
+}
+.el-card__body {
+    padding: 0 20px 0 20px;
+    
+}
+.el-collapse-item__header {
+    display: flex;
+    -webkit-box-align: center;
+    align-items: center;
+    height: 40px;
+    line-height: 48px;
+    background-color: #f7f7f7; /* 浅灰色背景 */
+    color: #303133;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #ebf0f5;
+    transition: border-bottom-color 0.3s ease 0s;
+    outline: 0px;
+}
+.el-icon-s-flag:before {
+    content: "\e7b0";
+    color: red;
+}
+.el-icon-star-on:before{
+    content: "\e797";
+    color: #FF6633;
+}
+.audit-user {
+    width: 70%;
+    padding-right: 20px;
+}
+.audit-user .input {
+    width: 130px;
+}
+.audit-role-tip {
+    background-color: #2d8cf0;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 10px;
+}
+.process-steps .el-step__title {
+    font-size: 12px;
+}
+.process-steps .el-step__icon.is-text {
+    border: 1px solid;
+}
+.process-steps .el-step__icon {
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+}
+.process-steps .el-step.is-vertical .el-step__line {
+    top: 20px;
+    left: 5px;
+}
+.process-steps .el-step.is-vertical .el-step__main {
+    padding-left: 0px;
+}
+.step-row2 {
+    width: 200px;
+    margin: 0;
+    font-size: 8px;
+}
+.modal-content {
+    min-height: 450px;
+    background-color: #f9fafb; /* 模态框背景改为浅灰色 */
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 15px;
+}
+.file-button{
+    padding-top: 50px;
+}
+.audit-form{}

@@ -1,0 +1,33 @@
+package org.jit.sose.domain.param;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * @Author: LJH
+ * @Date: 2020/10/8 14:46
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ListMyFileParam {
+    private Integer userId;
+    private Integer pageNum;
+
+    private Integer pageSize;
+
+    private String fileName;
+    private String auditState;
+
+    private Integer categoryId;
+
+    private Integer termId;
+
+    private Integer courseId;
+    private int [] roleId;
+
+    private Integer deletePermission;
+    private Integer updatePermission;
+    private Integer downloadPermission;
+}

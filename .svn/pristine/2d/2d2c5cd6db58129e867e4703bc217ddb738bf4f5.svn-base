@@ -1,0 +1,17 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ArchiveTemplateEmpFile;
+
+public interface ArchiveTemplateEmpFileMapper {
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ArchiveTemplateEmpFile record);
+
+    int insertSelective(ArchiveTemplateEmpFile record);
+
+    ArchiveTemplateEmpFile selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ArchiveTemplateEmpFile record);
+
+    int updateByPrimaryKey(ArchiveTemplateEmpFile record);
+}

@@ -1,0 +1,639 @@
+package org.jit.sose.controller.account;
+
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.github.xiaoymin.knife4j.annotations.*;
+import io.swagger.annotations.*;
+import lombok.extern.slf4j.Slf4j;
+import org.jit.sose.controller.WeiXin.WeiXinController;
+import org.jit.sose.domain.entity.SecurityUser;
+import org.jit.sose.domain.entity.User;
+import org.jit.sose.domain.entity.UserInfo;
+import org.jit.sose.domain.vo.LoginInfoVo;
+import org.jit.sose.domain.vo.QcloudSmsVo;
+import org.jit.sose.enums.PicCodeEnum;
+import org.jit.sose.enums.SmsCodeEnum;
+import org.jit.sose.properties.QcloudSmsProperties;
+import org.jit.sose.redis.RedisService;
+import org.jit.sose.service.UserInfoService;
+import org.jit.sose.service.UserService;
+import org.jit.sose.util.*;
+import org.jit.sose.web.exception.DataFormatException;
+import org.jit.sose.web.exception.RedisException;
+import org.jit.sose.web.response.CommonResp;
+import org.jit.sose.web.response.CommonRespT;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
+
+import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 账户模块:用户登录、注册、忘记密码、重置密码
+ *
+ * @author wangyue
+ * @date 2019年4月18日 下午3:13:30
+ */
+@Slf4j
+@Api(tags = "用户登录注册等相关接口")
+@ApiSupport(order = 1, author = "wangyue")
+@RestController
+@RequestMapping("/account/member")
+public class MemberController {
+
+    @Autowired
+    private WeiXinController weiXinController;
+
+    @Autowired
+    RedisService redisService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private UserInfoService userInfoService;
+    /**
+     * 注入密码加密方式
+     *
+     * @return 加密工具
+     */
+    @Bean(name = "bCryptPasswordEncoder2")
+    private PasswordEncoder bCryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "CommonResp => 'obj':{'LoginInfoVo':'登录成功返回对象','fail':'账号或密码错误'}"),
+            @ApiResponse(code = 421, message = "Cache Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "账号密码登录", notes = "根据账号【用户名、手机号或邮箱】和密码登录")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "account", value = "账号【用户名、手机号或邮箱】", required = true, paramType = "query", dataTypeClass = String.class, example = "zhangsan"),
+            @ApiImplicitParam(name = "password", value = "密码", required = true, paramType = "query", dataTypeClass = String.class, example = "123456")})
+    @ApiOperationSupport(order = 1, responses = @DynamicResponseParameters(properties = {
+            @DynamicParameter(value = "状态码", name = "code"), @DynamicParameter(value = "返回信息", name = "msg"),
+            @DynamicParameter(value = "返回参数对象", name = "obj", dataTypeClass = LoginInfoVo.class)}))
+    @PostMapping("/accountLogin")
+    public LoginInfoVo accountLogin(@RequestParam("account") String account,
+                                    @RequestParam("password") String password) {
+        // 交由SpringSecurity操作
+        log.info("userName:{},password:{}", account, password);
+
+        // 假登录
+        LoginInfoVo loginInfoVo = new LoginInfoVo();
+        loginInfoVo.setMessage("success");
+        loginInfoVo.setUserName(account);
+
+        return loginInfoVo;
+    }
+
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "CommonResp => 'obj':{'codeExpired':'验证码失效','phoneError':'手机号码有误',\"smsCodeErr\":\"验证码有误\",'success':'验证码匹配'}"),
+            @ApiResponse(code = 421, message = "Cache Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "手机登录", notes = "根据手机获取的短信验证登录")
+    @ApiOperationSupport(order = 2)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "phone", value = "手机号", required = true, paramType = "query", dataTypeClass = String.class, example = "18852070321"),
+            @ApiImplicitParam(name = "smsCode", value = "短信验证码", required = true, paramType = "query", dataTypeClass = String.class, example = "123456")})
+    @PostMapping("/phoneLogin")
+    public void phoneLogin(@RequestParam String phone, @RequestParam String smsCode) {
+        log.info("phone:{},smsCode:{}", phone, smsCode);
+    }
+
+    // 应该将短信和图形验证码放入此接口中验证，或者可以采取责任链模式等其他方法一起验证
+    @Transactional
+    @ApiResponses({@ApiResponse(code = 200, message = "CommonResp => 'obj':{'success':'成功','fail':'失败'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "注册", notes = "手机和邮箱注册二选一", response = CommonResp.class)
+    @ApiOperationSupport(order = 3, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "userName", value = "账号", required = true, example = "dylan404"),
+            @DynamicParameter(name = "password", value = "密码", required = true, example = "123456"),
+            @DynamicParameter(name = "phone", value = "手机号", example = "18852070321"),
+            @DynamicParameter(name = "email", value = "邮箱", example = "dylan404@foxmail.com"),
+            @DynamicParameter(name = "type", value = "账号类型（phone:手机）（email:邮箱）", required = true, example = "phone")}))
+    @PostMapping("/accountRegister")
+    public String accountRegister(@RequestBody JSONObject json) {
+        if (json.get("flag") != null) {
+            System.out.println(json);
+            User wxUser = new User();
+            wxUser.setUserName(json.getString("userName"));
+            wxUser.setPassword(bCryptPasswordEncoder().encode(json.getString("password")));
+            wxUser.setPhone(json.getString("phone"));
+            //wxUser.setDepartId(json.getInteger("departId"));
+            //wxUser.setDepartName(json.getString("departName"));
+            userService.wxinsert(wxUser);//用户用户名，密码，手机号
+
+            Integer userId= wxUser.getId();
+            UserInfo wxUserInfo = new UserInfo();
+            Map<String,Object> map=weiXinController.onLogin2(json);//修改为每个人的code
+            wxUserInfo.setUserId(userId);
+           // wxUserInfo.setOpenid("oMTtI43dh0eyE9Av4wOpvmkoWt6A");
+            wxUserInfo.setDepartId(json.getInteger("departId"));
+            wxUserInfo.setOpenid((String)map.get("openid"));//修改为动态的
+            wxUserInfo.setTempState('X');
+            userInfoService.wxregister(wxUserInfo);//用户id，openId
+
+            userInfoService.wxAddDepartment(userId, wxUserInfo.getDepartId());  //用户id，部门id
+
+           return  ResponseUtil.success("success");
+        } else {
+            UserInfo u = new UserInfo();
+            u.setAge(json.getInteger("age"));
+            u.setSex(json.getString("sex"));
+            u.setCode(json.getString("code"));
+            User user = new User();
+            // 判断是手机注册还是邮箱注册
+//        if ("phone".equals(json.getString("type"))) {
+            user.setPhone(json.getString("phone"));
+//        } else if ("email".equals(json.getString("type"))) {
+//            user.setMail(json.getString("email"));
+//        } else {
+//            return ResponseUtil.success("fail");
+//        }
+            // 将密码加密
+            String encryptPassword = bCryptPasswordEncoder().encode((json.getString("password")));
+            user.setPassword(encryptPassword);
+            user.setUserName(json.getString("userName"));
+            // 向数据库插入值
+            userService.insert(user);
+            u.setUserId(user.getId());
+            userInfoService.register(u);
+            return ResponseUtil.success("success");
+        }
+    }
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "CommonResp => 'obj':{'success':'成功','fail':'失败','pwdError':'新旧密码相同'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "忘记密码", notes = "手机和邮箱注册二选一", response = CommonResp.class)
+    @ApiOperationSupport(order = 4, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "userName", value = "账号", required = true, example = "dylan404"),
+            @DynamicParameter(name = "password", value = "密码", required = true, example = "123456"),
+            @DynamicParameter(name = "phone", value = "手机号", example = "18852070321"),
+            @DynamicParameter(name = "email", value = "邮箱", example = "dylan404@foxmail.com")}))
+    @PostMapping("/forgetPwdByPhone")
+    public String forgetPwdByPhone(@RequestBody JSONObject json) {
+        // 查询用户
+        User user = userService.getOne(Wrappers.lambdaQuery(User.class).select(User::getId, User::getPassword)
+                .allEq(new HashMap<SFunction<User, ?>, String>() {
+                    private static final long serialVersionUID = -3756553277606548809L;
+
+                    {
+                        put(User::getUserName, json.getString("userName"));
+                        put(User::getPhone,
+                                StringUtil.isEmpty(json.getString("phone")) ? null : json.getString("phone"));
+                        put(User::getMail,
+                                StringUtil.isEmpty(json.getString("email")) ? null : json.getString("email"));
+                    }
+                }, false));
+        if (user == null) {
+            return ResponseUtil.success("fail");
+        }
+
+        // 2，判断新密码与旧密码是否相同
+        boolean matches = bCryptPasswordEncoder().matches(json.getString("password"), user.getPassword());
+        if (matches) {
+            return ResponseUtil.success("pwdError");
+        }
+
+        // 3,修改密码
+        // 密码加密
+        String encryptPassword = bCryptPasswordEncoder().encode(json.getString("password"));
+        userService.update(Wrappers.lambdaUpdate(User.class).set(User::getPassword, encryptPassword).eq(User::getId,
+                user.getId()));
+        return ResponseUtil.success("success");
+    }
+
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "CommonResp => 'obj':{'success':'成功','fail':'失败','pwdError':'新旧密码相同'}"),
+            @ApiResponse(code = 401, message = "Authentication Failure"),
+            @ApiResponse(code = 402, message = "Login Information Invalid"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "修改密码", response = CommonResp.class)
+    @ApiOperationSupport(order = 5, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "password", value = "密码", required = true, example = "123456")}))
+    @PostMapping(value = "/changePwd")
+    public String changePwd(@RequestBody JSONObject json,
+                            @ApiIgnore @AuthenticationPrincipal SecurityUser securityUser) {
+        // 查询用户
+        User user = userService.getOne(
+                Wrappers.lambdaQuery(User.class).select(User::getPassword).eq(User::getId, securityUser.getId()));
+        if (user == null) {
+            return ResponseUtil.success("fail");
+        }
+
+        // 2，判断新密码与旧密码是否相同
+        boolean matches = bCryptPasswordEncoder().matches(json.getString("password"), user.getPassword());
+        if (matches) {
+            return ResponseUtil.success("pwdError");
+        }
+
+        // 3,修改密码
+        // 密码加密
+        String encryptPassword = bCryptPasswordEncoder().encode(json.getString("password"));
+
+        userService.update(Wrappers.lambdaUpdate(User.class).set(User::getPassword, encryptPassword).eq(User::getId,
+                user.getId()));
+        return ResponseUtil.success("success");
+    }
+
+    @ApiResponses({@ApiResponse(code = 200, message = "Request Success"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 421, message = "Cache Error"),
+            @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "生成图形验证码", notes = "利用验证码工具类 ,生成验证码，将图形返回到页面")
+    @ApiOperationSupport(order = 10)
+    @ApiImplicitParam(name = "codeTypeEnum", value = "验证码类别{loginCode:登录图形验证码,registerCode:注册图形验证码,forgetPwdCode:忘记密码图形验码}", required = true, paramType = "path", dataTypeClass = PicCodeEnum.class, example = "loginCode")
+    @GetMapping("/{codeTypeEnum}/getVerifyCode")
+    public void getVerifyCode(@PathVariable PicCodeEnum codeTypeEnum, HttpServletRequest request,
+                              HttpServletResponse response) throws IOException {
+        String codeType = codeTypeEnum.toString();
+        // 验证路径参数
+        if (!("loginCode".equals(codeType) || "registerCode".equals(codeType) || "forgetPwdCode".equals(codeType))) {
+            throw new DataFormatException("验证码参数有误");
+        }
+        // 通知浏览器不要缓存
+        response.setDateHeader("Expires", 0);
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Pragma", "No-cache");
+        request.getSession().removeAttribute(codeType);
+        CaptchaUtil util = CaptchaUtil.Instance();
+        String code = util.getString();
+
+        // 获取redis的key
+        String key = CaptchaUtil.getRedisKey(codeTypeEnum, WebServletUtil.getClientIpAddress(request));
+        // 将验证码保存进redis中
+        boolean isSuccess = redisService.set(key, code, CaptchaUtil.PIC_CODE_EXPIRED_TIME);
+        if (!isSuccess) {
+            throw new RedisException("缓存验证码错误");
+        }
+
+        // 输出打web页面
+        ImageIO.write(util.getImage(), "jpg", response.getOutputStream());
+    }
+
+    //微信小程序端获取验证码
+//    @GetMapping("/{codeTypeEnum}/getWXVerifyCode")
+//    public void getWXVerifyCode(@PathVariable PicCodeEnum codeTypeEnum, HttpServletResponse response) throws IOException {
+//        String codeType = codeTypeEnum.toString();
+//        // 验证路径参数
+//        if (!("loginCode".equals(codeType) || "registerCode".equals(codeType) || "forgetPwdCode".equals(codeType))) {
+//            throw new DataFormatException("验证码参数有误");
+//        }
+//
+//        CaptchaUtil util = CaptchaUtil.Instance();
+//        String code = util.getString();
+//
+//        // 获取redis的key  微信注册登录时 redis的key设置为 验证码+WXRegister
+//        String key = code+"WXRegisterOrLogin";
+//        // 将验证码保存进redis中
+//        boolean isSuccess = redisService.set(key, code, CaptchaUtil.PIC_CODE_EXPIRED_TIME);
+//        if (!isSuccess) {
+//            throw new RedisException("缓存验证码错误");
+//        }
+//        ImageIO.write(util.getImage(), "jpg", response.getOutputStream());
+//    }
+
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "CommonResp => 'obj':{'codeExpired':'验证码失效','success':'验证码匹配','fail':'验证码不匹配'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 421, message = "Cache Error"),
+            @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "验证图形验证码", notes = "验证用户输入的验证码与生成的验证码是否匹配", response = CommonResp.class)
+    @ApiOperationSupport(order = 11, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "picCode", value = "验证码", example = "qwer", required = true, dataTypeClass = String.class)}))
+    @ApiImplicitParam(name = "codeTypeEnum", value = "验证码类别{loginCode:登录图形验证码,registerCode:注册图形验证码,forgetPwdCode:忘记密码图形验码}", required = true, paramType = "path", dataTypeClass = PicCodeEnum.class, example = "loginCode")
+    @PostMapping("/{codeTypeEnum}/comparePicCode")
+    public String comparePicCode(@PathVariable PicCodeEnum codeTypeEnum, @RequestBody JSONObject json,
+                                 HttpServletRequest request) {
+        log.debug("验证验证码");
+        String codeType = codeTypeEnum.toString();
+        // 验证路径参数
+        if (!("loginCode".equals(codeType) || "registerCode".equals(codeType) || "forgetPwdCode".equals(codeType))) {
+            throw new DataFormatException("验证码参数有误");
+        }
+        // 验证json数据
+        String picCode;
+        if (json.containsKey("picCode")) {
+            picCode = json.getString("picCode");
+        } else {
+            throw new DataFormatException();
+        }
+
+        // 客户端ip
+        String clientIp = WebServletUtil.getClientIpAddress(request);
+        // redis中验证码的key
+        String key = CaptchaUtil.getRedisKey(codeTypeEnum, clientIp);
+        // 查看key是否存在
+        if (!redisService.hasKey(key)) {
+            // key不存在，返回验证码已失效
+            return ResponseUtil.success("codeExpired");
+        }
+        // 从redis中获取验证码
+        String code = (String) redisService.get(key);
+        if (code == null) {
+            return ResponseUtil.success("codeExpired");
+        }
+        log.debug(clientIp + " 的验证码为：" + code);
+
+        // 判断用户输入的验证码是否匹配
+        if (picCode.equalsIgnoreCase(code)) {
+            return ResponseUtil.success("success");
+        } else {
+            return ResponseUtil.success("fail");
+        }
+    }
+
+    //验证微信小程序验证码
+//    @PostMapping("/{codeTypeEnum}/compareWXPicCode")
+//    public String compareWXPicCode(@PathVariable PicCodeEnum codeTypeEnum, @RequestBody JSONObject json,
+//                                 HttpServletRequest request) {
+//        log.debug("验证验证码");
+//        String codeType = codeTypeEnum.toString();
+//        // 验证路径参数
+//        if (!("loginCode".equals(codeType) || "registerCode".equals(codeType) || "forgetPwdCode".equals(codeType))) {
+//            throw new DataFormatException("验证码参数有误");
+//        }
+//        // 验证json数据
+//        String picCode;
+//        if (json.containsKey("picCode")) {
+//            picCode = json.getString("picCode");
+//        } else {
+//            throw new DataFormatException();
+//        }
+//
+//        // redis中验证码的key
+//        String key = picCode+"WXRegisterOrLogin";
+//        // 查看key是否存在
+//        if (!redisService.hasKey(key)) {
+//            // key不存在，返回验证码已失效
+//            return ResponseUtil.success("codeExpired");
+//        }
+//        // 从redis中获取验证码
+//        String code = (String) redisService.get(key);
+//        if (code == null) {
+//            return ResponseUtil.success("codeExpired");
+//        }
+//
+//        // 判断用户输入的验证码是否匹配
+//        if (picCode.equalsIgnoreCase(code)) {
+//            return ResponseUtil.success("success");
+//        } else {
+//            return ResponseUtil.success("fail");
+//        }
+//    }
+
+    @ApiResponses({@ApiResponse(code = 200, message = "Request Success"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 421, message = "Cache Error"),
+            @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "发送手机验证码", notes = "使用腾讯云短信发送短信验证码")
+    @ApiOperationSupport(order = 12, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "phone", value = "手机号", example = "18852070321", required = true)}))
+    @ApiImplicitParam(name = "phoneType", value = "验证码类别{loginPhone:登录短信验证码,registerPhone:注册短信验证码,forgetPwdPhone:忘记密码短信验证码}", required = true, paramType = "path", dataTypeClass = SmsCodeEnum.class, example = "loginPhone")
+    @PostMapping("/{phoneType}/sendMessage")
+    public CommonRespT<QcloudSmsVo> sendMessage(@PathVariable SmsCodeEnum phoneType, @RequestBody JSONObject json) {
+        // 获取手机号码
+        String phone = json.getString("phone");
+
+        // 自定义验证码
+        String code = QcloudSmsUtil.smsCode(QcloudSmsProperties.smsCodeLength);
+
+        // 发送验证码
+        QcloudSmsVo qcloudSmsVo = QcloudSmsUtil.sendQcloudSms(phone, phoneType, code);
+
+        // 假的发送短信
+//		QcloudSmsVo qcloudSmsVo = new QcloudSmsVo(true, 0, "短信发送成功");
+//		log.error("假的发送短信：" + code);
+
+        // 缓存redis
+        if (qcloudSmsVo.isSuccess()) {
+            // 获取redis的key
+            String key = QcloudSmsUtil.getRedisKey(phoneType, phone);
+            // 将验证码保存进redis中
+            boolean isSuccess = redisService.set(key, code, QcloudSmsUtil.getRedisExpiredTime(phoneType));
+            if (!isSuccess) {
+                throw new RedisException("缓存验证码错误");
+            }
+        } else {
+            qcloudSmsVo.setSuccess(false);
+            qcloudSmsVo.setMessage("短信发送失败");
+        }
+
+        return ResponseUtil.successT(qcloudSmsVo);
+    }
+
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "CommonResp => 'obj':{'success':'验证成功','msgCodeErr':'短信验证码错误','codeExpired':'验证码超时'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 421, message = "Cache Error"),
+            @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "验证手机验证码", response = CommonResp.class)
+    @ApiOperationSupport(order = 13, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "phone", value = "手机号", example = "18852070321", required = true),
+            @DynamicParameter(name = "msgCode", value = "短信验证码", example = "012345", required = true)}))
+    @ApiImplicitParam(name = "phoneType", value = "验证码类别{loginPhone:登录短信验证码,registerPhone:注册短信验证码,forgetPwdPhone:忘记密码短信验证码}", required = true, paramType = "path", dataTypeClass = SmsCodeEnum.class, example = "loginPhone")
+    @PostMapping("/{phoneType}/compareSmsCode")
+    public String compareSmsCode(@PathVariable SmsCodeEnum phoneType, @RequestBody JSONObject json) {
+        String phone = json.getString("phone");
+        String msgCode = json.getString("msgCode");
+
+        // redis中验证码的key
+        String key = QcloudSmsUtil.getRedisKey(phoneType, phone);
+        // 查看key是否存在
+        if (!redisService.hasKey(key)) {
+            // key不存在，返回验证码已失效
+            return ResponseUtil.success("codeExpired");
+        }
+        // 从redis中获取验证码
+        String redisCode = (String) redisService.get(key);
+        if (redisCode == null) {
+            return ResponseUtil.success("codeExpired");
+        }
+
+        // 判断用户输入的验证码是否匹配
+        if (msgCode.equalsIgnoreCase(redisCode)) {
+            return ResponseUtil.success("success");
+        } else {
+            return ResponseUtil.success("fail");
+        }
+
+    }
+
+    // 可以将下面的查询方法合在一起，好久之前写的，就不改了
+    @ApiResponses({@ApiResponse(code = 200, message = "CommonResp => 'obj':{'exist':'存在','null':'不存在'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "查找用户名是否存在", response = CommonResp.class)
+    @ApiOperationSupport(order = 20, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "userName", value = "用户名", required = true, example = "zhangsan")}))
+    @PostMapping(value = "/checkByName")
+    public String checkByName(@RequestBody JSONObject json) {
+        Integer count=userService.selectCountByUserName(json.getString("userName"));
+        System.out.println("查到的姓名数量为"+count);
+//        Integer count = new User()
+//                .selectCount(Wrappers.lambdaQuery(User.class).eq(User::getUserName, json.getString("userName")));
+        if (count > 0) {
+            return ResponseUtil.success("exist");
+        } else {
+            return ResponseUtil.success("null");
+        }
+    }
+
+    @ApiResponses({@ApiResponse(code = 200, message = "CommonResp => 'obj':{'exist':'存在','null':'不存在'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "查找手机号是否存在", response = CommonResp.class)
+    @ApiOperationSupport(order = 21, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "phone", value = "手机号", required = true, example = "18852070321")}))
+    @PostMapping(value = "/findByPhone")
+    public String findByPhone(@RequestBody JSONObject json) {
+        Integer count = new User()
+                .selectCount(Wrappers.lambdaQuery(User.class).eq(User::getPhone, json.getString("phone")));
+        if (count > 0) {
+            return ResponseUtil.success("exist");
+        } else {
+            return ResponseUtil.success("null");
+        }
+    }
+
+    @ApiResponses({@ApiResponse(code = 200, message = "CommonResp => 'obj':{'exist':'存在','null':'不存在'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "查找邮箱是否存在", response = CommonResp.class)
+    @ApiOperationSupport(order = 22, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "email", value = "邮箱", required = true, example = "dylan404@foxmail.com")}))
+    @PostMapping(value = "/findByEmail")
+    @RequestMapping(value = "/findByEmail", method = RequestMethod.POST)
+    public String findByEmail(@RequestBody JSONObject json) {
+        Integer count = new User()
+                .selectCount(Wrappers.lambdaQuery(User.class).eq(User::getMail, json.getString("email")));
+        if (count > 0) {
+            return ResponseUtil.success("exist");
+        } else {
+            return ResponseUtil.success("null");
+        }
+    }
+
+    @ApiResponses({@ApiResponse(code = 200, message = "CommonResp => 'obj':{'match':'匹配','mismatch':'不匹配'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "查询手机号码是否匹配用户名", response = CommonResp.class)
+    @ApiOperationSupport(order = 23, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "userName", value = "用户名", required = true, example = "zhangsan"),
+            @DynamicParameter(name = "phone", value = "手机号", required = true, example = "18852070321")}))
+    @PostMapping(value = "/checkNameByPhone")
+    public String checkNameByPhone(@RequestBody JSONObject json) {
+        Map<SFunction<User, ?>, Object> map = new HashMap<SFunction<User, ?>, Object>();
+        map.put(User::getUserName, json.getString("userName"));
+        map.put(User::getPhone, json.getString("phone"));
+        Integer count = new User().selectCount(Wrappers.lambdaQuery(User.class).allEq(map));
+        if (count > 0) {
+            return ResponseUtil.success("match");
+        } else {
+            return ResponseUtil.success("mismatch");
+        }
+    }
+
+    @ApiResponses({@ApiResponse(code = 200, message = "CommonResp => 'obj':{'match':'匹配','mismatch':'不匹配'}"),
+            @ApiResponse(code = 420, message = "Data Error"), @ApiResponse(code = 500, message = "Request fail")})
+    @ApiOperation(value = "查看邮箱是否匹配用户名", response = CommonResp.class)
+    @ApiOperationSupport(order = 24, params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "userName", value = "用户名", required = true, example = "zhangsan"),
+            @DynamicParameter(name = "email", value = "邮箱", required = true, example = "dylan404@foxmail.com")}))
+    @PostMapping(value = "/checkNameByEmail")
+    public String checkNameByEmail(@RequestBody JSONObject json) {
+        Map<SFunction<User, ?>, Object> map = new HashMap<SFunction<User, ?>, Object>() {
+            private static final long serialVersionUID = -3756553277606548809L;
+
+            {
+                put(User::getUserName, json.getString("userName"));
+                put(User::getMail, json.getString("email"));
+            }
+        };
+        Integer count = new User().selectCount(Wrappers.lambdaQuery(User.class).allEq(map));
+        if (count > 0) {
+            return ResponseUtil.success("match");
+        } else {
+            return ResponseUtil.success("mismatch");
+        }
+    }
+
+    /**
+     * 发送邮箱验证码
+     *
+     * @param emailType 邮箱发送类型:registerEmail forgetPwdEmail loginEmail
+     * @param str
+     * @param session
+     * @return
+     * @throws Exception
+     */
+//	@RequestMapping(value = "/{emailType}/sendEmail", method = RequestMethod.POST)
+//	public String sendEmail(@PathVariable String emailType, @RequestBody String str, HttpSession session)
+//			throws Exception {
+//		JSONObject strj = new JSONObject(str);
+//		// 获取生成验证码的时间
+//		long createEmailCodeTime = new Date().getTime();
+//		// 将当前时间放到session中，与注册时获取的时间相比较
+//		session.setAttribute("createEmailCodeTime", createEmailCodeTime);
+//		// 邮箱工具类
+//		JavaMailUtil mailUtil = new JavaMailUtil();
+//		// 获取邮箱
+//		String email = strj.getString("email");
+//		// 将获取验证码的邮箱放入session中
+//		session.setAttribute(emailType, email);
+//		String[] receiveMailAccount = new String[] { email };
+//		String result = mailUtil.sendMail(emailType, receiveMailAccount);
+//		return ResponseUtil.success(result);
+//	}
+
+    /**
+     * 验证邮箱验证码
+     *
+     * @param emailType 短信发送类型:registerEmail forgetPwdEmail loginEmail
+     * @param str
+     * @param session
+     * @return
+     */
+//	@RequestMapping(value = "/{emailType}/compareEmailCode", method = RequestMethod.POST)
+//	public String compareEmailCode(@PathVariable String emailType, @RequestBody String str, HttpSession session) {
+//		JSONObject strj = new JSONObject(str);
+//		// 获取注册时的时间 getTime()将当前时间变为毫秒 1秒=1000毫秒
+//		long registerTime = new Date().getTime();
+//		long createEmailCodeTime = (long) session.getAttribute("createEmailCodeTime");
+//		// 定义validMsgCode 放置用户接收得到得有效短信验证码
+//		String validEmailCode = "";
+//		// 定义stringTime 放置短信验证码有效时间
+//		String validTime = "";
+//		// 1，判断验证码类型
+//		if (emailType.equals("registerEmail")) {
+//			// 从session中获取工具类生成的验证码,设置验证码有效时间
+//			validEmailCode = (String) session.getAttribute("registerEmailCode");
+//			validTime = (String) session.getAttribute("registerEmailTime");
+//		} else if (emailType.equals("forgetPwdEmail")) {
+//			validEmailCode = (String) session.getAttribute("forgetPwdEmailCode");
+//			validTime = (String) session.getAttribute("forgetPwdEmailTime");
+//		} else {
+//			return ResponseUtil.success("emailCodeErr");
+//		}
+//		log.info("邮箱验证码有效时间:" + validTime);
+//		log.info("邮箱验证码:" + validEmailCode);
+//		// 转换验证码有效时间
+//		long emailFailureTime = Long.parseLong(validTime) * 60 * 1000;
+//		// 获取从页面输入的验证码
+//		String emailCode = strj.getString("emailCode");
+//		// 2，比较验证码时间是否超时
+//		if (createEmailCodeTime + emailFailureTime < registerTime) {
+//			return ResponseUtil.success("timeOut");
+//		} else {
+//			// 3，比较验证码是否相同
+//			if (emailCode.equals(validEmailCode)) {
+//				return ResponseUtil.success("success");
+//			} else {
+//				return ResponseUtil.success("emailCodeErr");
+//			}
+//		}
+//	}
+
+}

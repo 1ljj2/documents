@@ -1,0 +1,199 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.Process;
+import org.jit.sose.domain.entity.ProcessSteps;
+import org.jit.sose.domain.param.AddEditProcessParam;
+import org.jit.sose.domain.param.ListProcessParam;
+import org.jit.sose.domain.vo.ListProcessVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.ProcessCategoryConMapper;
+import org.jit.sose.mapper.ProcessMapper;
+import org.jit.sose.mapper.ProcessStepsMapper;
+import org.jit.sose.service.ProcessService;
+import org.jit.sose.util.StringUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author wufang
+ * @Date 2020-07-01 22:30:02
+ */
+@Service
+public class ProcessServiceImpl implements ProcessService {
+
+    @Autowired
+    private ProcessMapper processMapper;
+
+    @Autowired
+    private ProcessStepsMapper processStepsMapper;
+
+    @Autowired
+    private ProcessCategoryConMapper processCategoryConMapper;
+
+    @Transactional
+    @Override
+    public PageInfoVo<ListProcessVo> listByCondition(ListProcessParam param) {
+        // 设置分页参数
+        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+        // 查询集合(包括流程信息、所属学院idList、服务角色idList、公文模板idList)
+        System.out.println(param);
+        List<ListProcessVo> voList = processMapper.listByCondition(param);
+        PageInfo<ListProcessVo> pageInfo = new PageInfo<>(voList);
+        System.out.println("result:"+pageInfo);
+        return new PageInfoVo<>(pageInfo);
+    }
+
+    //
+//
+//    @Override
+//    public List<SimProcessVo> listProcessByName(String processName) {
+//        return processMapper.listProcessByName(processName);
+//    }
+//
+//    @Override
+//    public List<ProcessAndStepIdVo> selectProcessAndStepIdList(Integer id) {
+//        List<ProcessAndStepIdVo> voList = processMapper.selectProcessAndStepIdList(id);
+//        for (int i = 0; i < voList.size(); i++) {
+//            //获取当前的流程指定第一个步骤id
+//            Integer firstStepId = voList.get(i).getFirstStepId();
+//            Integer nextStepId = processStepsMapper.selectNextStepIdById(firstStepId);
+//            Boolean flag = true;
+//            List<Integer> stepIdList = new ArrayList<>();
+//            stepIdList.add(firstStepId);
+//            while (flag) {
+//                if (nextStepId != null) {
+//                    stepIdList.add(nextStepId);
+//                    nextStepId = processStepsMapper.selectNextStepIdById(nextStepId);
+//                } else {
+//                    flag = false;
+//                }
+//            }
+//            voList.get(i).setStepIdList(stepIdList);
+//        }
+//        return voList;
+//    }
+//
+//    @Override
+//    public Integer selectStepIdById(Integer id) {
+//        return processMapper.selectStepIdById(id);
+//    }
+//
+//    @Override
+//    public PageInfoVo<ListSimProcessVo> listProcessByNameUser(ListSimProcessParam param) {
+//        // 设置分页参数
+//        PageHelper.startPage(param.getPageNum(), param.getPageSize());
+//        List<ListSimProcessVo> voList = processMapper.listProcessByNameUser(param);
+//        PageInfo<ListSimProcessVo> pageInfo = new PageInfo<>(voList);
+//        return new PageInfoVo<>(pageInfo);
+//    }
+
+    @Transactional
+    @Override
+    public void editProcess(AddEditProcessParam param) {
+        System.out.println(param);
+        //编辑流程基本信息
+        Process process = new Process();
+        process.setId(param.getId());
+        process.setProcessName(param.getProcessName());
+        process.setRemark(param.getRemark());
+        process.setRoleId(param.getRoleId());
+        processMapper.editProcess(process);
+        //编辑流程
+        if (!(param.getCategoryId() == null)) {
+            processCategoryConMapper.changeCon(param.getId(), param.getCategoryId());
+        }
+        if (param.getStepList() != null) {
+            //编辑流程步骤
+            List<Object> stepList = param.getStepList();
+            Integer pStepId = param.getFatherStepId();//编辑前最后一个流程步骤的id
+
+            for (int i = 0; i < stepList.size(); i++) {
+                ProcessSteps processSteps = new ProcessSteps();
+                //设置父id
+                //获取其余的流程步骤数据
+                Map map = (Map) stepList.get(i);
+                processSteps.setStepName((String) map.get("stepName"));
+                processSteps.setRoleId((Integer) map.get("roleId"));
+                processSteps.setIsSign((Integer) map.get("isSign"));
+                processSteps.setRemark((String) map.get("remark"));
+                if ((Integer) map.get("id") == -1) {
+                    //新增
+                    processSteps.setPStepId(pStepId);
+                    System.out.println(processSteps);
+                    processStepsMapper.addStep(processSteps);//新增流程
+                    pStepId = processSteps.getId();//将自增的主键作为洗衣歌新增的pStepId
+                } else {
+                    //修改
+                    processSteps.setId((Integer) map.get("id"));
+                    processStepsMapper.editProcessStep(processSteps);
+                }
+            }
+        }
+    }
+
+    @Transactional
+    @Override
+    public void addProcess(AddEditProcessParam param) {
+        List<Object> stepList = param.getStepList();
+        //定义第一个步骤的父步骤标识，默认为0
+        Integer pStepId = 0;
+        //定义第一个步骤添加后返回的主键
+        Integer firstStepId = 0;
+        //新增流程
+        for (int i = 0; i < stepList.size(); i++) {
+            ProcessSteps processSteps = new ProcessSteps();
+            //设置父id
+            processSteps.setPStepId(pStepId);
+            //获取其余的流程步骤数据
+            Map map = (Map) stepList.get(i);
+            processSteps.setStepName((String) map.get("stepName"));
+            processSteps.setRoleId((Integer) map.get("roleId"));
+            processSteps.setIsSign((Integer) map.get("isSign"));
+            processSteps.setRemark((String) map.get("remark"));
+            //新增流程步骤
+            processStepsMapper.addStep(processSteps);
+            //获取自增的主键,作为下一个步骤的父流程标识
+            pStepId = processSteps.getId();
+            if (i == 0) {
+                firstStepId = pStepId;
+            }
+        }
+        //新增流程
+        Process process = new Process();
+        process.setProcessName(param.getProcessName());
+        process.setProcessStepId(firstStepId);
+        process.setRemark(StringUtil.isEmpty(param.getRemark()) ? null : param.getRemark());
+        process.setRoleId(param.getRoleId());
+        processMapper.addProcess(process);
+        //获取新增流程自增的id
+        Integer processId = process.getId();
+        //新增流程分类关联
+        processCategoryConMapper.addCon(param.getCategoryId(), processId);
+    }
+
+    @Override
+    public void changeEnableProcess(Integer id, String enable) {
+        processMapper.changeEnableProcess(id, enable);
+    }
+
+    @Override
+    public void removeProcess(Integer id) {
+        processMapper.removeProcess(id);
+    }
+
+    @Override
+    public void disableProcessSelect(List<Integer> idList) {
+        processMapper.disableProcessSelect(idList);
+    }
+
+    @Override
+    public void removeProcessSelect(List<Integer> idList) {
+        processMapper.removeProcessSelect(idList);
+    }
+}

@@ -1,0 +1,34 @@
+package org.jit.sose.domain.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import io.swagger.annotations.ApiModel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+import java.sql.Timestamp;
+
+@Data
+@ApiModel(value = "Category", description = "分类")
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+public class Category {
+    @TableId(value = "id",type = IdType.AUTO)//指定自增策略
+    private Integer id;
+
+    private String name;
+
+    private String type;
+
+    private String remark;
+
+    private String state;
+
+    private Timestamp stateTime;
+
+    private String stateTimeString;
+
+}

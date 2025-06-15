@@ -1,0 +1,18 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.entity.UserRole;
+
+/**
+ * @author 小红
+ * @Date 2020/7/9 17:23
+ */
+public interface UserRoleService {
+
+    /**
+     * 注册时用户选择的基本角色
+     * @param record
+     * @return
+     */
+    int register(UserRole record);
+
+}

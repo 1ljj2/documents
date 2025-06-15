@@ -1,0 +1,32 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.param.ArchiveTemInfoParam;
+import org.jit.sose.domain.param.ListArchiveTemParam;
+import org.jit.sose.domain.vo.ListArchiveTemVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+
+/**
+ * @author wufang
+ * @Date 2020-10-07 15:10:03
+ */
+public interface ArchiveTemplateService {
+
+    /**
+     * 新增【档案模板】
+     */
+    void addArchiveTem(ArchiveTemInfoParam param);
+
+    /**
+     * 编辑【档案模板】
+     */
+    void editArchiveTem(ArchiveTemInfoParam param);
+
+    /**
+     * 根据【档案模板名称、学期、分类、分页参数】筛选档案模板列表对象
+     *
+     * @param param
+     * @return
+     */
+    PageInfoVo<ListArchiveTemVo> listArchiveTemByCondition(ListArchiveTemParam param);
+
+}

@@ -1,0 +1,289 @@
+package org.jit.sose.controller.file;
+
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.github.xiaoymin.knife4j.annotations.ApiSupport;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.jit.sose.domain.entity.FileCategoryCon;
+import org.jit.sose.domain.entity.FileInfo;
+import org.jit.sose.domain.entity.FileTermCon;
+import org.jit.sose.domain.entity.SecurityUser;
+import org.jit.sose.domain.param.*;
+import org.jit.sose.domain.vo.*;
+import org.jit.sose.redis.RedisService;
+import org.jit.sose.service.FileCategoryConService;
+import org.jit.sose.service.FileInfoService;
+import org.jit.sose.service.FileTermConService;
+import org.jit.sose.util.EncryptionUtil;
+import org.jit.sose.util.FileUtil;
+import org.jit.sose.util.MD5Util;
+import org.jit.sose.util.ResponseUtil;
+import org.jit.sose.web.response.CommonRespT;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
+
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author LJH
+ * @Date 2020年10月3日10点59分
+ */
+@Api(tags = "文件接口")
+@ApiSupport(author = "LJH")
+@RestController
+@RequestMapping("/file/file")
+public class FileController {
+
+    @Autowired
+    private FileUtil fileUtil;
+
+    @Autowired
+    RedisService redisService;
+
+    @Autowired
+    FileInfoService fileInfoService;
+
+    @Autowired
+    FileCategoryConService fileCategoryConService;
+
+    @Autowired
+    FileTermConService fileTermConService;
+
+    @ApiOperation(value = "课程和学期都选好时，获取匹配文档模板给档案模板参考")
+    @PostMapping("/listMatchFile")
+    public PageInfoVo<ListMatchFileTemVo> listMatchFile(@RequestBody JSONObject json) {
+        Integer termId = json.getInteger("termId");
+        Integer courseId = json.getInteger("courseId");
+        Integer pageNum = json.getInteger("pageNum");
+        Integer pageSize = json.getInteger("pageSize");
+        return fileInfoService.listMatchFile(termId, courseId,pageNum,pageSize);
+    }
+
+    @ApiOperation(value = "编辑文件信息")
+    @PostMapping("/editFileInfo")
+    public void editFileInfo(@RequestBody FileInfoParam param) {
+        fileInfoService.editFileInfo(param);
+    }
+
+    @ApiOperation(value = "根据【流程模板名称、学期、分类、分页参数】筛选文档模板列表对象")
+    @PostMapping("/listFileTemByCondition")
+    public PageInfoVo<ListFileTemVo> listFileTemByCondition(@RequestBody ListFileTemParam param) {
+        return fileInfoService.listFileTemByCondition(param);
+    }
+
+    @ApiOperation(value = "根据【流程文档名称、学期、分类、创建者、分页参数】筛选我审核的文档列表对象")
+    @PostMapping("/listMyAuditFile")
+    public PageInfoVo<listMyAuditFileVo> listMyAuditFile(@RequestBody listMyAuditFileParam param,
+                                                     @ApiIgnore @AuthenticationPrincipal SecurityUser securityUser) {
+        param.setUserId(securityUser.getId());
+        return fileInfoService.listMyAuditFile(param);
+    }
+
+    @ApiOperation(value = "根据【名称、学期、分类、分页参数】筛选我的文档")
+    @PostMapping("/listMyFile")
+    public PageInfoVo<ListMyFileVo> listFileTemByCondition(@RequestBody ListMyFileParam param) {
+        return fileInfoService.listMyFile(param);
+    }
+
+    @ApiOperation(value = "编辑我的文档")
+    @PostMapping("/editMyFile")
+    public Integer editMyFile(@RequestBody FileInfo fileInfo) {
+//        System.out.println(fileInfo+"++++++++++++");
+        fileInfoService.saveOrUpdate(fileInfo);
+        if(!(fileInfo.getCategoryId()==null)){
+            FileCategoryCon fileCategoryCon = new FileCategoryCon();
+            fileCategoryCon.setFileId(fileInfo.getId());
+            fileCategoryCon.setCategoryId(fileInfo.getCategoryId());
+            UpdateWrapper<FileCategoryCon> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("file_id",fileInfo.getId());
+            fileCategoryConService.saveOrUpdate(fileCategoryCon,updateWrapper);
+        }
+        if(!(fileInfo.getTermId()==null)){
+            FileTermCon fileTermCon = new FileTermCon();
+            fileTermCon.setFileId(fileInfo.getId());
+            fileTermCon.setTermId(fileInfo.getTermId());
+            UpdateWrapper<FileTermCon> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("file_id",fileInfo.getId());
+            fileTermConService.saveOrUpdate(fileTermCon,updateWrapper);
+        }
+
+//        fileCategoryConService.update(fileCategoryCon,updateWrapper);
+
+//        return fileInfoService.listMyFile(fileInfo);
+        return null;
+    }
+
+    @ApiOperation(value = "根据【流程模板名称、学期、分类、课程、分页参数】筛选文档监管列表对象")
+    @PostMapping("/listChargingFileByCondition")
+    public PageInfoVo<ListChargingFileVo> listChargingFileByCondition(@RequestBody ListChargingFileParam param) {
+        return fileInfoService.listChargingFileByCondition(param);
+    }
+
+    @ApiOperation(value = "设置文件可用")
+    @PostMapping("/enableFile")
+    public CommonRespT<?> enableFile(@RequestBody Integer id) {
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setId(id);
+        fileInfo.setIsEnable(true);
+        if (fileInfoService.updateById(fileInfo)) {
+            return ResponseUtil.successT("success");
+        } else {
+            return ResponseUtil.successT("fail");
+        }
+    }
+
+    @ApiOperation(value = "设置文件禁用")
+    @PostMapping("/disableFile")
+    public CommonRespT<?> disableFile(@RequestBody Integer id) {
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setId(id);
+        fileInfo.setIsEnable(false);
+        if (fileInfoService.updateById(fileInfo)) {
+            return ResponseUtil.successT("success");
+        } else {
+            return ResponseUtil.successT("fail");
+        }
+    }
+
+    @ApiOperation(value = "上传文件")
+    @PostMapping("/uploadFile")
+    public CommonRespT<?> uploadFile(@RequestBody FileInfo fileInfo,
+                                     @ApiIgnore @AuthenticationPrincipal SecurityUser securityUser) throws Exception {
+        Integer userId = securityUser.getId();//获取用户信息userId
+        String aesKey = EncryptionUtil
+                .rsaDecrypt(fileInfo.getAesKeyEncrypt(), (String) redisService.get(String.valueOf(userId)));//解密被非对称加密加密的对称加密秘钥
+        String base64 = EncryptionUtil.aesDecrypt(fileInfo.getFileCodeStr(), aesKey);//文件base64编码解密
+        fileInfo.setBase64(base64);
+        fileInfo.setHashCode(MD5Util.getMD5(base64));//获取文件base64编码哈希值
+        fileInfo.setUserId(userId);
+        int flag = 0;
+        if (fileInfo.getParameters().get(0).equals("E")) {//"E"上传的是签名文件
+            fileInfo.setType("E");
+            flag = fileInfoService.insertSignature(fileInfo);
+            if (flag > 0) {
+                return ResponseUtil.successT("success");
+            } else {
+                return ResponseUtil.successT("fail");
+            }
+        } else if (fileInfo.getParameters().get(0).equals("F")) {//"F"上传的是验真文件
+            flag = fileInfoService.fileVerification(fileInfo.getHashCode());//用于记录数据库中相同文件的数量
+            Map result = new HashMap();
+            result.put("fileName", fileInfo.getFileName());
+            if (flag > 0) {
+                result.put("result", "success");
+                return ResponseUtil.successT(result);
+            } else {
+                result.put("result", "fail");
+                return ResponseUtil.successT(result);
+            }
+        } else if (fileInfo.getParameters().get(0).equals("A")) {//"A"上传的是文件模板
+            fileInfo.setType("A");
+            flag = fileInfoService.insertFileTem(fileInfo);
+            if (flag > 0) {
+                return ResponseUtil.successT("success");
+            } else {
+                return ResponseUtil.successT("fail");
+            }
+        } else if (fileInfo.getParameters().get(0).equals("C1")) {//"C1"上传的是个人文件（原始文件，未归档）
+            fileInfo.setType("C1");
+            flag = fileInfoService.insertMyFile(fileInfo);
+            if (flag > 0) {
+                return ResponseUtil.successT("success");
+            } else {
+                return ResponseUtil.successT("fail");
+            }
+        }else if (fileInfo.getParameters().get(0).equals("C2")) {//"C2"上传的是个人文件（原始文件，归档）
+            fileInfo.setType("C2");
+            flag = fileInfoService.insertMyArchivFile(fileInfo);
+            if (flag > 0) {
+                return ResponseUtil.successT("success");
+            } else {
+                return ResponseUtil.successT("fail");
+            }
+        } else if (fileInfo.getParameters().get(0).equals("M")) {//"M"上传的是消息文档
+            fileInfo.setType("M");
+            int fileId = 0;
+            fileId = fileInfoService.insertMessFile(fileInfo);
+            if (fileId > 0) {
+                return ResponseUtil.successT(fileId);
+            } else {
+                return ResponseUtil.successT("fail");
+            }
+        } else if (fileInfo.getParameters().get(0).equals("N")) {//"N"上传的是公告文档
+            fileInfo.setType("N");
+            int fileId = 0;
+            fileId = fileInfoService.insertNoticeFile(fileInfo);
+            if (fileId > 0) {
+                return ResponseUtil.successT(fileId);
+            } else {
+                return ResponseUtil.successT("fail");
+            }
+        }
+
+        else if (fileInfo.getParameters().get(0).equals("Y")) {//"Y"  临时上传的文件
+            fileInfo.setType("Y");
+            int fileId = 0;
+            fileId = fileInfoService.insertTempFile(fileInfo);
+            if (fileId > 0) {
+                return ResponseUtil.successT(fileId);
+            } else {
+                return ResponseUtil.successT("fail");
+            }
+        }
+        return ResponseUtil.successT("success");
+
+    }
+
+    /**
+     * 获取文件base64编码
+     *
+     * @param f
+     * @param securityUser
+     * @return
+     * @throws Exception
+     */
+    @ApiOperation(value = "获取文件编码【下载文件】")
+    @PostMapping(value = "/getFileCodeById")
+    public FileInfo getFileCodeById(@RequestBody FileInfo f, @ApiIgnore @AuthenticationPrincipal SecurityUser securityUser) throws Exception {
+        FileInfo fileInfo = fileInfoService.getFileCodeById(f.getId());
+
+        String aesKey = EncryptionUtil.rsaDecrypt(f.getAesKeyEncrypt(), (String) redisService.get(String.valueOf(securityUser.getId())));//解密被非对称加密加密的对称加密秘钥
+        String fileBase64Encrypt = EncryptionUtil.encryptAes(fileInfo.getPrefix() + Base64.getEncoder().encodeToString(fileInfo.getFileCode()), aesKey);//对文件base64编码进行ase对称加密
+        fileInfo.setBase64(fileBase64Encrypt);
+        fileInfo.setFileCode(null);
+        return fileInfo;
+    }
+
+    /**
+     * 文件逻辑删除
+     *
+     * @param id
+     * @return
+     */
+    @ApiOperation(value = "逻辑删除文件")
+    @PostMapping(value = "/delete")
+    public int delete(@RequestBody Integer id) {
+        return fileInfoService.updateStateToX(id);
+    }
+
+    /**
+     * 文件批量逻辑删除
+     * @param idList
+     * @return
+     */
+    @ApiOperation(value = "批量逻辑删除文件")
+    @PostMapping(value = "/deleteMyFileSelected")
+    public int deleteMyFileSelected(@RequestBody List<Integer> idList) {
+        return fileInfoService.updateSelectedStateToX(idList);
+    }
+
+}

@@ -1,0 +1,42 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.entity.CourseInfo;
+import org.jit.sose.domain.vo.ListIdNameVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-09-30 11:09:28
+ */
+public interface CourseInfoService {
+
+
+    /**
+     * 根据输入的courseName获得courseList
+     *
+     * @param name
+     * @return
+     */
+    List<ListIdNameVo> listCourseByName(String name);
+
+
+    Integer updateCourse(CourseInfo courseInfo);
+
+    Integer deleteOneCourse(Integer id);
+
+    Integer deleteSelectedCourses(int[] idList);
+
+    void insertOneCourse(CourseInfo courseInfo);
+
+    PageInfoVo<CourseInfo> selectPageInfo(CourseInfo one, Integer pageNum, Integer pageSize);
+
+    Integer selectUserId(Integer id);
+
+    int[] selectRoleId(Integer id);
+
+    void insertCourseList(CourseInfo courseInfo);
+}
+
+

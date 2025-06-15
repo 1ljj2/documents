@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.UserInfoMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.UserInfo" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="user_id" property="userId" jdbcType="INTEGER" />
+    <result column="openid" property="openid" jdbcType="VARCHAR" />
+    <result column="weixin_name" property="weixinName" jdbcType="VARCHAR" />
+    <result column="integral" property="integral" jdbcType="INTEGER" />
+    <result column="created_date" property="createdDate" jdbcType="TIMESTAMP" />
+    <result column="update_date" property="updateDate" jdbcType="TIMESTAMP" />
+    <result column="state" property="state" jdbcType="CHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, user_id, openid, weixin_name, integral, created_date, update_date, state
+  </sql>
+
+<!--注册-->
+  <insert id="register" parameterType="org.jit.sose.domain.entity.UserInfo" >
+    insert into a_user_info
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="openid != null" >
+        openid,
+      </if>
+      <if test="weixinName != null" >
+        weixin_name,
+      </if>
+      <if test="age != null" >
+        age,
+      </if>
+      <if test="sex != null" >
+        sex,
+      </if>
+      <if test="email != null" >
+        email,
+      </if>
+      <if test="code != null" >
+        code,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="openid != null" >
+        #{openid,jdbcType=VARCHAR},
+      </if>
+      <if test="weixinName != null" >
+        #{weixinName,jdbcType=VARCHAR},
+      </if>
+      <if test="age != null" >
+        #{age,jdbcType=INTEGER},
+      </if>
+      <if test="sex != null" >
+        #{sex,jdbcType=CHAR},
+      </if>
+      <if test="email != null" >
+        #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null" >
+        #{code,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+<insert id="wxregister" parameterType="org.jit.sose.domain.entity.UserInfo">
+  insert into a_user_info (user_id,openid,tempState)
+  values (#{userId},#{openid},#{tempState})
+</insert>
+
+
+<insert id="wxAddDepartment">
+  insert into t_user_department_con (user_id,department_id) values (#{userId},#{departmentId})
+</insert>
+
+
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from a_user_info
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from a_user_info
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.UserInfo" >
+    insert into a_user_info
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="openid != null" >
+        openid,
+      </if>
+      <if test="weixinName != null" >
+        weixin_name,
+      </if>
+      <if test="integral != null" >
+        integral,
+      </if>
+      <if test="createdDate != null" >
+        created_date,
+      </if>
+      <if test="updateDate != null" >
+        update_date,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="openid != null" >
+        #{openid,jdbcType=VARCHAR},
+      </if>
+      <if test="weixinName != null" >
+        #{weixinName,jdbcType=VARCHAR},
+      </if>
+      <if test="integral != null" >
+        #{integral,jdbcType=INTEGER},
+      </if>
+      <if test="createdDate != null" >
+        #{createdDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.UserInfo" >
+    update a_user_info
+    <set >
+      <if test="userId != null" >
+        user_id = #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="openid != null" >
+        openid = #{openid,jdbcType=VARCHAR},
+      </if>
+      <if test="weixinName != null" >
+        weixin_name = #{weixinName,jdbcType=VARCHAR},
+      </if>
+      <if test="integral != null" >
+        integral = #{integral,jdbcType=INTEGER},
+      </if>
+      <if test="createdDate != null" >
+        created_date = #{createdDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        update_date = #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.UserInfo" >
+    update a_user_info
+    set user_id = #{userId,jdbcType=INTEGER},
+      openid = #{openid,jdbcType=VARCHAR},
+      weixin_name = #{weixinName,jdbcType=VARCHAR},
+      integral = #{integral,jdbcType=INTEGER},
+      created_date = #{createdDate,jdbcType=TIMESTAMP},
+      update_date = #{updateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

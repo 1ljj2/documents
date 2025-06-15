@@ -1,0 +1,157 @@
+package org.jit.sose.service.impl;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.jit.sose.domain.entity.CourseInfo;
+import org.jit.sose.domain.entity.courseLeader;
+import org.jit.sose.domain.vo.ListIdNameVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.mapper.CourseInfoMapper;
+import org.jit.sose.service.CourseInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * @author wufang
+ * @Date 2020-09-30 11:09:43
+ */
+@Service
+public class CourseInfoServiceImpl implements CourseInfoService {
+
+    @Autowired
+    private CourseInfoMapper courseInfoMapper;
+
+    @Override
+    public List<ListIdNameVo> listCourseByName(String name) {
+        return courseInfoMapper.listCourseByName(name);
+    }
+
+
+
+    @Override
+    public Integer updateCourse(CourseInfo courseInfo) {
+        return courseInfoMapper.updateCourse(courseInfo);
+    }
+
+    @Override
+    public Integer deleteOneCourse(Integer id) {
+        return courseInfoMapper.deleteOneCourse(id);
+    }
+
+    @Override
+    public Integer deleteSelectedCourses(int[] idList) {
+        return courseInfoMapper.deleteSelectedCourses(idList);
+    }
+
+    @Transactional
+    @Override
+    public void insertOneCourse(CourseInfo courseInfo) {
+         List<courseLeader> allCourseLead =new ArrayList<>();
+         courseInfoMapper.insertOneCourse(courseInfo);//课程增加
+         int courseId=courseInfo.getId();//返回课程id
+         courseLeader courseLeader=new courseLeader();
+         courseLeader.setCourseId(courseId);
+         courseLeader.setUserId(courseInfo.getLeaderUserId());
+         courseLeader.setType('A');
+         courseInfoMapper.insertOneCourseLeader(courseLeader);//负责人加入
+         if(courseInfo.getAllUserId().length>0){ //任课教师加入
+              for(int i=0;i<courseInfo.getAllUserId().length;i++){
+                  courseLeader courseLeader1=new courseLeader();
+                  courseLeader1.setCourseId(courseId);
+                  courseLeader1.setUserId(courseInfo.getAllUserId()[i]);
+                  courseLeader1.setType('B');
+                  allCourseLead.add(courseLeader1);
+              }
+              courseInfoMapper.insertCourseTeacher(allCourseLead);
+         }
+    }
+
+    @Override
+    public PageInfoVo<CourseInfo> selectPageInfo(CourseInfo one, Integer pageNum, Integer pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        // 查询集合
+        List<CourseInfo> CoursrList = courseInfoMapper.listByCourse(one);
+        PageInfo<CourseInfo> pageInfo = new PageInfo<CourseInfo>(CoursrList);
+        // 封装集合
+        return new PageInfoVo<CourseInfo>(pageInfo);
+    }
+
+    @Override
+    public Integer selectUserId(Integer id) {
+
+        return courseInfoMapper.selectUserId(id);
+    }
+
+    @Override
+    public int[] selectRoleId(Integer id) {
+        return courseInfoMapper.selectRoleId(id);
+    }
+
+    @Transactional
+    @Override
+    public void insertCourseList(CourseInfo courseInfo) {
+        //添加一条课程列表信息
+         courseInfoMapper.insertCourseList(courseInfo);
+         for(int i=0;i<courseInfo.getCourseListId().length;i++){
+             CourseInfo oneCourse=courseInfoMapper.selectByPrimaryKey(courseInfo.getCourseListId()[i]);
+             System.out.println("我的课程"+oneCourse);
+             if(oneCourse.getParentId().equals("-1")){
+                 oneCourse.setParentId(String.valueOf(courseInfo.getId()));
+                 courseInfoMapper.updateCourseOfList(oneCourse);
+             }
+             else{
+                 oneCourse.setParentId(oneCourse.getParentId()+","+String.valueOf(courseInfo.getId()));
+                 courseInfoMapper.updateCourseOfList(oneCourse);
+             }
+         }
+        //修改课程对应的课程列表
+
+    }
+
+    @Override
+    public List<ListIdNameVo> listCoursesByName(String name) {
+        List<ListIdNameVo> allCourse = courseInfoMapper.listCoursesByName(name);
+        List<ListIdNameVo> courseLists = new ArrayList<>();
+        List<ListIdNameVo> children =new ArrayList<>();
+        for (ListIdNameVo listIdNameVo:allCourse){
+            if (!Objects.equals(listIdNameVo.getParentId(),"0")){
+                children.add(listIdNameVo);
+            }
+            else{
+                courseLists.add(listIdNameVo);
+            }
+        }
+
+
+       for (ListIdNameVo oneCourseList: courseLists){
+           List<ListIdNameVo> temp =new ArrayList<>();
+           for (ListIdNameVo oneChildren: children){
+               String[] split = oneChildren.getParentId().split(",");
+               for (String s:split){
+                   if(Objects.equals(s,oneCourseList.getId()+"")){
+                       temp.add(oneChildren);
+                   }
+               }
+           }
+           oneCourseList.setChildren(temp);
+       }
+
+
+        return courseLists;
+    }
+
+//    @Override
+//    public PageInfoVo<CourseInfo> selectPageInfo(CourseInfo one, Integer pageNum, Integer pageSize) {
+//        PageHelper.startPage(pageNum, pageSize);
+//        // 查询集合
+//        List<CourseInfo> CoursrList = courseInfoMapper.listByEecstate(one);
+//        PageInfo<CourseInfo> pageInfo = new PageInfo<CourseInfo>(CoursrList);
+//        // 封装集合
+//        return new PageInfoVo<Eecstate>(pageInfo);
+//    }
+}

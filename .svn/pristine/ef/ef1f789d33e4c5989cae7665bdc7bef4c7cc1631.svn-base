@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.RoleMenuBackMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.RoleMenuBack" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="menu_back_id" property="menuBackId" jdbcType="INTEGER" />
+    <result column="role_id" property="roleId" jdbcType="INTEGER" />
+    <result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="update_date" property="updateDate" jdbcType="TIMESTAMP" />
+    <result column="state" property="state" jdbcType="CHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, menu_back_id, role_id, create_date, update_date, state
+  </sql>
+  
+  <select id="listMenuIdByRoleId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+		SELECT
+		    rm.menu_back_id
+		FROM
+		    `a_role_menu_back` rm
+		INNER JOIN a_menu_back m ON rm.menu_back_id = m.id
+		WHERE
+		    m.state = 'A'
+		AND m.is_enable = TRUE
+		AND rm.state = 'A'
+		AND rm.role_id = #{roleId,jdbcType=INTEGER}
+  </select>
+  
+  <update id="deleteList" parameterType="java.util.Map">
+        UPDATE a_role_menu_back
+        SET state = 'X'
+        WHERE
+          state = 'A'
+        AND role_id = #{roleId,jdbcType=INTEGER}
+        AND menu_back_id IN
+        <foreach collection="removeMenuIdList" item="menuId" index="index" open = "(" separator = "," close = ")">
+            #{menuId,jdbcType=INTEGER}
+        </foreach>
+   </update>
+   
+   <insert id="insertOrUpdateList" parameterType="java.util.Map">
+        INSERT INTO a_role_menu_back 
+           (role_id, menu_back_id, state)
+          VALUES
+          <foreach collection="addMenuIdList" item="menuId" index="index" separator=",">
+           (
+               #{roleId,jdbcType=INTEGER},
+               #{menuId,jdbcType=VARCHAR},
+               'A'
+           )
+          </foreach>
+          ON DUPLICATE KEY UPDATE 
+			role_id =VALUES(role_id),
+			menu_back_id=VALUES(menu_back_id),
+			state = VALUES(state)
+    </insert>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from a_role_menu_back
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from a_role_menu_back
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.RoleMenuBack" >
+    insert into a_role_menu_back (id, menu_back_id, role_id, 
+      create_date, update_date, state
+      )
+    values (#{id,jdbcType=INTEGER}, #{menuBackId,jdbcType=INTEGER}, #{roleId,jdbcType=INTEGER}, 
+      #{createDate,jdbcType=TIMESTAMP}, #{updateDate,jdbcType=TIMESTAMP}, #{state,jdbcType=CHAR}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.RoleMenuBack" >
+    insert into a_role_menu_back
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="menuBackId != null" >
+        menu_back_id,
+      </if>
+      <if test="roleId != null" >
+        role_id,
+      </if>
+      <if test="createDate != null" >
+        create_date,
+      </if>
+      <if test="updateDate != null" >
+        update_date,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="menuBackId != null" >
+        #{menuBackId,jdbcType=INTEGER},
+      </if>
+      <if test="roleId != null" >
+        #{roleId,jdbcType=INTEGER},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.RoleMenuBack" >
+    update a_role_menu_back
+    <set >
+      <if test="menuBackId != null" >
+        menu_back_id = #{menuBackId,jdbcType=INTEGER},
+      </if>
+      <if test="roleId != null" >
+        role_id = #{roleId,jdbcType=INTEGER},
+      </if>
+      <if test="createDate != null" >
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        update_date = #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.RoleMenuBack" >
+    update a_role_menu_back
+    set menu_back_id = #{menuBackId,jdbcType=INTEGER},
+      role_id = #{roleId,jdbcType=INTEGER},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      update_date = #{updateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

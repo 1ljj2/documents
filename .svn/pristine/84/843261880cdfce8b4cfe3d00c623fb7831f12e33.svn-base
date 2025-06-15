@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.ArchiveExampleFileMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="example_id" property="exampleId" jdbcType="INTEGER" />
+    <result column="empty_file_id" property="emptyFileId" jdbcType="INTEGER" />
+    <result column="file_id" property="fileId" jdbcType="INTEGER" />
+    <result column="state" property="state" jdbcType="CHAR" />
+    <result column="state_time" property="stateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, example_id, empty_file_id, file_id, state, state_time
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from t_archive_example_file
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from t_archive_example_file
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    insert into t_archive_example_file (id, example_id, empty_file_id, 
+      file_id, state, state_time
+      )
+    values (#{id,jdbcType=INTEGER}, #{exampleId,jdbcType=INTEGER}, #{emptyFileId,jdbcType=INTEGER}, 
+      #{fileId,jdbcType=INTEGER}, #{state,jdbcType=CHAR}, #{stateTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    insert into t_archive_example_file
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="exampleId != null" >
+        example_id,
+      </if>
+      <if test="emptyFileId != null" >
+        empty_file_id,
+      </if>
+      <if test="fileId != null" >
+        file_id,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+      <if test="stateTime != null" >
+        state_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="exampleId != null" >
+        #{exampleId,jdbcType=INTEGER},
+      </if>
+      <if test="emptyFileId != null" >
+        #{emptyFileId,jdbcType=INTEGER},
+      </if>
+      <if test="fileId != null" >
+        #{fileId,jdbcType=INTEGER},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+      <if test="stateTime != null" >
+        #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    update t_archive_example_file
+    <set >
+      <if test="exampleId != null" >
+        example_id = #{exampleId,jdbcType=INTEGER},
+      </if>
+      <if test="emptyFileId != null" >
+        empty_file_id = #{emptyFileId,jdbcType=INTEGER},
+      </if>
+      <if test="fileId != null" >
+        file_id = #{fileId,jdbcType=INTEGER},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+      <if test="stateTime != null" >
+        state_time = #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.ArchiveExampleFile" >
+    update t_archive_example_file
+    set example_id = #{exampleId,jdbcType=INTEGER},
+      empty_file_id = #{emptyFileId,jdbcType=INTEGER},
+      file_id = #{fileId,jdbcType=INTEGER},
+      state = #{state,jdbcType=CHAR},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.UserMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.User">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="create_date" property="createDate" jdbcType="TIMESTAMP"/>
+        <result column="update_date" property="updateDate" jdbcType="TIMESTAMP"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+        <!--a_user_info中的字段-->
+        <result column="sex" property="sex" jdbcType="CHAR"/>
+        <result column="age" property="age" jdbcType="INTEGER"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="openid" property="openid" jdbcType="VARCHAR"/>
+        <result column="weixin_Name" property="weixinName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="ResultMapWithRole" type="org.jit.sose.domain.entity.User" extends="BaseResultMap">
+        <collection property="roles" column="id" ofType="java.util.Set"
+                    select="org.jit.sose.mapper.RoleMapper.listRoleKeyByUserId"></collection>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id, user_name, password, phone, create_date, update_date, state
+      </sql>
+      
+      <select id="getPhoneByUserId" parameterType="java.lang.Integer" resultType="java.lang.String">
+        SELECT
+			phone 
+		FROM
+			a_user 
+		WHERE
+			id = #{id,jdbcType=INTEGER}
+      </select>
+      
+      <select id="listAuditUserByRoleKey" resultType="org.jit.sose.domain.vo.ListAuditUserVo" parameterType="java.lang.String" >
+	    SELECT
+			a.id,
+			a.user_name AS userName 
+		FROM
+			`a_user` a
+		LEFT JOIN a_user_role ur ON(
+		ur.state = 'A'
+		AND ur.user_id = a.id
+		)
+		LEFT JOIN a_role r ON(
+		r.state = 'A'
+		AND r.id = ur.role_id
+		)
+		WHERE
+			a.state = 'A'
+			AND r.role_key = 'ROLE_AUDIT_NOTICE'
+      </select>
+      
+      <select id="translateNameToId" resultType="java.lang.Integer" parameterType="java.lang.String">
+		SELECT
+		id
+		FROM
+		`a_user`
+		WHERE
+		state = 'A'
+		<if test="userName != null">
+		AND user_name IN
+		<foreach collection="list" item="userName" index="index"
+				 separator="," open="(" close=")">
+			#{userName,jdbcType=VARCHAR}
+		</foreach>
+		</if>
+	</select>
+
+	<select id="showUserSelected" resultType="java.lang.String"
+		parameterType="java.lang.Integer">
+		SELECT
+		user_name
+		FROM
+		`a_user`
+		WHERE
+		state = 'A'
+		AND id IN
+		<foreach collection="list" item="id" index="index"
+			separator="," open="(" close=")">
+			#{id,jdbcType=INTEGER}
+		</foreach>
+	</select>
+
+    <select id="listUserByName" resultType="org.jit.sose.domain.vo.ListUserVo" parameterType="java.lang.String">
+        SELECT
+        id,
+        user_name AS userName
+        FROM
+        `a_user`
+        WHERE
+        state = 'A'
+        <if test="userName != null">
+            AND user_name LIKE CONCAT('%', #{userName,jdbcType=VARCHAR}, '%')
+        </if>
+        ORDER BY
+        id
+    </select>
+
+    <select id="listAuditUser" resultType="org.jit.sose.domain.vo.ListUserVo"
+            parameterType="org.jit.sose.domain.param.ListUserParam">
+        SELECT
+        u.id,
+        u.user_name AS userName,
+        u.phone,
+        i.email
+        FROM
+        `a_user` u
+        INNER JOIN a_user_role ur ON (
+        ur.state = 'A'
+        AND ur.user_id = u.id
+        AND role_id = #{roleId,jdbcType=INTEGER}
+        )
+        LEFT JOIN a_user_info i ON (
+        u.id = i.user_id
+        AND i.state = 'A'
+        )
+        LEFT JOIN t_user_department_con duc ON (
+        duc.state = 'A'
+        AND duc.user_id = u.id
+        )
+        LEFT JOIN t_department d ON (
+        d.state = 'A'
+        AND d.id = duc.department_id
+        )
+        WHERE
+        u.state = 'A'
+        <if test="userName != null">
+            AND u.user_name LIKE CONCAT('%',#{userName,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="phone != null">
+            AND u.phone LIKE CONCAT('%',#{phone,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="email != null">
+            AND i.email LIKE CONCAT('%',#{email,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="departmentId != null">
+            AND d.id = #{departmentId,jdbcType=INTEGER}
+        </if>
+        ORDER BY
+        u.state_date DESC,
+        i.state_date DESC
+    </select>
+
+    <select id="selectByUserName" resultMap="ResultMapWithRole" parameterType="java.lang.String">
+    SELECT
+	    id,
+	    `password`,
+	    phone
+	FROM
+	    `a_user`
+	WHERE
+	    user_name = #{userName,jdbcType=VARCHAR}
+	AND state = 'A'
+  </select>
+
+    <select id="listUser" resultType="org.jit.sose.domain.vo.UserVo" parameterType="java.lang.String">
+        SELECT
+        u.id,
+        u.user_name AS userName,
+        u.phone,
+        u.created_date AS createDate
+        FROM
+        `a_user` u
+        LEFT JOIN a_user_info i ON (
+        u.id = i.user_id
+        AND i.state = 'A'
+        )
+        WHERE
+        u.state = 'A'
+        <if test="userName != null">
+            AND u.user_name LIKE CONCAT('%',#{userName,jdbcType=VARCHAR},'%')
+        </if>
+        ORDER BY
+        u.created_date DESC,
+        i.created_date DESC
+    </select>
+
+
+    <select id="listUserRole" resultType="org.jit.sose.domain.vo.UserRoleVo" parameterType="java.util.Map">
+        SELECT
+        u.id,
+        u.user_name,
+        u.phone,
+        r.id AS roleId,
+        r.role_key AS roleKey,
+        r.role_name AS roleName,
+        r.is_enable AS roleEnable
+        FROM
+        `a_user` u
+        INNER JOIN a_user_role ur ON (
+        u.id = ur.user_id
+        AND ur.state = 'A'
+        )
+        INNER JOIN a_role r ON (
+        ur.role_id = r.id
+        AND r.state = 'A'
+        )
+        WHERE
+        u.state = 'A'
+        <if test="userName != null">
+            AND u.user_name LIKE CONCAT('%',#{userName,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="roleName != null">
+            AND r.role_name LIKE CONCAT('%',#{roleName,jdbcType=VARCHAR},'%')
+        </if>
+        ORDER BY
+        u.update_date DESC,
+        r.update_date DESC
+    </select>
+
+    <!--注册用户-->
+    <insert id="register" parameterType="org.jit.sose.domain.entity.User" useGeneratedKeys="true" keyProperty="id">
+        insert into a_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userName != null">
+                user_name,
+            </if>
+            <if test="password != null">
+                password,
+            </if>
+            <if test="phone != null">
+                phone,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+
+            <if test="userName != null">
+                #{userName,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null">
+                #{password,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null">
+                #{phone,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <!--获取详细用户信息-->
+    <select id="selectByOpenid" resultMap="BaseResultMap" parameterType="java.lang.String">
+        SELECT
+            au.id AS id,
+            au.phone AS phone,
+            au.user_name AS user_name,
+            aui.age AS age,
+            aui.email AS email,
+            aui.openid AS openid,
+            aui.sex AS sex,
+            aui.weixin_name AS weixin_name
+        FROM
+            a_user au
+        LEFT JOIN a_user_info aui ON au.id = aui.user_id
+        WHERE
+            aui.openid = #{openid,jdbcType=VARCHAR}
+    </select>
+
+
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.User"
+            useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into a_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            user_name,
+            password,
+            <if test="phone != null">
+                phone,
+            </if>
+            <if test="mail != null">
+                mail,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{id,jdbcType=INTEGER},
+            #{userName,jdbcType=VARCHAR},
+            #{password,jdbcType=VARCHAR},
+            <if test="phone != null">
+                #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="createDate != null">
+                #{mail,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.User">
+        update a_user
+        <set>
+            <if test="userName != null">
+                user_name = #{userName,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null">
+                password = #{password,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null">
+                phone = #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="createDate != null">
+                create_date = #{createDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateDate != null">
+                update_date = #{updateDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="state != null">
+                state = #{state,jdbcType=CHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.User">
+    update a_user
+    set user_name = #{userName,jdbcType=VARCHAR},
+      password = #{password,jdbcType=VARCHAR},
+      phone = #{phone,jdbcType=VARCHAR},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      update_date = #{updateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

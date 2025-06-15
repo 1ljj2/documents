@@ -1,0 +1,31 @@
+package org.jit.sose.domain.entity;
+
+import io.swagger.annotations.ApiModel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+import java.util.Date;
+
+@Data
+@ApiModel(value = "CourseInfo")
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+public class CourseInfo {
+    private Integer id;
+
+    private String courseCode;
+
+    private String courseName;
+
+    private String remark;
+
+    private Date createdDate;
+
+    private Date stateDate;
+    private String stateDateString;
+
+    private String state;
+}

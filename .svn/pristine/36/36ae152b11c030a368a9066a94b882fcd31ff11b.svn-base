@@ -1,0 +1,25 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ArchiveExampleProcess;
+
+public interface ArchiveExampleProcessMapper {
+
+    /**
+     * 新增或更新个人档案实体
+     * @param record
+     * @return
+     */
+    int insertOrUpdate(ArchiveExampleProcess record);
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ArchiveExampleProcess record);
+
+    int insertSelective(ArchiveExampleProcess record);
+
+    ArchiveExampleProcess selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ArchiveExampleProcess record);
+
+    int updateByPrimaryKey(ArchiveExampleProcess record);
+}

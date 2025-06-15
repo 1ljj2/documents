@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.ProcessStepsMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.ProcessSteps">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="step_name" property="stepName" jdbcType="VARCHAR"/>
+        <result column="p_step_id" property="pStepId" jdbcType="INTEGER"/>
+        <result column="role_id" property="roleId" jdbcType="INTEGER"/>
+        <result column="is_sign" property="isSign" jdbcType="TINYINT"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="state_date" property="stateDate" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, step_name, p_step_id, role_id, is_sign, remark, state, create_time, state_date
+  </sql>
+  
+    <select id="listStepIdByPStepId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+	  SELECT DISTINCT
+			id 
+		FROM
+			t_process_steps 
+		WHERE
+			p_step_id = #{pStepId,jdbcType=INTEGER}
+  </select>
+
+    <select id="selectNextStepByNowStep" resultType="org.jit.sose.domain.vo.NextStepVo"
+            parameterType="java.lang.Integer">
+        SELECT
+            ps.id AS nextStepId,
+            ps.role_id AS roleId,
+            r.role_name AS roleName
+        FROM
+            `t_process_steps` ps
+        INNER JOIN a_role r ON (
+            r.state = 'A'
+            AND r.id = ps.role_id
+        )
+        WHERE
+            ps.state = 'A'
+        AND ps.p_step_id = #{preStepId,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectEmpArcAuditByPStepId" resultType="org.jit.sose.domain.vo.UserStepArcVo"
+            parameterType="java.lang.Integer">
+        SELECT
+            id AS stepId,
+            step_name AS stepName
+        FROM
+            `t_process_steps`
+        WHERE
+            state = 'A'
+        AND p_step_id = #{preStepId,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectEmpFileAuditByPStepId" resultType="org.jit.sose.domain.vo.UserStepVo"
+            parameterType="java.lang.Integer">
+        SELECT
+            id AS stepId,
+            step_name AS stepName
+        FROM
+            `t_process_steps`
+        WHERE
+            state = 'A'
+        AND p_step_id = #{preStepId,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectFirArcUserStep" resultType="org.jit.sose.domain.vo.UserStepArcVo"
+            parameterType="java.lang.Integer">
+      SELECT
+            ps.id AS stepId,
+            ps.step_name AS stepName,
+            ps.p_step_id AS preId,
+            aep.state_time AS stateTimeString
+        FROM
+            `t_archive_example_process` aep
+        INNER JOIN t_process p ON (
+            p.state = 'A'
+            AND p.id = aep.process_id
+        )
+        INNER JOIN t_process_steps ps ON (
+            ps.state = 'A'
+            AND ps.id = p.process_step_id
+        )
+        WHERE
+            aep.state = 'A'
+        AND aep.id = #{exampleId,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectFirFileUserStep" resultType="org.jit.sose.domain.vo.UserStepVo"
+            parameterType="java.lang.Integer">
+        SELECT
+            ps.id AS stepId,
+            ps.step_name AS stepName,
+            ps.p_step_id AS preId,
+            fep.state_time AS stateTimeString
+        FROM
+            `t_file_example_process` fep
+        INNER JOIN t_process p ON (
+            p.state = 'A'
+            AND p.id = fep.process_id
+        )
+        INNER JOIN t_process_steps ps ON (
+            ps.state = 'A'
+            AND ps.id = p.process_step_id
+        )
+        WHERE
+            fep.state = 'A'
+        AND fep.id = #{exampleId,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectRoleIdByPreStepId" resultType="java.lang.Integer"
+            parameterType="java.lang.Integer">
+        SELECT
+            role_id
+        FROM
+            `t_process_steps`
+        WHERE
+            state = 'A'
+        AND p_step_id = #{preStepId,jdbcType=INTEGER}
+    </select>
+
+    <update id="editProcessStep" parameterType="org.jit.sose.domain.entity.ProcessSteps">
+        update t_process_steps
+        <set>
+            <if test="stepName != null">
+                step_name = #{stepName,jdbcType=VARCHAR},
+            </if>
+            <if test="pStepId != null">
+                p_step_id = #{pStepId,jdbcType=INTEGER},
+            </if>
+            <if test="roleId != null">
+                role_id = #{roleId,jdbcType=INTEGER},
+            </if>
+            <if test="isSign != null">
+                is_sign = #{isSign,jdbcType=TINYINT},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <update id="updateNextStep" parameterType="java.util.Map">
+    UPDATE t_process_steps
+    SET p_step_id = #{pStepId,jdbcType=VARCHAR}
+    WHERE
+        id = #{id,jdbcType=INTEGER}
+  </update>
+
+    <update id="updatePStepIdTo0" parameterType="java.lang.Integer">
+    UPDATE t_process_steps
+    SET p_step_id = 0
+    WHERE
+        id = #{id,jdbcType=INTEGER}
+  </update>
+
+    <update id="removeStep" parameterType="java.lang.Integer">
+    UPDATE t_process_steps
+    SET state = 'X'
+    WHERE
+        id = #{id,jdbcType=INTEGER}
+  </update>
+
+    <select id="selectNextStepIdById" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+    SELECT
+        id
+    FROM
+        `t_process_steps`
+    WHERE
+        state = 'A'
+    AND p_step_id = #{id,jdbcType=INTEGER}
+  </select>
+
+    <select id="selectPStepIdById" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        SELECT
+            p_step_id
+        FROM
+            `t_process_steps`
+        WHERE
+            id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <insert id="addStep" parameterType="org.jit.sose.domain.param.AddEditStepParam" useGeneratedKeys="true"
+            keyColumn="id" keyProperty="id">
+        insert into t_process_steps
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            step_name,
+            p_step_id,
+            role_id,
+            is_sign,
+            <if test="remark != null">
+                remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{stepName,jdbcType=VARCHAR},
+            #{pStepId,jdbcType=INTEGER},
+            #{roleId,jdbcType=INTEGER},
+            #{isSign,jdbcType=TINYINT},
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <sql id="Base_Step_Info">
+      SELECT
+          ps.id,
+          ps.step_name AS stepName,
+          ps.is_sign AS isSign,
+          ps.role_id AS roleId,
+          r.role_name AS roleName,
+          ps.remark
+      FROM
+        `t_process_steps` ps
+      INNER JOIN a_role r ON (
+          r.state = 'A'
+          AND r.id = ps.role_id
+          )
+      WHERE
+        ps.state = 'A'
+  </sql>
+
+    <select id="selectStepByPStepId" resultType="org.jit.sose.domain.vo.ListStepsVo" parameterType="java.lang.Integer">
+        <include refid="Base_Step_Info"></include>
+        AND ps.p_step_id = #{pStepId,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectFirStepByProcessId" resultType="org.jit.sose.domain.vo.ListStepsVo"
+            parameterType="java.lang.Integer">
+        <include refid="Base_Step_Info"></include>
+        AND ps.id = (
+        SELECT
+        p.process_step_id
+        FROM
+        `t_process` p
+        WHERE
+        p.state = 'A'
+        AND p.id = #{processId,jdbcType=INTEGER}
+        )
+    </select>
+
+    <select id="viewStepByIdList" resultType="org.jit.sose.domain.vo.ListStepsVo"
+            parameterType="java.lang.Integer">
+        <include refid="Base_Step_Info"></include>
+        AND ps.id IN
+        <foreach collection="list" item="id" index="index"
+                 separator="," open="(" close=")">
+            #{id,jdbcType=INTEGER}
+        </foreach>
+    </select>
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select
+        <include refid="Base_Column_List"/>
+        from t_process_steps
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_process_steps
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.ProcessSteps">
+    insert into t_process_steps (id, step_name, p_step_id, 
+      role_id, is_sign, remark, 
+      state, create_time, state_date
+      )
+    values (#{id,jdbcType=INTEGER}, #{stepName,jdbcType=VARCHAR}, #{pStepId,jdbcType=INTEGER}, 
+      #{roleId,jdbcType=INTEGER}, #{isSign,jdbcType=TINYINT}, #{remark,jdbcType=VARCHAR}, 
+      #{state,jdbcType=CHAR}, #{createTime,jdbcType=TIMESTAMP}, #{stateDate,jdbcType=TIMESTAMP}
+      )
+  </insert>
+
+
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.ProcessSteps">
+    update t_process_steps
+    set step_name = #{stepName,jdbcType=VARCHAR},
+      p_step_id = #{pStepId,jdbcType=INTEGER},
+      role_id = #{roleId,jdbcType=INTEGER},
+      is_sign = #{isSign,jdbcType=TINYINT},
+      remark = #{remark,jdbcType=VARCHAR},
+      state = #{state,jdbcType=CHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      state_date = #{stateDate,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

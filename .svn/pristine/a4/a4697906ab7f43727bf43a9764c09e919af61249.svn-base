@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户权限管理</title>
+    <script type="text/javascript" src="/public/common.js"></script>
+    <script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+</head>
+<body>
+<div class="layout-body" id="user" v-cloak>
+    <layout-header></layout-header>
+    <div id="wrap">
+        <layout-sider></layout-sider>
+        <div class="layout-main">
+            <!-- 多条件查询 -->
+            <div class="qry">
+                <div class="first">
+                    <div class="butRight">
+                        <span class="juinline">
+                                用户名称:
+                            <el-input class="input" v-model.trim="sUserRole.userName"
+                                      type="text"></el-input>
+                        </span>
+                    </div>
+                    <div class="butRight">
+                        <i-button type="primary" icon="ios-search" @click="filter">搜索</i-button>
+                        <i-button @click="clearSUserRole">清空</i-button>
+                    </div>
+                </div>
+                <div class="butLeft">
+                    <i-Button type="primary" @click="addUserRoleModal = true">新增用户</i-Button>
+                    <i-Button type="primary" @click="addUsersRoleModal = true">从Excel表导入用户</i-Button>
+                    <i-button @click="openRemoveUserRoleSelectModal">批量删除</i-button>
+                </div>
+            </div>
+            <div>
+                <i-table class="table" border height="auto" size='small' :columns="column"
+                         :data="nowData" :loading="loading" highlight-row="true"
+                         @on-selection-change="onSelectionChange">
+                    <template
+                            slot-scope="{ row, index }" slot="action">
+                        <!-- <a class="table-a" @click="openUpdatePasswordModal(index)"> 修改密码 </a> -->
+                        <a class="table-a" @click="openEditUserRoleModal(index)"> 修改角色 </a>
+                        <a @click="openRemoveUserRoleModal(index)">删除用户</a>
+                    </template>
+                </i-table>
+
+                <div class="div-inline-left">
+                    <span v-show="selection.length >0">已勾选 {{selection.length}} 条</span>
+                </div>
+                <div class="div-inline-right">
+                    <Page :current="pageNum" :total="totalNum" :page-size="pageSize"
+                          @on-change="onPageChange"
+                          @on-page-size-change="onPageSizeChange" show-total show-elevator
+                          show-sizer></Page>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增模态框 -->
+        <Modal v-model="addUserRoleModal" :mask-closable="false" @on-cancel="cancelAddUserRole">
+            <p slot="header">
+                <span class="modal-title-class">新增用户</span>
+            </p>
+            <center>
+                <table>
+                    <tr>
+                        <td>用户名:</td>
+                        <td>
+                            <i-input type="text" placeholder="请输入用户名" v-model="user.userName" size="large" clearable
+                                     class="input"/>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td>登陆密码:</td>
+                        <td>
+                            <i-input type="text" placeholder="请输入密码" v-model="user.password" size="large"
+                                     clearable
+                                     class="input"/>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>手机号:</td>
+                        <td>
+                            <i-input type="text" placeholder="请输入手机号" v-model="user.phone" size="large"
+                                     clearable="true"
+                                     class="input"/>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>年龄:</td>
+                        <td>
+                            <i-input type="text" placeholder="请输入年龄" v-model="user.age" size="large"
+                                     clearable="true"
+                                     class="input"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>性别:</td>
+                        <td>
+                            <el-radio v-model="user.sex" label="男">男</el-radio>
+                            <el-radio v-model="user.sex" label="女">女</el-radio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>学号:</td>
+                        <td>
+                            <i-input type="text" placeholder="请输入学号" v-model="user.code" size="large"
+                                     clearable="true"
+                                     class="input"/>
+
+                        </td>
+                    </tr>
+
+<!--                    <tr>-->
+<!--                        <td>备注:</td>-->
+<!--                        <td>-->
+<!--                            <el-input class="input" type="textarea" v-model.trim="userRole.remark"-->
+<!--                                      maxlength="2000" :autosize="{minRows: 2,maxRows: 4}"-->
+<!--                                      show-word-limit></el-input>-->
+<!--                        </td>-->
+<!--                    </tr>-->
+                </table>
+            </center>
+            <div slot="footer">
+                <i-button type="text" size="large" @click="cancelAddUserRole">取消</i-button>
+                <i-button type="primary" size="large" @click="addUserRole">确认</i-button>
+            </div>
+        </Modal>
+
+        <!-- 编辑模态框 -->
+        <Modal v-model="editUserRoleModal" :mask-closable="false"
+               @on-cancel="cancelEditUserRole">
+            <p slot="header">
+                <span class="modal-title-class">编辑用户角色</span>
+            </p>
+            <center>
+                <table>
+                    <tr>
+                        <td>用户名称:</td>
+                        <td>
+                            <i-input type="text" v-model="userRole.userName" size="large" readonly
+                                     class="input"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>角色名称:</td>
+                        <td>
+                            <el-select v-model="ownRoleIdList" class="input" filterable multiple clearable>
+                                <el-option
+                                        v-for="item in roleList"
+                                        :key="item.id"
+                                        :label="item.roleName"
+                                        :value="item.id">
+                                    <span style="float: left">{{ item.roleName }}</span>
+                                    <span style="float: right; color: #8492a6; font-size: 13px">{{ item.roleKey }}</span>
+                                </el-option>
+                            </el-select>
+                        </td>
+                    </tr>
+                </table>
+            </center>
+            <div slot="footer">
+                <i-button type="text" size="large" @click="cancelEditUserRole">取消</i-button>
+                <i-button type="primary" size="large" @click="editUserRole">确定</i-button>
+            </div>
+        </Modal>
+
+        <!-- 修改密码模态框 -->
+        <Modal v-model="updatePasswordModal" :mask-closable="false"
+               @on-cancel="cancelUpdatePassword">
+            <p slot="header">
+                <span>修改用户密码</span>
+            </p>
+            <center>
+                <table>
+                    <tr>
+                        <td>登陆密码:</td>
+                        <td>
+                            <i-input type="password" placeholder="请输入密码" v-model="userRole.password" size="large"
+                                     clearable
+                                     class="input"/>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>密码确认:</td>
+                        <td>
+                            <i-input type="password" placeholder="请再次输入密码" v-model="userRole.password1" size="large"
+                                     clearable="true"
+                                     class="input"/>
+                        </td>
+                    </tr>
+                </table>
+            </center>
+            <div slot="footer">
+                <i-button type="text" size="large" @click="cancelUpdatePassword">取消</i-button>
+                <i-button type="primary" size="large" @click="updatePassword">确定</i-button>
+            </div>
+        </Modal>
+
+        <!-- 删除模态框 -->
+        <Modal v-model="removeUserRoleModal" title="删除用户"
+               @on-ok="removeUserRole" :mask-closable="false">
+            <p>确定删除该用户？删除后原有内容将不再进行保存</p>
+        </Modal>
+        <!-- 批量删除模态框 -->
+        <Modal v-model="removeUserRoleSelectModal" title="批量删除用户"
+               @on-ok="removeUserRoleSelect" :mask-closable="false">
+            <p>确定删除当前{{selection.length}}条用户？删除后原有内容将不再进行保存</p>
+        </Modal>
+
+
+
+
+        <!--批量上传用户-->
+        <Modal v-model="addUsersRoleModal" :mask-closable="false"
+               @on-cancel="cancelEditUserRole">
+            <p slot="header">
+                <span class="modal-title-class">从本地选择Excel文件</span>
+            </p>
+            <center>
+<!--                <el-upload-->
+<!--                        class="upload-demo"-->
+<!--                        drag-->
+<!--                        action="https://jsonplaceholder.typicode.com/posts/"-->
+<!--                        multiple>-->
+<!--                    <i class="el-icon-upload"></i>-->
+<!--                    <div class="el-upload__text">将用户Excel表拖到此处，或<em>点击上传</em></div>-->
+<!--                </el-upload>-->
+
+                <el-upload
+                        class="upload-demo"
+                        :limit="1"
+                        drag
+                        :auto-upload="false"
+                        multiple
+                        :on-change="handleChange"
+                        :on-remove="handleRemove"
+                        :on-preview="handlePreview"
+                        :on-exceed="handleExceedLimit"
+                        :file-list="fileList"
+                        :show-file-list="true"
+                        style="width: 450px;">
+                    <i class="el-icon-upload"></i>
+                    <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                    <!--                    <div class="el-upload__tip" slot="tip">文件不超过不超过4M</div>-->
+                </el-upload>
+
+            </center>
+            <div slot="footer">
+                <i-button type="text" size="large" @click="canceladdUsersRole">取消</i-button>
+                <i-button type="primary" size="large" @click="addUsersRole">确定</i-button>
+            </div>
+        </Modal>
+    </div>
+    <div style="clear: both"></div>
+    <layout-footer></layout-footer>
+</div>
+<script type="text/javascript" src="/templates/config/js/user.js"></script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+//对称加密、非对称加密加密相关组件
+document.write("<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/jsencrypt.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/cipher-core.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/crypto-js.js'></script>"
+    + "<script type='text/javascript' src='" + PROJECT_NAME + "/public/encryption/Base64.js'></script>")
+var aesKey;
+
+
+
+/**
+ * 文件加密上传
+ * @param fileList 文件对象
+ * @param funcSuc 回调函数
+ * @constructor
+ */
+function SubmitFileList(fileList, funcSuc) {
+    // console.log(arguments)
+    var flag = 0;
+    var parameters = [];
+    if (arguments.length < 3) {//parameters第一个参数为文件类型，未指定情况下默认为'A'
+        parameters.push("A");
+    } else {
+        for (let i = 2; i < arguments.length; i++) {
+            parameters.push(arguments[i]);
+        }
+    }
+    var that = this;
+    Base64.fromFileInPiece(fileList[flag].raw, function (base64) {
+
+        let aesKey = GetAesKey();//生成16位对称加密秘钥
+        let fileCodeStr = AesEncrypt(aesKey, base64);//对称加密文件base64编码
+        let fileName = fileList[flag].name;//获取文件名称
+        let suffix = fileList[flag].raw.name.split(".")[1];
+        let aesKeyEncrypt = RsaEncrypt(aesKey, localStorage.getItem("rsaPublicKey"));//对对称加密秘钥进行非对称加密
+        // let aesKeyEncrypt = RsaEncrypt(aesKey, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCaA3qOyq0jWNFzw804x0Y1QndNIgT5naml/vAVko85Srd9MHSaxeYdiIaem+fQgOIRK7B8p3IpIxVPjVZmOffzh43qZ8sa9RoyJ9bx7YSmf8n1HGC41oZF6FHFAtJdcVzYf6TH2HF9zw6vcZ0Qn5WiWS6QR7djLvYgGg7oImBq2wIDAQAB");//对对称加密秘钥进行非对称加密
+        // console.log("rsaPublicKey"+localStorage.getItem("rsaPublicKey"))
+        let uplodData = {
+            fileCodeStr: fileCodeStr,//文件编码
+            fileName: fileName,//文件名称
+            parameters: parameters,//其他请求参数
+            aesKeyEncrypt: aesKeyEncrypt,//非对称加密后的对称加密秘钥
+            roleIdList: fileList[flag].roleId,//所分配角色的id
+            remark: fileList[flag].remark,//备注
+            suffix:suffix,//文件名后缀
+            categoryId:fileList[flag].categoryId,//所属分类标识
+            courseId:fileList[flag].courseId,//关联课程标识
+            termId:fileList[flag].termId,//所属学年学期标识
+            archTemFileId:fileList[flag].archTemFileId,//模板文件id
+        }
+        console.log("uplodData1", uplodData);
+        flag++
+        let url = "/file/file" + '/uploadFile';//文件上传请求地址
+        CallAjaxPost(url, uplodData, funcSuc,submitFileSuc,submitFileSuc,false);//发送上传文件请求
+        if (flag < fileList.length) {
+            SubmitFile(fileList, parameters, flag, funcSuc);
+        }
+    })
+
+}
+
+/**
+ * 文件加密上传
+ * @param fileList 文件对象
+ * @param parameters
+ * @param flag
+ * @constructor
+ */
+function SubmitFile(fileList, parameters, flag, funcSuc) {
+
+    var that = this;
+    Base64.fromFileInPiece(fileList[flag].raw, function (base64) {
+
+        let aesKey = GetAesKey();//生成16位对称加密秘钥
+        let fileCodeStr = AesEncrypt(aesKey, base64);//对称加密文件base64编码
+        let fileName = fileList[flag].name;//获取文件名称
+        let suffix = fileList[flag].raw.name.split(".")[1];//文件名称后缀
+        let aesKeyEncrypt = RsaEncrypt(aesKey, localStorage.getItem("rsaPublicKey"));//对对称加密秘钥进行非对称加密
+        // let aesKeyEncrypt = RsaEncrypt(aesKey, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCaA3qOyq0jWNFzw804x0Y1QndNIgT5naml/vAVko85Srd9MHSaxeYdiIaem+fQgOIRK7B8p3IpIxVPjVZmOffzh43qZ8sa9RoyJ9bx7YSmf8n1HGC41oZF6FHFAtJdcVzYf6TH2HF9zw6vcZ0Qn5WiWS6QR7djLvYgGg7oImBq2wIDAQAB");//对对称加密秘钥进行非对称加密
+        // console.log("rsaPublicKey"+localStorage.getItem("rsaPublicKey"))
+        let uplodData = {
+            fileCodeStr: fileCodeStr,//文件编码
+            fileName: fileName,//文件名称
+            parameters: parameters,//其他请求参数
+            aesKeyEncrypt: aesKeyEncrypt,//非对称加密后的对称加密秘钥
+            roleIdList: fileList[flag].roleId,//所分配角色的id
+            remark: fileList[flag].remark,//备注
+            suffix:suffix,//文件名后缀
+            categoryId:fileList[flag].categoryId,//所属分类标识
+            courseId:fileList[flag].courseId,//关联课程标识
+            termId:fileList[flag].termId,//所属学年学期标识
+            archTemFileId:fileList[flag].archTemFileId,//模板文件id
+        }
+        console.log("uplodData2", uplodData);
+        let url = "/file/file" + '/uploadFile';//文件上传请求地址
+        CallAjaxPost(url, uplodData, funcSuc,submitFileSuc,submitFileSuc,false);//发送上传文件请求
+        flag++;
+        if (flag < fileList.length) {
+            SubmitFile(fileList, parameters, flag, funcSuc);
+        }
+    })
+
+}
+
+/**
+ * 上传文件回调信息
+ * @param data
+ */
+function submitFileSuc(data) {
+    // console.log("data", data)
+}
+
+function err(){
+
+}
+
+/**
+ * 获取文件编码
+ * @param id
+ * @param aesKey
+ * @param funcSuc
+ */
+function GetFileCodeById(id,aesKey,funcSuc) {
+
+    // aesKey = GetAesKey();//生成16位对称加密秘钥
+    let url = "/file/file" + "/getFileCodeById";//请求获取文件base64编码的地址
+    let data = {//请求文件base64编码的参数
+        id: id,
+        aesKeyEncrypt: RsaEncrypt(aesKey, localStorage.getItem("rsaPublicKey")),//对对称加密秘钥进行非对称加密
+    }
+    CallAjaxPost(url, data, funcSuc);//发送获取文件base64编码的请求
+}
+
+// /**
+//  * 获取文件编码
+//  * @param id
+//  * @param aesKey
+//  * @param funcSuc
+//  */
+// function getFileCodeByIdSuc(data) {
+//     data.obj.base64 = AesDecrypt(aesKey, data.obj.base64);//AES非对称加密解码
+//     funcSuc(data)
+// }
+
+/**
+ * 下载文件（加密版）
+ * @param id 文件file_info_id
+ */
+function downloadFileEncrypt(id) {
+    aesKey = GetAesKey();//生成16位对称加密秘钥
+    let url = "/file/file" + "/getFileCodeById";//请求获取文件base64编码的地址
+    let data = {//请求文件base64编码的参数
+        id: id,
+        aesKeyEncrypt: RsaEncrypt(aesKey, localStorage.getItem("rsaPublicKey")),//对对称加密秘钥进行非对称加密
+    }
+    CallAjaxPost(url, data, downloadFileEncryptSuc);//发送获取文件base64编码的请求
+}
+/**
+ * 下载文件（加密版）回调函数
+ * @param data
+ */
+function downloadFileEncryptSuc(data) {
+    // console.log("downloadFileEncryptSuc", data)
+    var base64 = AesDecrypt(aesKey, data.obj.base64);//AES非对称加密解码
+    // console.log("downloadFileEncryptSuc", base64)
+    // switch (data.obj.fileName.split(".")[1]) {
+    //     case "doc":
+    //         this.base64 = "data:application/msword;base64," + this.base64;
+    //         break;
+    //     case "pdf":
+    //         this.base64 = "data:application/pdf;base64," + this.base64;
+    //         break;
+    //     default:
+    //         break;
+    // }
+    // this.base64 = "data:application/pdf;base64," + this.base64;
+
+    // this.downloadFileByBase64(this.base64);
+    // console.log("this.base64",this.base64)
+    // console.log("data.obj.fileName.split(\".\").length",data.obj.fileName.split(".").length)
+    // console.log("data.obj.fileName.split(\".\").length",data.obj.fileName.split("."))
+    // console.log("data.obj.fileName.split(\".\").length",data.obj.fileName.split(".")[0])
+    if(data.obj.fileName.split(".").length>1){
+        downloadFileByBase64(base64, data.obj.fileName.split(".")[0]);
+    }else{
+        downloadFileByBase64(base64, data.obj.fileName);
+    }
+    // downloadFileByBase64(base64, data.obj.fileName);
+    // CloseMessageLoading(this.loadingMsg);// 关闭加载提示
+}
+function dataURLtoBlob(dataurl) {
+    var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {type: mime});
+}
+function downloadFileCopy(url, name) {
+    var a = document.createElement("a")
+    a.setAttribute("href", url)
+    a.setAttribute("download", name)
+    a.setAttribute("target", "_blank")
+    let clickEvent = document.createEvent("MouseEvents");
+    clickEvent.initEvent("click", true, true);
+    a.dispatchEvent(clickEvent);
+}
+function downloadFileByBase64(base64, name) {
+    var myBlob = dataURLtoBlob(base64)
+    var myUrl = URL.createObjectURL(myBlob)
+    downloadFileCopy(myUrl, name)
+}
+
+
+/**
+ * 生成aes对称加密密钥
+ * @param n 生成多少位的密钥(默认16位)
+ */
+function GetAesKey(n) {
+    var chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+    if (n == null) {
+        n = 16;
+    }
+    var res = "";
+    for (var i = 0; i < n; i++) {
+        var id = Math.ceil(Math.random() * 35);
+        res += chars[id];
+    }
+    return res;
+}
+
+/**
+ * aes对称加密
+ * @param theKey 密钥
+ * @param pass 密码(原文)
+ */
+function AesEncrypt(theKey, pass) {
+    var key = CryptoJS.enc.Utf8.parse(theKey);
+    var srcs = CryptoJS.enc.Utf8.parse(pass);
+    var encrypted = CryptoJS.AES.encrypt(srcs, key, {mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7});
+    return encrypted.toString();
+}
+
+/**
+ * aes对称加密解密
+ * @param pass 密文
+ * @param theKey 秘钥
+ * @returns {string}
+ * @constructor
+ */
+function AesDecrypt(theKey, pass) {
+    var key = CryptoJS.enc.Utf8.parse(theKey);
+    let decrypt = CryptoJS.AES.decrypt(pass, key, {mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7});
+    return decrypt.toString(CryptoJS.enc.Utf8);
+
+}
+
+/**
+ * RSA非对称加密
+ * @param str
+ * @returns {*}
+ */
+function RsaEncrypt(str, key) {
+    // 新建JSEncrypt对象
+    let encryptor = new JSEncrypt();
+    // 设置公钥
+    encryptor.setPublicKey(key);
+    // 加密数据
+    return encryptor.encrypt(str);
+}

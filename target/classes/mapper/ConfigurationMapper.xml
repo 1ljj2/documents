@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.ConfigurationMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.Configuration" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="value" property="value" jdbcType="VARCHAR" />
+    <result column="is_enable" property="isEnable" jdbcType="BIT" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+    <result column="state" property="state" jdbcType="CHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="state_time" property="stateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, name, value, is_enable, remark, state, create_time, state_time
+  </sql>
+  
+  <!-- 模板/文档名称能否编辑开关 -->
+  <select id="checkArchiveNotAuditInSet" resultType="java.lang.Integer">
+  	SELECT
+		is_enable 
+	FROM
+		a_configuration 
+	WHERE
+		state != 'X' 
+		AND `name` = 'ArchiveNotAuditInSet'
+  </select>
+  
+  <!-- 模板/文档名称能否编辑开关 -->
+  <select id="checkFileArchiveNameChange" resultType="java.lang.Integer">
+  	SELECT
+		is_enable 
+	FROM
+		a_configuration 
+	WHERE
+		state != 'X' 
+		AND `name` = 'FileArchiveNameChange'
+  </select>
+  
+  <!-- 发布审核短信开关 -->
+  <select id="checkMessage4Audit" resultType="java.lang.Integer">
+  	SELECT
+		is_enable 
+	FROM
+		a_configuration 
+	WHERE
+		state != 'X' 
+		AND `name` = 'Message4Audit'
+  </select>
+  
+  <!-- 新增配置表项 -->
+  <insert id="addConfig" parameterType="org.jit.sose.domain.vo.ListConfigVo" useGeneratedKeys="true" keyProperty="id">
+        insert into a_configuration
+	      <trim prefix="(" suffix=")" suffixOverrides=",">
+            name, value, description, is_enable
+        </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	        #{name,jdbcType=VARCHAR}, #{value,jdbcType=VARCHAR},
+	        #{description,jdbcType=VARCHAR}, #{isEnable,jdbcType=VARCHAR},
+        </trim>
+    </insert>
+  
+  <!-- 编辑配置项 -->
+  <update id="editConfig" parameterType="org.jit.sose.domain.vo.ListConfigVo">
+  	update a_configuration
+        <set>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="value != null">
+                value = #{value,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null">
+                description = #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="isEnable != null">
+                is_enable = #{isEnable,jdbcType=VARCHAR},
+            </if>
+        </set>
+     where id = #{id,jdbcType=INTEGER}
+  </update>
+  
+  <!-- 启用单个配置表信息 -->
+  	<update id="isableConfig" parameterType="java.lang.Integer">
+		UPDATE a_configuration
+		SET is_enable = '1'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+  
+  <!-- 禁用单个配置表信息 -->
+  	<update id="disableConfig" parameterType="java.lang.Integer">
+		UPDATE a_configuration
+		SET is_enable = '0'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+  
+  	<!-- 删除单个配置表信息 -->
+  	<update id="removeConfig" parameterType="java.lang.Integer">
+		UPDATE a_configuration
+		SET state
+		= 'X'
+		WHERE
+		id = #{id,jdbcType=INTEGER}
+	</update>
+	
+	<!-- 删除多个配置表信息 -->
+	<update id="removeConfigSelect" parameterType="java.util.List">
+		UPDATE a_configuration
+		SET state = 'X'
+		WHERE 
+		id IN
+		<foreach collection="list" item="id" index="index"
+			separator="," open="(" close=")">
+			#{id,jdbcType=INTEGER}
+		</foreach>
+	</update>
+  
+  <select id="listConfigByCondition" resultType="org.jit.sose.domain.vo.ListConfigVo" parameterType="org.jit.sose.domain.param.ListConfigParam">
+	 SELECT DISTINCT
+		ac.id,
+		ac.`name`,
+		ac.description,
+		ac.`value`,
+		ac.is_enable AS isEnable,
+		ac.state,
+		ac.create_time AS createTimeString,
+		ac.state_time AS stateTimeString 
+	FROM
+		`a_configuration` ac 
+	WHERE
+		ac.state != 'X' 
+	<if test="description != null">
+	     AND ac.description LIKE CONCAT('%', #{description,jdbcType=VARCHAR}, '%')
+	</if>
+	<if test="isEnable != null">
+	     AND ac.is_enable = #{isEnable,jdbcType=INTEGER}
+	</if>
+	ORDER BY
+		ac.state_time DESC
+  </select>
+  
+  <!-- 根据名字查询是否enable -->
+  <select id="ListEnableByName" resultType="java.lang.Integer" parameterType="org.jit.sose.domain.entity.Configuration">
+  	SELECT
+		is_enable*1 AS isEnable 
+	FROM
+		a_configuration 
+	WHERE
+		state = 'A' 
+	AND 
+		`name` LIKE CONCAT('%', #{name,jdbcType=VARCHAR}, '%')
+  </select>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from a_configuration
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from a_configuration
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.Configuration" >
+    insert into a_configuration (id, name, value, 
+      is_enable, remark, state, create_time, 
+      state_time)
+    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{value,jdbcType=VARCHAR}, 
+      #{isEnable,jdbcType=BIT}, #{remark,jdbcType=VARCHAR}, #{state,jdbcType=CHAR}, #{createTime,jdbcType=TIMESTAMP}, 
+      #{stateTime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.Configuration" >
+    insert into a_configuration
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="name != null" >
+        name,
+      </if>
+      <if test="value != null" >
+        value,
+      </if>
+      <if test="isEnable != null" >
+        is_enable,
+      </if>
+      <if test="remark != null" >
+        remark,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+      <if test="createTime != null" >
+        create_time,
+      </if>
+      <if test="stateTime != null" >
+        state_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="value != null" >
+        #{value,jdbcType=VARCHAR},
+      </if>
+      <if test="isEnable != null" >
+        #{isEnable,jdbcType=BIT},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stateTime != null" >
+        #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.Configuration" >
+    update a_configuration
+    <set >
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="value != null" >
+        value = #{value,jdbcType=VARCHAR},
+      </if>
+      <if test="isEnable != null" >
+        is_enable = #{isEnable,jdbcType=BIT},
+      </if>
+      <if test="remark != null" >
+        remark = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null" >
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stateTime != null" >
+        state_time = #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.Configuration" >
+    update a_configuration
+    set name = #{name,jdbcType=VARCHAR},
+      value = #{value,jdbcType=VARCHAR},
+      is_enable = #{isEnable,jdbcType=BIT},
+      remark = #{remark,jdbcType=VARCHAR},
+      state = #{state,jdbcType=CHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      state_time = #{stateTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

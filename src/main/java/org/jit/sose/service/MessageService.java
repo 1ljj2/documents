@@ -1,0 +1,71 @@
+package org.jit.sose.service;
+
+import java.util.List;
+
+import org.jit.sose.domain.entity.MessReadUser;
+import org.jit.sose.domain.param.AddEditMessParam;
+import org.jit.sose.domain.param.ListMessParam;
+import org.jit.sose.domain.vo.ListMessVo;
+import org.jit.sose.domain.vo.ListReadUserByMess;
+import org.jit.sose.domain.vo.PageInfoVo;
+
+/** 
+* @author jinyu: 
+* @Date 2020年9月22日 上午10:55:17 
+*  
+*/
+public interface MessageService {
+
+	/**
+	 * 	新增消息
+	 * @param param
+	 */
+	void addMess(AddEditMessParam param);
+	
+	/**
+	 * 	编辑消息
+	 * @param param
+	 */
+	void editMess(AddEditMessParam param);
+	
+	/**
+	 * 批量删除消息
+	 * @param idList
+	 */
+	void removeMessSelect(List<Integer> idList);
+
+	/**
+	 * 删除单个消息
+	 * @param id
+	 */
+	void removeMess(Integer id);
+	
+	/**
+	 * 根据【标题、发布部门、发布用户、分类、分页参数】筛选消息列表对象
+	 * @param param
+	 * @return
+	 */
+	PageInfoVo<ListMessVo> listMess(ListMessParam param);
+
+	/**
+	 * 我的提醒页面根据登录用户查询相应的消息
+	 * @param param
+	 * @return
+	 */
+	PageInfoVo<ListMessVo> listMessMyRemind(ListMessParam param);
+
+	/**
+	 * 设置用户消息已读
+	 * @param data
+	 */
+	void isRead(MessReadUser data);
+
+	/**
+	 * 我的提醒页面根据登录用户查询相应的消息
+	 * @param vo
+	 * @return
+	 */
+	int newMessCount(ListReadUserByMess vo);
+
+}
+ 

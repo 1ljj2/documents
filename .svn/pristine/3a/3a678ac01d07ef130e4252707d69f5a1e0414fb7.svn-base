@@ -1,0 +1,291 @@
+var vmyRemind = new Vue({
+    el: '#myRemind',
+    data: function () {
+        return {
+            componentSize: 'medium',// 组件尺寸
+            loading: true, selection: [],// 表格参数
+            loadingMsg: '',// 加载提示
+            notice: '',// 提醒对象
+            //-------------------------------公告浏览部分-------------------------
+            noticePath: '/noticeMan',
+            totalNum: 0, pageNum: 1, pageSize: 4,  // 公告分页参数
+            noticeData: [],
+            sNotice:{
+            	 id:'',title:'',content:'',
+	           	 categoryName:'',categoryId:'',
+	           	 seq:'',state:'',auditState:'',isEnable:'',
+	           	 createTime:'',createTimeString:'',stateTime:'',stateTimeString:'',
+	           	 departmentId:[],departmentName:'',departmentParName:'',departmentNameStr:'',
+	           	 userId:[],userName:'',
+	           	 roleId:[],roleName:'',
+	           	 fileId:'',fileName:'',accessUrl:'',
+	           	 auditId:'',count:''
+            },// 公告信息
+            noticeList: [],
+            //-------------------------------个人消息部分-------------------------
+            messPath: '/messageMan',
+            totalNum1: 0, pageNum1: 1, pageSize1: 4,  // 个人消息分页参数
+            messData: [],
+            sMess:{
+	           	 id:'',title:'',content:'',
+	           	 categoryName:'',categoryId:'',
+	           	 state:'',createTime:'',createTimeString:'',stateTime:'',stateTimeString:'',
+	           	 departmentId:[],departmentName:'',departmentParName:'',departmentNameStr:'',
+	           	 userId:'',userName:'',
+	           	 readUserId:[],readUserName:'',readUser:[],
+	           	 roleId:[],roleName:'',role:[],
+	           	 fileId:'',fileName:'',accessUrl:'',
+	           	 isRead:'',count:'',keepNewTime:''
+            },// 消息信息
+            messList: [],
+            // --------------------------------------TODO      待办事宜部分-------------------------
+            userStepConPath: '/process/userStepCon',
+            openedPanel: '1111',//默认打开的面板name值
+            runningStepList: [],//每个流程
+            backLogList: [],//根据用户和信息状态查询出的待办信息
+            processIdList: [],//待办事宜所属的流程标识集合
+            panel: [],//面板数据
+            panelItem: {
+                processName: '',
+                startTime: '',
+                endTime: '',
+                runningStepSize: '',
+                runningStep: [],
+            },//面板中card的数据
+            backLogTotal: 0,//待办事宜总条数
+        }
+    },
+    components: {
+        'layout-header': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-header.vue'),
+        'layout-sider': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-sider.vue'),
+        'layout-footer': httpVueLoader(PROJECT_NAME + '/templates/layout/layout-footer.vue'),
+    },
+    beforeCreate: function () {
+        CheckPermissions();
+    },
+    mounted() {
+        this.initPage();
+    },
+    methods: {
+        //-------------------------------页面初始化加载项-------------------------
+        initPage() {
+        	//公告
+        	this.getNotice();//初始先加载公告浏览
+            setInterval(() =>
+            	this.getNotice(), 3600000)//每1h调用一次listAllNotice方法，进行数据更新
+            this.newNoticeCount();//初始化加载新消息个数
+            setInterval(() =>
+        	this.newNoticeCount(), 3600000)//每1h调用一次newNoticeCount方法，进行数据更新
+            //个人消息
+            this.getMess();//初始先加载个人消息
+            setInterval(() =>
+            	this.getMess(), 3600000)//每1h调用一次listPersonalAffair方法，进行数据更新
+            this.newMessCount();//初始化加载新消息个数
+            setInterval(() =>
+        	this.newMessCount(), 3600000)//每1h调用一次newMessCount方法，进行数据更新
+            //待办
+//            this.listBacklogByUser();//初始先加载待办事宜
+//            setInterval(() =>
+//                this.listBacklogByUser(), 10000)//每10s调用一次listBacklogByUser方法，进行数据更新
+        },
+        //--------------------------------公告浏览部分-------------------------
+        /**
+         * 改变页码
+         *
+         * @param pageNum
+         *            改变后的页码
+         */
+        onPageChange(pageNum) {
+            this.pageNum = pageNum;
+            this.getNotice();
+        },
+        getNotice() {
+            let data = {
+                pageNum: this.pageNum,
+                pageSize: this.pageSize,
+            };
+            let url = this.noticePath + '/listNoticeMyRemind';
+            CallAjaxPost(url, data, this.getNoticeSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        getNoticeSuc(data) {
+            console.log("listNoticeMyRemind请求返回值：", data.obj)
+            // 取消显示加载
+            this.loading = false;
+            //部门一二级展示
+        	for(let i =0;i<data.obj.list.length;i++){
+        		data.obj.list[i].departmentNameStr=data.obj.list[i].department.departmentParName+'  '+data.obj.list[i].department.departmentName;
+        	}
+            this.noticeList = data.obj.list;
+            this.totalNum = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        downloadNoticeFile(id){
+        	console.log('fileId'+id)
+        	downloadFileEncrypt(id);
+        },     
+        //获取新消息
+        newNoticeCount(){
+        	let url = this.noticePath + '/newNoticeCount';
+        	CallAjaxGetNoParam(url, this.newNoticeCountSuc);
+        	// 显示加载
+            this.loading = true;
+        },
+        newNoticeCountSuc(data){
+        	console.log("/newNoticeCount返回值",data.obj)
+        	this.sNotice.count = data.obj;
+        	// 取消显示加载
+            this.loading = false;
+        },
+        //-------------------------------个人消息部分-------------------------
+        /**
+         * 改变页码
+         *
+         * @param pageNum
+         *            改变后的页码
+         */
+        onPageChange1(pageNum1) {
+            this.pageNum1 = pageNum1;
+            this.getMess();
+        },
+        getMess() {
+            let data = {
+                pageNum: this.pageNum1,
+                pageSize: this.pageSize1,
+            };
+            let url = this.messPath + '/listMessMyRemind';
+            console.log("/listMessMyRemind参数",data)
+            CallAjaxPost(url, data, this.getMessSuc);
+            // 显示加载
+            this.loading = true;
+        },
+        getMessSuc(data) {
+        	console.log("/listMessMyRemind返回值",data.obj)
+            // 取消显示加载
+            this.loading = false;
+        	//部门一二级展示
+        	for(let i =0;i<data.obj.list.length;i++){
+        		data.obj.list[i].departmentNameStr=data.obj.list[i].department.departmentParName+'  '+data.obj.list[i].department.departmentName;
+        	}
+            this.messList = data.obj.list;
+            this.totalNum1 = data.obj.total;
+            // 再次设置当前页码,若查询记录为空，设为第一页
+            this.pageNum1 = data.obj.pageNum === 0 ? 1 : data.obj.pageNum;
+        },
+        //下载
+        downloadMessFile(id){
+        	console.log('fileId'+id)
+        	downloadFileEncrypt(id);
+        },
+        //已读
+        isRead(id){
+        	console.log("messId"+id)
+        	let data = {
+        		messId: id,
+        	};
+        	let url = this.messPath + '/isRead';
+        	console.log("/isRead参数",data)
+            CallAjaxPost(url, data, this.isReadSuc);
+        	// 打开加载提示
+            this.loadingMsg = MessageLoading();
+        },
+        isReadSuc(data){
+        	// 关闭加载提示
+            CloseMessageLoading(this.loadingMsg);
+            MessageSuccess('消息已经阅读');
+            // 重新查询数据
+            this.getMess();
+            this.newMessCount();
+        },
+        //获取新消息个数
+        newMessCount(){
+        	let url = this.messPath + '/newMessCount';
+        	CallAjaxGetNoParam(url, this.newMessCountSuc);
+        	// 显示加载
+            this.loading = true;
+        },
+        newMessCountSuc(data){
+        	console.log("/newMessCount返回值",data.obj)
+        	this.sMess.count = data.obj;
+        	// 取消显示加载
+            this.loading = false;
+        },
+        //-------------------------------TODO            待办事宜部分-------------------------
+//        /**
+//         * 根据当前用户标识和状态获取流程运转的信息
+//         */
+//
+//        listBacklogByUser() {
+//            //查询状态为C的待办用户流程步骤，C是发起者建立流程时默认设置的
+//            let data = {
+//                state: 'C'
+//            };
+//            let url = this.userStepConPath + '/listBacklogByUser';
+//            console.log("listBacklogByUser参数：", data)
+//            CallAjaxPost(url, data, this.listBacklogByUserSuc, null, null, false);
+//        },
+//        listBacklogByUserSuc(data) {
+//            this.backLogList = data.obj;
+//            console.log("backLogList:", this.backLogList)
+//            //获取所有的key值（即processIdList）
+//            let processIdList = Object.keys(this.backLogList)
+//            console.log("processIdList:", processIdList)
+//            let panel = [];
+//            let backLogTotal = 0;
+//            //打印出所有的待办事宜信息
+//            for (let processId in this.backLogList) {
+//                if (this.backLogList.hasOwnProperty(processId)) {
+//                    let panelItem = {
+//                        processId: '',
+//                        processName: '',
+//                        startTime: '',
+//                        endTime: '',
+//                        runningStepSize: '',
+//                        runningStep: [],
+//                    };
+//                    let a = processId;
+//                    console.log("processId:", a, "backLogList:", this.backLogList[a])
+//                    for (let i = 0; i < this.backLogList[a].length; i++) {
+//                        panelItem.runningStep.push(this.backLogList[a][i].runningStep)
+//                    }
+//                    panelItem.processId = a;
+//                    panelItem.startTime = this.backLogList[a][0].startTime;
+//                    panelItem.endTime = this.backLogList[a][0].endTime;
+//                    panelItem.processName = this.backLogList[a][0].processName;
+//                    panelItem.runningStepSize = this.backLogList[a].length;
+//                    console.log("panelItem:", panelItem)
+//                    panel.push(panelItem);
+//                    backLogTotal = backLogTotal + this.backLogList[a].length;
+//                    console.log("循环过程面板数据：", panel)
+//                }
+//            }
+//            this.panel = panel;
+//            this.backLogTotal = backLogTotal;
+//            console.log("整合后的面板所有数据：", this.panel)
+//        },
+//        /**
+//         * 选择面板，获取name值（processId）
+//         * @param name
+//         */
+//        choosePanel(name) {
+//            console.log("选择的面板的name值：", name);
+//            console.log("选择的面板对应的数据：", this.backLogList[name])
+//        },
+//        /**
+//         * 进入某流程的某个实例化运转步骤
+//         * @param index
+//         * @param i
+//         */
+//        auditRunningStep(index, i) {
+//            // console.log("panel的索引:", index, "runningStep的索引:", i);
+//            let userStepId = this.panel[index].runningStep[i].userStepId;
+//            let stepId = this.panel[index].runningStep[i].stepId;
+//            let processId = this.panel[index].processId;
+//            console.log("userStepId：", this.panel[index].runningStep[i].userStepId, "stepId：", this.panel[index].runningStep[i].stepId, "processId：", this.panel[index].processId)
+//            let proOperationUrl = "/process/proOperation?processId=" + processId + "&stepId=" + stepId + "&userStepId=" + userStepId + "&flag=false&uploadedFileFlag=false";
+//            window.open(proOperationUrl);
+//        }
+    }
+});

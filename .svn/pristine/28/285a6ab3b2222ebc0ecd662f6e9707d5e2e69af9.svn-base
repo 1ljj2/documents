@@ -1,0 +1,97 @@
+package org.jit.sose.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.User;
+import org.jit.sose.domain.param.ListUserParam;
+import org.jit.sose.domain.vo.ListAuditUserVo;
+import org.jit.sose.domain.vo.ListUserVo;
+import org.jit.sose.domain.vo.UserRoleVo;
+import org.jit.sose.domain.vo.UserVo;
+
+import java.util.List;
+
+public interface UserMapper extends BaseMapper<User> {
+
+	/**
+	 * 获取审核角色是公告审核人的user集合
+	 * @param roleKey
+	 * @return
+	 */
+	List<ListAuditUserVo> listAuditUserByRoleKey(String roleKey);
+
+	/**
+	 * 根据nameList获取用户idList
+	 *
+	 * @param userNameList
+	 * @return
+	 */
+	List<Integer> translateNameToId(List<String> userNameList);
+
+	/**
+	 * 根据idList获取用户名称List
+	 *
+	 * @param userIdList
+	 * @return
+	 */
+	List<String> showUserSelected(List<Integer> userIdList);
+
+    List<ListUserVo> listUserByName(@Param("userName") String userName);
+
+    /**
+     * 根据【所属部门、姓名、电话号码、分页】条件查询用户列表
+     *
+     * @param param
+     * @return
+     */
+    List<ListUserVo> listAuditUser(ListUserParam param);
+
+    /**
+     * 根据用户名查找用户信息
+     *
+     * @param userName 用户名
+     * @return User
+     */
+    User selectByUserName(@Param("userName") String userName);
+
+    /**
+     * 查询用户信息集合
+     *
+     * @param userName
+     * @return User集合
+     */
+    List<UserVo> listUser(@Param("userName") String userName);
+
+
+    /**
+     * 查询用户和角色信息集合
+     *
+     * @param userName 用户名
+     * @param roleName 角色名
+     * @return UserRoleVo集合
+     */
+    List<UserRoleVo> listUserRole(@Param("userName") String userName, @Param("roleName") String roleName);
+
+    /**
+     * 注册用户
+     *
+     * @param record
+     * @return
+     */
+    int register(User record);
+
+    /**
+     * 获取详细用户信息
+     *
+     * @param openid
+     * @return
+     */
+    User selectByOpenid(@Param("openid") String openid);
+
+    int insert(User record);
+
+    int updateByPrimaryKeySelective(User record);
+
+    int updateByPrimaryKey(User record);
+
+}

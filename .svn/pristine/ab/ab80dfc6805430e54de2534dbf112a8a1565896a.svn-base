@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.PermissionsMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.Permissions" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="permissions_type_id" property="permissionsTypeId" jdbcType="INTEGER" />
+    <result column="permissions_module_id" property="permissionsModuleId" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+    <result column="url" property="url" jdbcType="VARCHAR" />
+    <result column="is_enable" property="enable" jdbcType="BIT" />
+    <result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="update_date" property="updateDate" jdbcType="TIMESTAMP" />
+    <result column="state" property="state" jdbcType="CHAR" />
+  </resultMap>
+
+  <resultMap id="BaseResultVoMap" type="org.jit.sose.domain.vo.PermissionsVo" extends="BaseResultMap">
+  </resultMap>
+
+  <sql id="Base_Column_List" >
+    id, permissions_type_id, permissions_module_id, name, description, url, is_enable, 
+    create_date, update_date, state
+  </sql>
+
+  <select id="listByURLModuleType" resultMap="BaseResultVoMap" parameterType="org.jit.sose.domain.param.ListPageInfoParam">
+    SELECT
+      p.id,
+      p.permissions_type_id,
+      p.permissions_module_id,
+      p.`name`,
+      p.description,
+      p.url,
+      p.remark,
+      p.is_enable,
+      mdu.module_name as moduleName,
+      mdu.description AS moduleDescription,
+      t.description AS typeDescription
+    FROM
+    `a_permissions` p
+    LEFT JOIN a_permissions_module mdu ON (
+    p.permissions_module_id = mdu.id
+    AND mdu.state = 'A'
+    )
+    LEFT JOIN a_permissions_type t ON (
+    p.permissions_type_id = t.id
+    AND t.state = 'A'
+    )
+    WHERE
+    p.state = 'A'
+    <if test="url != null" >
+      AND p.url LIKE CONCAT('%', #{url,jdbcType=VARCHAR}, '%')
+    </if>
+    <if test="moduleId != null" >
+      AND p.permissions_module_id = #{moduleId,jdbcType=INTEGER}
+    </if>
+    <if test="typeId != null" >
+      AND p.permissions_type_id = #{typeId,jdbcType=INTEGER}
+    </if>
+    ORDER BY
+    p.update_date DESC
+  </select>
+
+  <update id="disablePermission" parameterType="java.lang.Integer">
+    UPDATE a_permissions
+    SET is_enable = 0
+    WHERE
+        id = #{id,jdbcType=INTEGER}
+  </update>
+
+  <update id="removePermission" parameterType="java.lang.Integer">
+    UPDATE a_permissions
+    SET state = 'X'
+    WHERE
+        id = #{id,jdbcType=INTEGER}
+  </update>
+
+  <update id="disablePermissionSelect" parameterType="java.util.List">
+    UPDATE a_permissions
+    SET is_enable = 0
+    WHERE
+    id IN
+    <!--每次从list集合中取出数据放入id中 -->
+    <foreach collection="list"  item="id"  index="index"
+             separator="," open="(" close=")">
+      #{id,jdbcType=INTEGER}
+    </foreach>
+  </update>
+
+  <update id="removePermissionSelect" parameterType="java.util.List">
+    UPDATE a_permissions
+    SET state = 'X'
+    WHERE
+    id IN
+    <!--每次从list集合中取出数据放入id中 -->
+    <foreach collection="list"  item="id"  index="index"
+             separator="," open="(" close=")">
+      #{id,jdbcType=INTEGER}
+    </foreach>
+  </update>
+
+  <update id="editPermission" parameterType="org.jit.sose.domain.entity.Permissions" >
+    update a_permissions
+    <set >
+      <if test="permissionsTypeId != null" >
+        permissions_type_id = #{permissionsTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="permissionsModuleId != null" >
+        permissions_module_id = #{permissionsModuleId,jdbcType=INTEGER},
+      </if>
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="url != null" >
+        url = #{url,jdbcType=VARCHAR},
+      </if>
+      <if test="enable != null" >
+        is_enable = #{enable,jdbcType=BIT},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+
+
+  <insert id="addPermission" parameterType="org.jit.sose.domain.entity.Permissions" >
+    insert into a_permissions
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+        permissions_type_id,
+        permissions_module_id,
+        `name`,
+      <if test="description != null" >
+        description,
+      </if>
+        url,
+      <if test="remark != null" >
+        remark,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      #{permissionsTypeId,jdbcType=INTEGER},
+      #{permissionsModuleId,jdbcType=INTEGER},
+      #{name,jdbcType=VARCHAR},
+      <if test="description != null" >
+        #{description,jdbcType=VARCHAR},
+      </if>
+      #{url,jdbcType=VARCHAR},
+      <if test="remark != null" >
+         #{remark,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+
+  <select id="listUrlByMenuButtonId" resultType="java.lang.String" parameterType="java.lang.Integer">
+    SELECT
+        p.url
+    FROM
+        a_permissions p
+    INNER JOIN a_menu_back_permissions mp ON mp.permission_id = p.id
+    INNER JOIN a_menu_back m ON mp.menu_back_id = m.id
+    WHERE
+        p.state = 'A'
+    AND p.is_enable = TRUE
+    AND mp.state = 'A'
+    AND m.state = 'A'
+    AND m.id = #{buttonId,jdbcType=INTEGER}
+  </select>
+
+  <select id="listUrlByType" resultType="java.lang.String" parameterType="org.jit.sose.enums.PermissionTypeEnum">
+    SELECT
+        p.url
+    FROM
+        `a_permissions` p
+    INNER JOIN a_permissions_type t ON p.permissions_type_id = t.id
+    WHERE
+        p.state = 'A'
+    AND p.is_enable = TRUE
+    AND t.state = 'A'
+    AND t.type_name = #{type,jdbcType=VARCHAR}
+    ORDER BY
+        p.update_date DESC
+  </select>
+
+  <select id="listByMenuButtonId" resultType="org.jit.sose.domain.vo.PermissionsVo" parameterType="java.lang.Integer">
+    SELECT
+      p.id,
+      p.permissions_type_id,
+      p.permissions_module_id,
+      p.`name`,
+      p.description,
+      p.url,
+      p.is_enable AS `enable`,
+      mdu.description AS moduleDescription,
+      t.description AS typeDescription
+  FROM
+      a_permissions p
+  INNER JOIN a_menu_back_permissions mp ON (
+      mp.permission_id = p.id
+      AND mp.state = 'A'
+  )
+  LEFT JOIN a_permissions_module mdu ON (
+      p.permissions_module_id = mdu.id
+      AND mdu.state = 'A'
+  )
+  LEFT JOIN a_permissions_type t ON (
+      p.permissions_type_id = t.id
+      AND t.state = 'A'
+  )
+  WHERE
+      p.state = 'A'
+  AND mp.menu_back_id = #{buttonId,jdbcType=INTEGER}
+  </select>
+
+  <select id="listByUrl" resultType="org.jit.sose.domain.vo.PermissionsVo" parameterType="java.lang.String">
+     SELECT
+        p.id,
+        p.`name`,
+        p.description,
+        p.url,
+        mdu.description AS moduleDescription,
+        t.description AS typeDescription
+    FROM
+        a_permissions p
+    LEFT JOIN a_permissions_module mdu ON (
+        p.permissions_module_id = mdu.id
+        AND mdu.state = 'A'
+    )
+    LEFT JOIN a_permissions_type t ON (
+        p.permissions_type_id = t.id
+        AND t.state = 'A'
+    )
+    WHERE
+        p.state = 'A'
+    AND p.is_enable = TRUE
+    AND p.url LIKE CONCAT('%', #{url,jdbcType=VARCHAR}, '%')
+  </select>
+
+
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select
+    <include refid="Base_Column_List" />
+    from a_permissions
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from a_permissions
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.Permissions" >
+    insert into a_permissions (id, permissions_type_id, permissions_module_id, 
+      name, description, url, 
+      is_enable, create_date, update_date, 
+      state)
+    values (#{id,jdbcType=INTEGER}, #{permissionsTypeId,jdbcType=INTEGER}, #{permissionsModuleId,jdbcType=INTEGER}, 
+      #{name,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{url,jdbcType=VARCHAR}, 
+      #{enable,jdbcType=BIT}, #{createDate,jdbcType=TIMESTAMP}, #{updateDate,jdbcType=TIMESTAMP}, 
+      #{state,jdbcType=CHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.Permissions" >
+    insert into a_permissions
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="permissionsTypeId != null" >
+        permissions_type_id,
+      </if>
+      <if test="permissionsModuleId != null" >
+        permissions_module_id,
+      </if>
+      <if test="name != null" >
+        name,
+      </if>
+      <if test="description != null" >
+        description,
+      </if>
+      <if test="url != null" >
+        url,
+      </if>
+      <if test="enable != null" >
+        is_enable,
+      </if>
+      <if test="createDate != null" >
+        create_date,
+      </if>
+      <if test="updateDate != null" >
+        update_date,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="permissionsTypeId != null" >
+        #{permissionsTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="permissionsModuleId != null" >
+        #{permissionsModuleId,jdbcType=INTEGER},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="url != null" >
+        #{url,jdbcType=VARCHAR},
+      </if>
+      <if test="enable != null" >
+        #{enable,jdbcType=BIT},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.Permissions" >
+    update a_permissions
+    <set >
+      <if test="permissionsTypeId != null" >
+        permissions_type_id = #{permissionsTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="permissionsModuleId != null" >
+        permissions_module_id = #{permissionsModuleId,jdbcType=INTEGER},
+      </if>
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="url != null" >
+        url = #{url,jdbcType=VARCHAR},
+      </if>
+      <if test="enable != null" >
+        is_enable = #{enable,jdbcType=BIT},
+      </if>
+      <if test="createDate != null" >
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        update_date = #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.Permissions" >
+    update a_permissions
+    set permissions_type_id = #{permissionsTypeId,jdbcType=INTEGER},
+      permissions_module_id = #{permissionsModuleId,jdbcType=INTEGER},
+      name = #{name,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      url = #{url,jdbcType=VARCHAR},
+      is_enable = #{enable,jdbcType=BIT},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      update_date = #{updateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

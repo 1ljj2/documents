@@ -1,0 +1,107 @@
+package org.jit.sose.mapper;
+
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.Process;
+import org.jit.sose.domain.param.ListProcessParam;
+import org.jit.sose.domain.vo.ListIdNameVo;
+import org.jit.sose.domain.vo.ListProcessForReviewVo;
+import org.jit.sose.domain.vo.ListProcessVo;
+
+import java.util.List;
+
+public interface ProcessMapper {
+
+    /**
+     * 根据【流程名称、所属分类】筛选流程列表对象
+     *
+     * @param param
+     * @return
+     */
+    List<ListProcessForReviewVo> listForReviewByCondition(ListProcessParam param);
+
+    /**
+     * 根据processName模糊查询流程名称、标识
+     *
+     * @param processName
+     * @return
+     */
+    List<ListIdNameVo> listProcessByName(@Param("processName") String processName);
+
+    /**
+     * 根据id编辑流程基本信息
+     *
+     * @param process
+     */
+    void editProcess(Process process);
+
+    /**
+     * 单个更改流程项启用禁用状态
+     *
+     * @param id
+     * @param enable
+     */
+    void changeEnableProcess(@Param("id") Integer id, @Param("enable") String enable);
+
+    /**
+     * 更新process表中步骤标识
+     *
+     * @param stepId
+     */
+    void updateStepId(@Param("processId") Integer processId, @Param("stepId") Integer stepId);
+
+    /**
+     * 根据processId查询第一个步骤标识firstStepId
+     *
+     * @param id
+     * @return
+     */
+    Integer selectStepIdById(@Param("id") Integer id);
+
+    /**
+     * 删除单个流程项
+     *
+     * @param id
+     */
+    void removeProcess(Integer id);
+
+    /**
+     * 批量禁用流程项
+     *
+     * @param idList
+     */
+    void disableProcessSelect(List<Integer> idList);
+
+    /**
+     * 批量删除流程项
+     *
+     * @param idList
+     */
+    void removeProcessSelect(List<Integer> idList);
+
+    /**
+     * 新增流程
+     *
+     * @param process
+     */
+    void addProcess(Process process);
+
+    /**
+     * 根据【流程名称、所属分类、服务角色】筛选流程列表对象
+     *
+     * @param param
+     * @return
+     */
+    List<ListProcessVo> listByCondition(ListProcessParam param);
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(Process record);
+
+    int insertSelective(Process record);
+
+    Process selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(Process record);
+
+    int updateByPrimaryKey(Process record);
+}

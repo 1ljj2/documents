@@ -1,0 +1,55 @@
+#########################################
+# \u591A\u73AF\u5883\u914D\u7F6E
+#spring.profiles.active=dev
+# \u70ED\u90E8\u7F72\u662F\u5426\u751F\u6548
+spring.devtools.restart.enabled=false
+# \u662F\u5426\u5F00\u542Fsecurity
+security.enable=true
+# \u662F\u5426\u5F00\u542Fswagger
+swagger.enable=false
+##########################################
+# \u9879\u76EE\u540D
+server.servlet.context-path=/
+#\u8BBE\u7F6E\u542F\u52A8\u7AEF\u53E3
+server.port=2000
+# \u65E5\u5FD7\u6587\u4EF6\u5B58\u653E\u5730\u5740
+logging.file=D:/proj/document/log
+# \u65E5\u5FD7\u6253\u5370\u7EA7\u522B,\u4E5F\u53EF\u4EE5\u5206\u5305\u8BBE\u7F6E
+# \u65E5\u5FD7\u4E94\u4E2A\u7EA7\u522B error>warn>info>debug>trace
+# error\uFF08\u9519\u8BEF\uFF09\u3001warn\uFF08\u8B66\u544A\uFF09\u3001info\uFF08\u4FE1\u606F\uFF09\u3001debug\uFF08\u8C03\u8BD5\uFF09\u3001trace\uFF08\u8DDF\u8E2A\uFF09
+# \u5FC5\u8981\u7684\u6253\u5370\u4FE1\u606F\u7528info
+# \u8C03\u8BD5\u65F6\u7684\u8F93\u51FA\u7528debug
+# \u7CFB\u7EDF\u6D41\u7A0B\u8F93\u51FA\u7528trace
+logging.level.org.jit.sose=debug
+logging.level.org.jit.sose.mapper=trace
+# \u53BB\u9664swagger int\u7C7B\u578B\u65E0example\u65F6\u7684\u62A5\u9519
+logging.level.io.swagger.models.parameters.AbstractSerializableParameter=error
+# \u53EF\u4EE5\u6253\u5370\u914D\u7F6E\u62A5\u544A
+#debug = true
+## \u5728View\u8FD4\u56DE\u8BED\u53E5\u524D\u540E\u6DFB\u52A0\u524D\u540E\u7F00\u4FE1\u606F
+spring.mvc.view.prefix=/templates/
+spring.mvc.view.suffix=.html
+#\u52A0\u8F7D\u9759\u6001\u8D44\u6E90\u65B9\u5F0F\u4E8C
+spring.resources.static-locations=classpath:/resource
+#JPA Configuration:
+spring.jpa.database=MySQL
+spring.jpa.show-sql=true
+spring.jpa.generate-ddl=true
+# \u5F00\u542F\u9A7C\u5CF0\u547D\u540D\u5339\u914D
+mybatis.configuration.map-underscore-to-camel-case=true
+# \u6307\u5B9Asql\u6620\u5C04\u6587\u4EF6\u7684\u4F4D\u7F6E
+mybatis.mapper-locations=classpath*:/mapper/*.xml
+# mybatis\u522B\u540D
+mybatis.type-aliases-package=org.jit.sose.entity
+#\u8BBE\u7F6Esession\u8D85\u65F6\u65F6\u95F4
+#server.session.timeout=300
+#pagehelper\u914D\u7F6E
+pagehelper.helper-dialect=mysql
+pagehelper.reasonable=true
+pagehelper.support-methods-arguments=true
+pagehelper.params=count=countSql
+
+#\u9759\u6001\u8D44\u6E90\u5BF9\u5916\u66B4\u9732\u7684\u8BBF\u95EE\u8DEF\u5F84
+file.staticAccessPath = /upload_document/**
+#\u6587\u4EF6\u4E0A\u4F20\u76EE\u5F55
+file.uploadFolder = D:\\proj\\document\\file\\

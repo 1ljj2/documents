@@ -1,0 +1,52 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.service.TxtReadService;
+import org.springframework.stereotype.Service;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author wufang
+ * @Date 2020-09-17 14:29:08
+ */
+@Service
+public class TxtReadServiceImpl implements TxtReadService {
+    /**
+     * 项目系统信息Txt目录
+     */
+//    @Value("${file.systemInfoUrl}")
+//    private String systemInfoUrl;
+
+    @Override
+    public Map<String,String> getSystemInfo() {
+        List<String> systemInfoList = new ArrayList<>();
+        Map<String,String> systemInfo = new HashMap<>();
+//        String path = "C:\\FruitCake\\proj\\document\\systemInfo.txt";
+//        String path = "D:\\proj\\document\\systemInfo.txt";
+        String path = "D:\\防篡改文档系统\\systemInfo.txt";
+        File file = new File(path);
+//        System.out.println("systemInfoUrl:" + systemInfoUrl);
+//        File file = new File(systemInfoUrl);
+        try {
+            InputStreamReader isr = new InputStreamReader(new FileInputStream(file), "UTF-8");
+            BufferedReader br = new BufferedReader(isr);
+            String s = null;
+            while ((s = br.readLine()) != null) {//使用readLine方法，一次读一行
+                String[] split = s.split(":",2);
+                systemInfoList.add(s);
+                systemInfo.put(split[0],split[1]);
+            }
+            br.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return systemInfo;
+    }
+}

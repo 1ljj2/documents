@@ -1,0 +1,138 @@
+package org.jit.sose.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.FileInfo;
+import org.jit.sose.domain.entity.shareFile;
+import org.jit.sose.domain.param.*;
+import org.jit.sose.domain.vo.*;
+
+import java.util.List;
+import java.util.Map;
+
+public interface FileInfoMapper extends BaseMapper<FileInfo> {
+
+    /**
+     * 课程和学期都选好时，获取匹配文档模板给档案模板参考
+     *
+     * @param termId
+     * @param courseId
+     * @return
+     */
+    List<ListMatchFileTemVo> listMatchFile(Integer termId, Integer courseId);
+
+    /**
+     * 编辑文档信息
+     *
+     * @param param
+     */
+    void editFileInfo(FileInfoParam param);
+
+    /**
+     * 根据【流程模板名称、学期、分类、分页参数】筛选文档模板列表对象
+     *
+     * @param param
+     * @return
+     */
+    List<ListFileTemVo> listFileTemByCondition(ListFileTemParam param);
+
+    /**
+     * 根据【流程文档名称、学期、分类、创建者、分页参数】筛选我审核的文档列表对象
+     *
+     * @param param
+     * @return
+     */
+    List<listMyAuditFileVo> listMyAuditFile(listMyAuditFileParam param);
+
+    /**
+     * 根据【名称、学期、分类、分页参数】筛选我的文档
+     *
+     * @param param
+     * @return
+     */
+    List<ListMyFileVo> listMyFile(ListMyFileParam param);
+
+    /**
+     * 根据【流程模板名称、学期、分类、课程、分页参数】筛选文档监管列表对象
+     *
+     * @param param
+     * @return
+     */
+    List<ListChargingFileVo> listChargingFileByCondition(ListChargingFileParam param);
+
+
+    int insertSelective(FileInfo record);
+
+    /**
+     * 插入签名
+     *
+     * @param record
+     * @return
+     */
+    int insertSignature(FileInfo record);
+
+    /**
+     * 签名信息过滤查询
+     *
+     * @param params
+     * @return
+     */
+    List<FileInfo> selectSignatureList(Map<String, Object> params);
+
+    /**
+     * 根据id查询文件信息【全部信息】
+     *
+     * @param id
+     * @return
+     */
+    FileInfo selectByPrimaryKey(Integer id);
+
+    /**
+     * 根据id查询文件信息【文件编码获取】
+     *
+     * @param id
+     * @return
+     */
+    FileInfo getFileCodeById(Integer id);
+
+    /**
+     * 逻辑删除文件
+     *
+     * @param id
+     * @return
+     */
+    int updateStateToX(Integer id);
+
+    /**
+     * 批量逻辑删除文件
+     *
+     * @param idList
+     * @return
+     */
+    int updateSelectedStateToX(List<Integer> idList);
+
+    /**
+     * 查询数据库中是否有相同的文件记录
+     *
+     * @param hashCode
+     * @return
+     */
+    int fileVerification(String hashCode);
+
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(FileInfo record);
+
+//    int insertSelective(FileInfo record);
+//
+//    FileInfo selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeyWithBLOBs(FileInfo record);
+
+    int updateByPrimaryKey(FileInfo record);
+
+    int shareFile(@Param("shareFiles") List<shareFile> shareFiles);
+
+    int[] selectRoleIdByUserId(@Param("id") Integer id);
+}

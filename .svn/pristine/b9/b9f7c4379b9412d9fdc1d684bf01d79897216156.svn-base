@@ -1,0 +1,25 @@
+package org.jit.sose.service.impl;
+
+import org.jit.sose.domain.vo.ListCategoryVo;
+import org.jit.sose.mapper.CategoryMapper;
+import org.jit.sose.service.CategoryService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-09-22 11:17:48
+ */
+@Service
+public class CategoryServiceImpl implements CategoryService {
+
+    @Autowired
+    private CategoryMapper categoryMapper;
+
+    @Override
+    public List<ListCategoryVo> listCategoryByType(String type) {
+        return categoryMapper.listCategoryByType(type);
+    }
+}

@@ -1,0 +1,183 @@
+/* 全局样式，设置页面和主体的高度、宽度，去除默认的外边距和内边距，隐藏溢出内容 */
+html, body, .layout-body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; /* 企业常用字体 */
+    color: #f8fafc; /* 浅色文本，确保在深色背景下可读 */
+}
+
+/* 主包裹容器，设置高度并允许垂直滚动 */
+#wrap {
+    height: 84%;
+    overflow: auto;
+}
+
+/* 整体布局容器，修改为深色背景 */
+.layout {
+    width: 100%;
+    /*background: #1e293b; /* 深蓝色背景，替代原浅灰色 */
+    background: #051e42; /* 深蓝色背景，替代原浅灰色 */
+    position: relative;
+}
+
+/* 侧边栏布局 */
+#layout-sider {
+    display: inline;
+    float: left;
+    width: 13%;
+    height: 100%;
+    /*background: #2c3e50; /* 深蓝色背景 */
+    background: #051e42; /* 深蓝色背景 */
+    overflow-x: hidden;
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox 隐藏滚动条 */
+    -ms-overflow-style: none; /* IE 10+ 隐藏滚动条 */
+    padding-top: 2%;
+}
+
+/* 修改侧边栏的宽度相关属性 */
+.ivu-layout-sider {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 100% !important;
+}
+
+/* Chrome 隐藏滚动条 */
+.ivu-layout-sider::-webkit-scrollbar {
+    width: 0;
+}
+
+/* 主内容区域布局，修改为深色背景 */
+.layout-main {
+    float: right;
+    width: 87%;
+    height: 100%;
+    padding-top: 2%;
+    padding-left: 1%;
+    /*background: #2c3e50; /* 深蓝色背景，替代原白色 */
+    background: #051e42; /* 深蓝色背景，替代原白色
+    /*border: 1px solid #051e42; /* 深色边框，与整体背景协调 */
+    overflow-x: hidden;
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox 隐藏滚动条 */
+    -ms-overflow-style: none; /* IE 10+ 隐藏滚动条 */
+}
+
+/* Chrome 隐藏滚动条 */
+.layout-main::-webkit-scrollbar {
+    width: 0;
+}
+
+.layout-logo-img {
+    width: 45%;
+    height: 64px;
+    float: left;
+}
+
+.layout-logo-img img {
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
+}
+
+.layout-logo {
+    width: 365px;
+    height: 50px;
+    background: #051e42; /* 深蓝色背景 */
+    border-radius: 3px;
+    float: left;
+    position: relative;
+    top: 7px;
+    left: 20px;
+    color: #fff; /* 白色文字 */
+    line-height: 48px;
+    font-size: 40px;
+    font-weight: bold; /* 加粗字体 */
+    letter-spacing: 1px; /* 增加字母间距 */
+}
+
+.layout-nav {
+    width: 420px;
+    margin: 0 auto;
+    margin-right: 20px;
+    color: #fff;
+}
+
+.nowTime {
+    font-size: 12px;
+    margin-left: 20px;
+}
+
+/* Chrome 隐藏侧边栏滚动条 */
+#layout-sider::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+/* 页脚布局，保持深蓝色背景 */
+#layout-foot {
+    height: 12%;
+    background: #051e42; /* 深蓝色背景 */
+    border-top: 1px solid #334155; /* 深灰色边框 */
+    text-align: center;
+}
+
+/* 页脚文字样式，保持白色文字 */
+.footerSpan {
+    font: 25px "Segoe UI", "Helvetica Neue", Arial, sans-serif; /* 企业常用字体 */
+    line-height: 60px;
+    font-wei.el-card__header {
+                padding
+            Shorthand property to set values for the thickness of the padding area. If left is omitted, it is the same as right. If bottom is omitted it is the same as top, if right is omitted it is the same as top. The value may not be negative.
+            了解详细信息
+            不显示
+            : 18px 20px;
+                border-bottom: 1px solid #EBEEF5;
+                -webkit-box-sizing: border-box;
+                box-sizing: border-box;
+            }ght: 300; /* 调整字体粗细 */
+    color: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -moz-font-feature-settings: "liga", "kern";
+}
+
+/* 外部容器样式，保持原有设置 */
+.outer-container {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 菜单主要样式，加深背景颜色 */
+.ivu-menu-primary {
+    background: #1e293b; /* 深蓝色背景 */
+}
+
+/* 布局头部样式 */
+.ivu-layout-header {
+    background: #051e42; /* 深蓝色背景 */
+}
+
+/* 深色菜单样式 */
+.ivu-menu-dark {
+    background: #051e42; /* 深蓝色背景 */
+}
+
+/* 待办事项计数样式*/
+#todo_affair_count {
+    color: #f87171; /* 亮红色文字*/
+}
+
+/* 列表项样式 */
+.item {
+    margin-left: 10px;
+}
+
+/* 徽章内容样式 */
+.el-badge__content.is-fixed {
+    top: 15px !important;
+}

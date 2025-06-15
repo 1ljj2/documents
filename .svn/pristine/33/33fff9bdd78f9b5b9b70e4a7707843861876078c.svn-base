@@ -1,0 +1,17 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ArchiveTemCategoryCon;
+
+public interface ArchiveTemCategoryConMapper {
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ArchiveTemCategoryCon record);
+
+    int insertSelective(ArchiveTemCategoryCon record);
+
+    ArchiveTemCategoryCon selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ArchiveTemCategoryCon record);
+
+    int updateByPrimaryKey(ArchiveTemCategoryCon record);
+}

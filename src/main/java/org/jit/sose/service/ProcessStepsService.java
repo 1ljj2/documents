@@ -1,0 +1,70 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.vo.ListStepsVo;
+import org.jit.sose.domain.vo.UserStepArcVo;
+import org.jit.sose.domain.vo.UserStepVo;
+
+import java.util.List;
+
+/**
+ * @author wufang
+ * @Date 2020-07-02 14:30:30
+ */
+public interface ProcessStepsService {
+//
+//    /**
+//     * 检查是否是流程的第一个操作步骤
+//     *
+//     * @param stepId
+//     * @return
+//     */
+//    Boolean checkIsFirstStep(Integer stepId);
+//
+//    /**
+//     * 判断是否是最后一个流程，1为否，0为是
+//     * @param id
+//     * @return
+//     */
+//    Boolean checkIsFinalStep(Integer id);
+
+    /**
+     * 根据【用户信息、流程信息】获取【流程步骤图及处理信息】集合
+     */
+    List<UserStepArcVo> checkArchiveAuditStepInfo(Integer exampleId, Integer processId);
+
+    /**
+     * 根据【用户信息、流程信息】获取【流程步骤图及处理信息】集合
+     */
+    List<UserStepVo> checkFileAuditStepInfo(Integer exampleId,Integer processId);
+
+    /**
+     * 根据idList流程步骤对象
+     *
+     * @param idList
+     * @return
+     */
+    List<ListStepsVo> viewStepByIdList(List<Integer> idList);
+
+//    /**
+//     * 编辑单个流程步骤
+//     *
+//     * @param param
+//     */
+//    void editProcessStep(AddEditStepParam param);
+
+    /**
+     * 根据流程id删除指定的一个流程步骤，重新部署流程步骤
+     *
+     * @param processId
+     * @param stepId
+     */
+    void removeStepByProcessId(Integer processId, Integer stepId);
+
+    /**
+     * 根据流程id获取其全部流程步骤对象
+     *
+     * @param processId
+     * @return
+     */
+    List<ListStepsVo> viewStepsByProcessId(Integer processId);
+}

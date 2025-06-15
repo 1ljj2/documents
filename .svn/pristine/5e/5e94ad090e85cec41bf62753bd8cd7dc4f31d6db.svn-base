@@ -1,0 +1,23 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.UserInfo;
+
+public interface UserInfoMapper {
+
+    /**
+     * 注册
+     * @param record
+     * @return
+     */
+    int register(UserInfo record);
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(UserInfo record);
+
+    UserInfo selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(UserInfo record);
+
+    int updateByPrimaryKey(UserInfo record);
+}

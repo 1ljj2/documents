@@ -1,0 +1,32 @@
+package org.jit.sose.mapper;
+
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.FileExampleProcess;
+
+public interface FileExampleProcessMapper {
+
+    /**
+     * 根据实例标识查询当前实例由谁发起
+     *
+     * @param exampleId
+     * @return
+     */
+    String selectUserStep(@Param("exampleId") Integer exampleId);
+
+    /**
+     * 新增实例
+     */
+    void addExample(FileExampleProcess example);
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(FileExampleProcess record);
+
+    FileExampleProcess selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(FileExampleProcess record);
+
+    int updateByPrimaryKey(FileExampleProcess record);
+
+    int getProcessIdByFileId(Integer fileId);
+}

@@ -1,0 +1,157 @@
+package org.jit.sose.controller.account;
+
+import com.alibaba.fastjson.JSONObject;
+import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
+import com.github.xiaoymin.knife4j.annotations.ApiSupport;
+import com.github.xiaoymin.knife4j.annotations.DynamicParameter;
+import com.github.xiaoymin.knife4j.annotations.DynamicParameters;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import org.jit.sose.domain.entity.CourseInfo;
+import org.jit.sose.domain.entity.SecurityUser;
+import org.jit.sose.domain.vo.ListIdNameVo;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.service.CourseInfoService;
+import org.jit.sose.util.ResponseUtil;
+import org.jit.sose.util.StringUtil;
+import org.jit.sose.web.response.CommonResp;
+import org.jit.sose.web.response.CommonRespT;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author wufang
+ * @Date 2020-09-30 11:07:16
+ */
+@ApiResponses({@ApiResponse(code = 200, message = "success"),
+        @ApiResponse(code = 401, message = "Authentication Failure"),
+        @ApiResponse(code = 402, message = "Login Information Invalid"),
+        @ApiResponse(code = 403, message = "No Permission"), @ApiResponse(code = 500, message = "Request fail")})
+@Api(tags = "课程信息接口")
+@ApiSupport(author = "wufang")
+@RestController
+@RequestMapping("/account/course")
+public class CourseInfoController {
+
+    @Autowired
+    private CourseInfoService courseInfoService;
+
+    @ApiOperation(value = "根据输入的courseName获得courseList")
+    @ApiOperationSupport(order = 1)
+    @PostMapping(value = "/listCourseByName")
+    public CommonRespT<List<ListIdNameVo>> listCourseByName(@RequestBody JSONObject json) {
+        String name = StringUtil.isEmpty(json.getString("name")) ? null : json.getString("name");
+        return ResponseUtil.successT(courseInfoService.listCourseByName(name));
+    }
+
+    @ApiOperation(value = "根据输入的课程列表名称获得courseLists 课程列表集合")
+    @ApiOperationSupport(order = 1)
+    @RequestMapping("/listCoursesByName")
+    public CommonRespT<List<ListIdNameVo>> listCoursesByName(@RequestBody JSONObject json){
+        String name = StringUtil.isEmpty(json.getString("name")) ? null : json.getString("name");
+        return ResponseUtil.successT(courseInfoService.listCoursesByName(name));
+    }
+
+//    @RequestMapping(value = "/queryAllCourse")
+//    @ResponseBody
+//    public List<CourseInfo> allCourse(){
+//        List<CourseInfo> l=courseInfoService.queryAllCourse();
+//        return l;
+//    }
+
+    @ApiOperation(value = "查询域表集合", notes = "根据课程名，课程编号过滤查询")
+    @ApiOperationSupport(params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "courseCode", value = "表名", required = true, dataTypeClass = String.class, example = "公用表"),
+            @DynamicParameter(name = "courseName", value = "列名", required = true, dataTypeClass = String.class, example = "状态"),
+            @DynamicParameter(name = "pageNum", value = "当前页码", required = true, dataTypeClass = String.class, example = "1"),
+            @DynamicParameter(name = "pageSize", value = "每页条数", required = true, dataTypeClass = String.class, example = "10")}))
+    @PostMapping(value = "/queryAllCourse")
+    public Map<Object, Object> listCourse(@RequestBody JSONObject json,
+                                          @ApiIgnore @AuthenticationPrincipal SecurityUser securityUser) {
+        CourseInfo one =new CourseInfo();
+        String courseCode = json.getString("courseCode");
+        String courseName = json.getString("courseName");
+        one.setCourseCode(StringUtil.isEmpty(courseCode) ? null : courseCode);
+        one.setCourseName(StringUtil.isEmpty(courseName) ? null : courseName);
+        // 当前页码
+        Integer pageNum = json.getInteger("pageNum");
+        // 每页条数
+        Integer pageSize = json.getInteger("pageSize");
+        PageInfoVo<CourseInfo> pageInfo = courseInfoService.selectPageInfo(one, pageNum, pageSize);
+        //String name = StringUtil.isEmpty(json.getString("name")) ? null : json.getString("name");
+        Integer n=courseInfoService.selectUserId(securityUser.getId());
+        int [] roleList=courseInfoService.selectRoleId(securityUser.getId());
+        Map<Object,Object> map=new HashMap<>();
+        map.put("allCourse",ResponseUtil.successT(pageInfo));
+        map.put("courseLeaderNum",n);
+        map.put("roleList",roleList);
+        return map;
+       // return ResponseUtil.successT(pageInfo);//,pageNum,pageSizelistCourseByName(name)
+        //CommonRespT<PageInfoVo<CourseInfo>>
+    }
+
+
+    @ApiOperation(value = "更新一条课程信息", response = CommonResp.class)
+    //@ApiOperationSupport(order = 3)
+    @RequestMapping(value = "/updateOneCourse", method = RequestMethod.POST)
+    public void updateOneCourse(@RequestBody CourseInfo courseInfo) {
+
+        System.out.println("进入修改方法");
+        courseInfoService.updateCourse(courseInfo);
+    }
+
+
+
+    @ApiOperation(value = "删除一条课程信息", response = CommonResp.class)
+    //@ApiOperationSupport(order = 3)
+    @RequestMapping(value = "/deleteOneCourse", method = RequestMethod.POST)
+    public void deleteOneCourse(@RequestBody Integer id) {
+        System.out.println("id是"+id);
+        System.out.println("进入删除方法");
+        courseInfoService.deleteOneCourse(id);
+    }
+
+
+    @ApiOperation(value = "删除多条课程信息", response = CommonResp.class)
+    //@ApiOperationSupport(order = 3)
+    @RequestMapping(value = "/deleteSelectedCourses", method = RequestMethod.POST)
+    public void deleteSelectedCourses(@RequestBody  int[] idList) {
+        System.out.println("============");
+        System.out.println(Arrays.toString(idList));
+        System.out.println("进入删除方法");
+        courseInfoService.deleteSelectedCourses(idList);
+    }
+
+
+    @ApiOperation(value = "增加一条课程信息", response = CommonResp.class)
+    //@ApiOperationSupport(order = 3)
+    @RequestMapping(value = "/insertOneCourse", method = RequestMethod.POST)
+    public void insertOneCourse(@RequestBody CourseInfo courseInfo) {
+      //  System.out.println("fuzeren"+courseInfo.getLeaderUserId());
+//        System.out.println(
+//                courseInfo.getCourseCode()+"=="+
+//                courseInfo.getCourseName()+"==" +
+//                courseInfo.getRemark()+"=="+
+//                Arrays.toString(courseInfo.getAllUserId()));
+   //     System.out.println("进入增加方法");
+        courseInfoService.insertOneCourse(courseInfo);
+    }
+
+
+    @ApiOperation(value = "增加一条课程信息")
+    @RequestMapping("/addCourseList")
+    public void insertCourseList(@RequestBody CourseInfo courseInfo){
+        //System.out.println(courseInfo);
+        courseInfoService.insertCourseList(courseInfo);
+    }
+
+}

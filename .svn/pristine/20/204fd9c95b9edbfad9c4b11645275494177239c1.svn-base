@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>我的档案</title>
+    <script type="text/javascript" src="/public/common.js"></script>
+    <script type="text/javascript" src="/public/sose/js/checkViewPermissions.js"></script>
+        <link rel="stylesheet" type="text/css" href="/templates/archive/css/myArchive.css">
+    <link rel="stylesheet" type="text/css" href="/templates/archive/css/archiveMan.css">
+    <!--    &lt;!&ndash; 引入样式 &ndash;&gt;-->
+    <!--    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">-->
+    <!--    &lt;!&ndash; 引入组件库 &ndash;&gt;-->
+    <!--    <script src="https://unpkg.com/element-ui/lib/index.js"></script>-->
+
+</head>
+<style>
+    .el-table .warning-row {
+        background: oldlace;
+    }
+
+    .el-table .success-row {
+        background: #f0f9eb;
+    }
+</style>
+
+<body>
+<div class="layout-body" id="myArchive" v-cloak>
+    <layout-header></layout-header>
+    <div id="wrap">
+        <layout-sider></layout-sider>
+        <div class="layout-main">
+            <!--页面Tabs部门-->
+            <template>
+                <el-tabs :value="activeName" @tab-click="handleClick" class="tabs">
+                    <!--文档模板管理-->
+                    <el-tab-pane label="学期" name="yearTermTab">
+                        <!-- 多条件查询及操作 -->
+                        <div class="qry">
+                            <!--搜索框及搜索、清空按钮-->
+                            <div class="first">
+                                <div class="juinline">
+                                    <span>
+                                        档案名称:
+                                        <el-input class="input" type="text" v-model.trim="sArchive.archiveName"
+                                                  placeholder="请输入名称" :size="componentSize"></el-input>
+                                    </span>
+                                    <span>
+                                         分类:
+                                        <el-select class="input" v-model="sArchive.categoryId"
+                                                   placeholder="请选择" :size="componentSize">
+                                            <el-option v-for="item in categoryList"
+                                                       :key="item.id"
+                                                       :label="item.categoryName"
+                                                       :value="item.id">
+                                                <span style="float: left">{{ item.categoryName }}</span>
+                                            </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        课程:
+                                        <el-select class="input" v-model="sArchive.courseId"
+                                                   placeholder="请选择" filterable remote :remote-method="listCourseByName"
+                                                   :size="componentSize">
+                                            <el-option v-for="item in courseList"
+                                                       :key="item.id"
+                                                       :label="item.name"
+                                                       :value="item.id">
+                                                <span style="float: left">{{ item.name }}</span>
+                                            </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        学期:
+                                        <el-select class="input" v-model="sArchive.termId"
+                                                   placeholder="2019-2020-1" size="medium"
+                                                   filterable remote :remote-method="listTermByName">
+                                                <el-option v-for="item in termList"
+                                                           :key="item.id"
+                                                           :label="item.name"
+                                                           :value="item.id">
+                                                    <span style="float: left">{{ item.name }}</span>
+                                                </el-option>
+                                        </el-select>
+                                    </span>
+                                </div>
+                                <div class="butRight">
+                                    <el-button type="primary" @click="getArchiveData" :size="componentSize">搜索
+                                    </el-button>
+                                    <el-button @click="clearSArchive" :size="componentSize">清空</el-button>
+                                </div>
+                            </div>
+                        </div>
+                        <!--页面主体部分-->
+                        <el-row>
+                            <!--档案区域-->
+                            <el-col :span="24">
+
+                                <!--档案模板Card列表-->
+                                <el-row :gutter="8">
+                                    <div v-for="(o, index) in archiveData" :key="o">
+                                        <el-col :span="24"
+                                                v-if="(index==0)||(archiveData[index].termName!=archiveData[index-1].termName)">
+                                            <el-divider content-position="left" width="1000px">
+                                                学期   {{archiveData[index].termName}}
+                                            </el-divider>
+                                        </el-col>
+                                        <el-col :span="8">
+
+                                            <el-card :body-style="{ padding: '0px' }" shadow="always"
+                                                     class="card-item" @click.native="">
+                                                <!--流程名称+服务对象-->
+                                                <div class="card-list-introduce">
+                                                    <span class="card-list-name">{{o.name}}</span>
+
+                                                </div>
+                                                <!--标签（都是关联）-->
+                                                <div class="card-list-tags">
+                                                    <span class="card-list-categoryName">{{o.categoryName}}</span>
+                                                    <span class="card-list-processName">{{o.processName}}</span>
+                                                </div>
+                                                <div class="card-list-tags">
+                                                    <span class="card-list-courseName">{{o.courseName}}</span>
+                                                    <span class="card-list-termName">{{o.termName}}</span>
+                                                </div>
+                                                <!--更新时间+备注-->
+                                                <div class="card-list-otherInfo">
+                                                    <div>更新时间：{{o.stateTimeString}}</div>
+                                                    <div>
+                                                        备注：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{o.remark}}
+                                                    </div>
+                                                    <div>
+                                                        编号：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{o.number}}
+                                                    </div>
+                                                </div>
+                                                <!--查看文件池按钮-->
+                                                <div class="bottom clearfix" style="padding: 5px;">
+<!--                                                    <el-button type="text" class="button"-->
+<!--                                                               v-if="!o.processId"-->
+<!--                                                               @click="openForReviewModal(o)">提交审核-->
+<!--                                                    </el-button>-->
+                                                    <el-button type="text" class="button" style="margin-right:15px;"
+                                                               @click="openDrawer(o)">编辑
+                                                    </el-button>
+
+                                                </div>
+                                            </el-card>
+                                        </el-col>
+                                    </div>
+                                </el-row>
+
+                                <!--分页功能-->
+                                <div class="div-inline-right">
+                                    <Page :current="archivePageNum" :total="archiveTotalNum" :page-size="archivePageSize"
+                                          @on-change="onArchivePageChange" @on-page-size-change="onArchivePageSizeChange"
+                                          show-total show-elevator show-sizer>
+                                    </Page>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </el-tab-pane>
+                    <!--系统文档监管-->
+                    <el-tab-pane label="课程" name="courseTab">
+                        <!-- 多条件查询及操作 -->
+                        <div class="qry">
+                            <!--搜索框及搜索、清空按钮-->
+                            <div class="first">
+                                <div class="juinline">
+                                    <span>
+                                        档案名称:
+                                        <el-input class="input" type="text" v-model.trim="sArchive.archiveName"
+                                                  placeholder="请输入名称" :size="componentSize"></el-input>
+                                    </span>
+                                    <span>
+                                         分类:
+                                        <el-select class="input" v-model="sArchive.categoryId"
+                                                   placeholder="请选择" :size="componentSize">
+                                            <el-option v-for="item in categoryList"
+                                                       :key="item.id"
+                                                       :label="item.categoryName"
+                                                       :value="item.id">
+                                                <span style="float: left">{{ item.categoryName }}</span>
+                                            </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        课程:
+                                        <el-select class="input" v-model="sArchive.courseId"
+                                                   placeholder="请选择" filterable remote :remote-method="listCourseByName"
+                                                   :size="componentSize">
+                                            <el-option v-for="item in courseList"
+                                                       :key="item.id"
+                                                       :label="item.name"
+                                                       :value="item.id">
+                                                <span style="float: left">{{ item.name }}</span>
+                                            </el-option>
+                                        </el-select>
+                                    </span>
+                                    <span>
+                                        学期:
+                                        <el-select class="input" v-model="sArchive.termId"
+                                                   placeholder="2019-2020-1" size="medium"
+                                                   filterable remote :remote-method="listTermByName">
+                                                <el-option v-for="item in termList"
+                                                           :key="item.id"
+                                                           :label="item.name"
+                                                           :value="item.id">
+                                                    <span style="float: left">{{ item.name }}</span>
+                                                </el-option>
+                                        </el-select>
+                                    </span>
+                                </div>
+                                <div class="butRight">
+                                    <el-button type="primary" @click="getArchiveData" :size="componentSize">搜索
+                                    </el-button>
+                                    <el-button @click="clearSArchive" :size="componentSize">清空</el-button>
+                                </div>
+                            </div>
+                        </div>
+                        <!--页面主体部分-->
+                        <el-row>
+                            <!--档案区域-->
+                            <el-col :span="24">
+
+                                <!--档案模板Card列表-->
+                                <el-row :gutter="8">
+                                    <div v-for="(o, index) in archiveData" :key="o">
+                                        <el-col :span="24"
+                                                v-if="(index==0)||(archiveData[index].courseName!=archiveData[index-1].courseName)">
+                                            <el-divider content-position="left" width="1000px">
+                                                课程   {{archiveData[index].courseName}}
+                                            </el-divider>
+                                        </el-col>
+                                        <el-col :span="8">
+
+                                            <el-card :body-style="{ padding: '0px' }" shadow="always"
+                                                     class="card-item" @click.native="">
+                                                <!--流程名称+服务对象-->
+                                                <div class="card-list-introduce">
+                                                    <span class="card-list-name">{{o.name}}</span>
+
+                                                </div>
+                                                <!--标签（都是关联）-->
+                                                <div class="card-list-tags">
+                                                    <span class="card-list-categoryName">{{o.categoryName}}</span>
+                                                    <span class="card-list-processName">{{o.processName}}</span>
+                                                </div>
+                                                <div class="card-list-tags">
+                                                    <span class="card-list-courseName">{{o.courseName}}</span>
+                                                    <span class="card-list-termName">{{o.termName}}</span>
+                                                </div>
+                                                <!--更新时间+备注-->
+                                                <div class="card-list-otherInfo">
+                                                    <div>更新时间：{{o.stateTimeString}}</div>
+                                                    <div>
+                                                        备注：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{o.remark}}
+                                                    </div>
+                                                    <div>
+                                                        编号：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{o.number}}
+                                                    </div>
+                                                </div>
+                                                <!--查看文件池按钮-->
+                                                <div class="bottom clearfix" style="padding: 5px;">
+                                                    <!--                                                    <el-button type="text" class="button"-->
+                                                    <!--                                                               v-if="!o.processId"-->
+                                                    <!--                                                               @click="openForReviewModal(o)">提交审核-->
+                                                    <!--                                                    </el-button>-->
+                                                    <el-button type="text" class="button" style="margin-right:15px;"
+                                                               @click="openDrawer(o)">编辑
+                                                    </el-button>
+
+                                                </div>
+                                            </el-card>
+                                        </el-col>
+                                    </div>
+                                </el-row>
+
+                                <!--分页功能-->
+                                <div class="div-inline-right">
+                                    <Page :current="archivePageNum" :total="archiveTotalNum" :page-size="archivePageSize"
+                                          @on-change="onArchivePageChange" @on-page-size-change="onArchivePageSizeChange"
+                                          show-total show-elevator show-sizer>
+                                    </Page>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </el-tab-pane>
+                </el-tabs>
+            </template>
+
+        </div>
+
+
+
+        <!--文件池抽屉-->
+        <el-drawer
+                :title="archiveFilePooInfo.archiveFilePoolTitle"
+                :visible.sync="archiveFilePool"
+                show-close="false"
+                direction="rtl"
+                :before-close="handleClose"
+                size="47%">
+            <el-table :data="archiveFilePoolData"
+                      :row-class-name="tableRowClassName">
+                <el-table-column property="temFileName" label=模板文件 width="220">
+
+                    <template slot-scope="scope">
+                        <span style="margin-left: 5px;width: 130px">{{ scope.row.temFileName }}</span>
+                        <el-button style="margin-left: 10px"
+                                   @click.native.prevent="downloadArchiveFileTem(scope.$index, scope.row)"
+                                   type="text"
+                                   size="small">
+                            下载
+                        </el-button>
+                        <el-button style="margin-left: 10px"
+                                   @click.native.prevent="downloadArchiveFileTem(scope.$index, scope.row)"
+                                   type="text"
+                                   size="small">
+                            预览
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column property="userFileName" label="用户上传文件" width="210">
+                    <template slot-scope="scope">
+                        <span style="margin-left: 5px;width: 130px" v-if="scope.row.userFileName">{{ scope.row.userFileName }}</span>
+                        <span style="margin-left: 5px;width: 130px" v-else>未上传文件</span>
+                        <el-button v-if="scope.row.userStateTimeString"
+                                   style="margin-left: 10px"
+                                   @click.native.prevent="downloadUserFile(scope.$index, scope.row)"
+                                   type="text"
+                                   size="small">
+                            下载
+                        </el-button>
+                        <el-button v-if="scope.row.userStateTimeString"
+                                   style="margin-left: 10px"
+                                   @click.native.prevent="downloadUserFile(scope.$index, scope.row)"
+                                   type="text"
+                                   size="small">
+                            预览
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        label="操作">
+                    <template slot-scope="scope">
+<!--                        <el-button v-if="scope.row.userStateTimeString"-->
+<!--                                   style="margin-left: 10px"-->
+<!--                                   @click.native.prevent="downloadUserFile(scope.$index, scope.row)"-->
+<!--                                   type="text"-->
+<!--                                   size="small">-->
+<!--                            提交审核-->
+<!--                        </el-button>-->
+                        <el-button v-if="scope.row.userStateTimeString"
+                                   style="margin-left: 10px"
+                                   @click.native.prevent="downloadUserFile(scope.$index, scope.row)"
+                                   type="text"
+                                   size="small">
+                            替换文件
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <!--                            <el-table-column property="address" label="地址"></el-table-column>-->
+            </el-table>
+            <div style="text-align: center;">
+                <el-upload
+                        class="upload-demo"
+                        :limit="9"
+                        drag
+                        :auto-upload="false"
+                        multiple
+                        :on-change="handleChange"
+                        :on-remove="handleRemove"
+                        :on-preview="handlePreview"
+                        :on-exceed="handleExceedLimit"
+                        :file-list="fileList"
+                        :show-file-list="true">
+                    <i class="el-icon-upload"></i>
+                    <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                    <!--                        <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过500kb</div>-->
+                </el-upload>
+                <el-button type="primary"
+                           @click.native.prevent="openSubmitArchiveFileModal"
+                           size="small">
+                    上传
+                </el-button>
+                <el-button type="success"
+                           size="small"
+                           v-if = "submitAuditButton"
+                           @click="openForReviewModal()">提交审核
+                </el-button>
+                <!--                <el-button type="success"-->
+                <!--                           @click.native.prevent=""-->
+                <!--                           type="text"-->
+                <!--                           size="small">-->
+                <!--                    下载-->
+                <!--                </el-button>-->
+            </div>
+        </el-drawer>
+
+
+        <!--送审的模态框-->
+        <Modal v-model="forReviewModal" :mask-closable="false" @on-cancel="cancelForReview" :width="1040">
+            <p slot="header">
+                <span class="modal-title-class">档案送审</span>
+            </p>
+            <div class="modal-content">
+                <!--标签页-->
+                <el-tabs tab-position="left">
+                    <el-tab-pane label="选择流程">
+                        <div class="first">
+                            <div class="juinline">
+                                <span>
+                                    流程名称:
+                                    <el-input class="input" type="text" v-model.trim="proConditions.processName"
+                                              placeholder="请输入名称" size="small"></el-input>
+                                </span>
+                                <span>
+                                    分类:
+                                    <el-select class="input" v-model="proConditions.categoryId"
+                                               placeholder="请选择" size="small">
+                                        <el-option v-for="item in categoryListD"
+                                                   :key="item.id"
+                                                   :label="item.categoryName"
+                                                   :value="item.id">
+                                            <span style="float: left">{{ item.categoryName }}</span>
+                                        </el-option>
+                                    </el-select>
+                                </span>
+                            </div>
+                            <div class="butRight">
+                                <el-button type="primary" @click="listProcessByQuery" size="small">搜索</el-button>
+                                <el-button @click="clearProConditions" size="small">清空</el-button>
+                            </div>
+                        </div>
+                        <!--表格-->
+                        <div>
+                            <!--表格主体-->
+                            <i-table row-key="id" class="table" border height="auto" highlight-row="true"
+                                     size='small' :columns="proColumn" :data="nowProData"
+                                     @on-selection-change="onSelectionChange">
+                                <template slot-scope="{ row, index }" slot="action">
+                                    <el-button type="primary" size="mini" @click="openViewStepModal(index)">查看流程步骤图
+                                    </el-button>
+                                    <el-button type="success" size="mini" @click="selectProcess(index)"
+                                               v-if="nowProData[index].isSelected === false">
+                                        选择
+                                    </el-button>
+                                    <el-button type="danger" size="mini" v-else>
+                                        已选择
+                                    </el-button>
+                                </template>
+                            </i-table>
+                            <!--底部分页功能-->
+                            <div class="div-inline-right">
+                                <Page :current="proPageNum" :total="proTotalNum" :page-size="proPageSize"
+                                      @on-change="onProPageChange" show-total show-elevator>
+                                </Page>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="选择审核人">
+                        <div v-if="processSelected === true">
+                            <!--选人-->
+                            <div class="class-float-left audit-user">
+                                <!--提示当前流程选择完成之后，需要选择审核人的角色-->
+                                <div class="audit-role-tip">当前审核的角色：{{process.roleName}}</div>
+                                <div class="first">
+                                    <div class="juinline">
+                                        <span>
+                                            姓名:
+                                            <el-input class="input" type="text" v-model.trim="userConditions.userName"
+                                                      size="mini"></el-input>
+                                        </span>
+                                        <span>
+                                            手机号:
+                                            <el-input class="input" type="text" v-model.trim="userConditions.phone"
+                                                      size="mini"></el-input>
+                                        </span>
+                                        <span>
+                                            所属部门:
+                                            <el-select class="input" v-model="userConditions.departmentId" size="small">
+                                                <el-option v-for="item in departmentList"
+                                                           :key="item.id"
+                                                           :label="item.name"
+                                                           :value="item.id">
+                                                    <span style="float: left">{{ item.name }}</span>
+                                                </el-option>
+                                            </el-select>
+                                        </span>
+                                    </div>
+                                    <div class="butRight">
+                                        <el-button type="primary" @click="listAuditUser" size="mini">搜索
+                                        </el-button>
+                                        <el-button @click="clearUserConditions" size="mini">清空</el-button>
+                                    </div>
+                                </div>
+                                <!-- 表格 -->
+                                <div>
+                                    <!--表格主体-->
+                                    <i-table row-key="id" class="table" border height="auto" highlight-row="true"
+                                             size='small' :columns="userColumn" :data="nowUserData">
+                                        <template slot-scope="{ row, index }" slot="action">
+                                            <el-button type="success" size="mini"
+                                                       v-if="nowUserData[index].isSelected === false"
+                                                       @click="selectAuditUser(index)">选择
+                                            </el-button>
+                                            <el-button type="danger" size="mini" v-else>已选择</el-button>
+                                        </template>
+                                    </i-table>
+                                    <!--底部分页功能-->
+                                    <div class="div-inline-right">
+                                        <Page :current="userPageNum" :total="userTotalNum" :page-size="userPageSize"
+                                              @on-change="onUserPageChange" show-total show-elevator>
+                                        </Page>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--流程步骤展示-->
+                            <div class="class-float-left process-steps">
+                                <div class="process-name">{{process.processName}}</div>
+                                <el-steps direction="vertical" :space="90" :active="999999" finish-status="process">
+                                    <el-step v-for="item in processStepsList" :id="item.id" :title="item.stepName">
+                                        <!--插槽——显示步骤剩余信息-->
+                                        <template slot="description">
+                                            <el-card class="step-row2 class-float-left"
+                                                     :body-style="{ padding: '0px 0px 0px 5px' }">
+                                                <div><i>服务角色名称：</i>{{item.roleName}}</div>
+                                                <div><i>签章情况：</i>{{item.isSignName}}</div>
+                                                <div><i>备注：</i>{{item.remark}}</div>
+                                            </el-card>
+                                        </template>
+                                    </el-step>
+                                </el-steps>
+                            </div>
+                        </div>
+                        <div v-else class="null-process-class">
+                            请先选择流程,否则无法匹配流程步骤信息
+                        </div>
+                    </el-tab-pane>
+                    <!--流程步骤条-->
+                    <!---->
+
+                </el-tabs>
+            </div>
+            <div slot="footer">
+                <i-button type="text" size="large" @click="cancelForReview">取消</i-button>
+                <i-button type="primary" size="large" @click="forReview">确定</i-button>
+            </div>
+        </Modal>
+
+
+
+    </div>
+    <div style="clear: both"></div>
+    <layout-footer></layout-footer>
+
+</div>
+<script type="text/javascript" src="/templates/archive/js/myArchive.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+package org.jit.sose.domain.param;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * @author wufang
+ * @Date 2020-07-11 17:56:36
+ */
+@ApiModel(value = "ListUserParam", description = "根据【所属部门、姓名、电话号码、分页】条件查询用户列表参数封装")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ListUserParam {
+
+    @ApiModelProperty(value = "部门id")
+    private Integer departmentId;
+
+    @ApiModelProperty(value = "用户姓名")
+    private String userName;
+
+    @ApiModelProperty(value = "用户电话号码")
+    private String phone;
+
+    @ApiModelProperty(value = "用户邮箱")
+    private String email;
+
+    @ApiModelProperty(value = "当前页索引")
+    private Integer pageNum;
+
+    @ApiModelProperty(value = "当前页页面大小")
+    private Integer pageSize;
+
+    @ApiModelProperty(value = "本流程的步骤标识")
+    private Integer stepId;
+
+    @ApiModelProperty(value = "选择的审核人属于的角色id")
+    private Integer roleId;
+}

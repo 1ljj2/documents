@@ -1,0 +1,74 @@
+package org.jit.sose.domain.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.annotations.ApiModel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Date;
+import java.util.List;
+
+@Data
+@ApiModel(value = "FileInfo", description = "文件信息")
+@TableName(value = "a_file_info")
+@NoArgsConstructor
+public class FileInfo {
+    @TableId(type = IdType.AUTO)
+    private Integer id;
+
+    private Integer classId;
+
+    private Integer parentId;
+
+    private String number;
+
+    private String fileName;
+
+    private String suffix;
+
+    private String prefix;
+
+    private String accessUrl;
+
+    private Integer userId;
+
+    private Integer roleId;
+
+    private String hashCode;
+
+    private String type;
+
+    private Boolean isEnable;
+
+    private String remark;
+
+    private String state;
+
+    private Date createTime;
+
+    private Date stateTime;
+
+    private byte[] fileCode;
+
+
+    private String fileCodeStr;
+
+    /**
+     * 非对称加密后的对称加密秘钥
+     */
+    private String aesKeyEncrypt;
+
+    /**
+     * 文件的base64编码
+     */
+    private String base64;
+
+
+
+    private List<Object> parameters;
+
+    private List<Integer> roleIdList;
+
+}

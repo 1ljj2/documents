@@ -1,0 +1,41 @@
+package org.jit.sose.service;
+
+import org.jit.sose.domain.entity.UserRole;
+
+/**
+ * @author 小红
+ * @Date 2020/7/9 17:23
+ */
+public interface UserRoleService {
+
+    /**
+     * 注册时用户选择的基本角色
+     * @param record
+     * @return
+     */
+    int register(UserRole record);
+
+    /**
+     * 判断这个用户是否有公告审核权限
+     * @param userId
+     * @return
+     */
+	int checkAuditNoticePermission(Integer userId);
+
+	/**
+	 * 判断这个用户是否有文档审核权限
+	 * @param userId
+	 * @return
+	 */
+	int checkAuditFilePermission(Integer userId);
+
+	/**
+	 * 判断这个用户是否有档案审核权限
+	 * @param userId
+	 * @return
+	 */
+	int checkAuditArcPermission(Integer userId);
+
+
+    int checkAuditPersonPermission(Integer userId);
+}

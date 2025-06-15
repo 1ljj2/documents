@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.YearTermMapper">
+    <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.YearTerm">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="term_name" property="termName" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="state_date" property="stateDate" jdbcType="TIMESTAMP"/>
+        <result column="state" property="state" jdbcType="CHAR"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, term_name, remark, state_date, state
+  </sql>
+
+    <select id="selectNameById" resultType="java.lang.String" parameterType="java.lang.Integer">
+        SELECT
+        term_name
+        FROM
+        `t_year_term`
+        WHERE
+        state = 'A'
+        <if test="id != null">
+            AND id = #{id,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <select id="listTermByName" resultType="org.jit.sose.domain.vo.ListIdNameVo" parameterType="java.lang.String">
+        SELECT
+        id,
+        term_name AS `name`
+        FROM
+        `t_year_term`
+        WHERE state = 'A'
+        <if test="name != null">
+            AND term_name LIKE CONCAT('%',#{name,jdbcType=VARCHAR},'%')
+        </if>
+    </select>
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select
+        <include refid="Base_Column_List"/>
+        from t_year_term
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_year_term
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+    <insert id="insert" parameterType="org.jit.sose.domain.entity.YearTerm">
+    insert into t_year_term (id, term_name, remark, 
+      state_date, state)
+    values (#{id,jdbcType=INTEGER}, #{termName,jdbcType=VARCHAR}, #{remark,jdbcType=VARCHAR}, 
+      #{stateDate,jdbcType=TIMESTAMP}, #{state,jdbcType=CHAR})
+  </insert>
+    <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.YearTerm">
+        insert into t_year_term
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="termName != null">
+                term_name,
+            </if>
+            <if test="remark != null">
+                remark,
+            </if>
+            <if test="stateDate != null">
+                state_date,
+            </if>
+            <if test="state != null">
+                state,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="termName != null">
+                #{termName,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="stateDate != null">
+                #{stateDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="state != null">
+                #{state,jdbcType=CHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.YearTerm">
+        update t_year_term
+        <set>
+            <if test="termName != null">
+                term_name = #{termName,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="stateDate != null">
+                state_date = #{stateDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="state != null">
+                state = #{state,jdbcType=CHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.YearTerm">
+    update t_year_term
+    set term_name = #{termName,jdbcType=VARCHAR},
+      remark = #{remark,jdbcType=VARCHAR},
+      state_date = #{stateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

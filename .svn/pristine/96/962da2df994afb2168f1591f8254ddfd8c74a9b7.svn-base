@@ -1,0 +1,27 @@
+package org.jit.sose.domain.entity;
+
+import java.sql.Timestamp;
+import java.util.Date;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+@Data
+@ApiModel(value = "Mess")
+@AllArgsConstructor
+@NoArgsConstructor
+public class Mess {
+    private Integer id;
+
+    private String title;
+
+    private String content;
+
+    private String state;
+
+    private Timestamp createTime;
+
+    private Timestamp stateTime;
+}

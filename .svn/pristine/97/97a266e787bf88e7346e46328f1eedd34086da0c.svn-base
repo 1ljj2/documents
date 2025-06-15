@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.NoticeAuditMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.NoticeAudit" >
+    <result column="id" property="id" jdbcType="INTEGER" />
+    <result column="notice_id" property="noticeId" jdbcType="INTEGER" />
+    <result column="user_id" property="userId" jdbcType="INTEGER" />
+    <result column="state" property="state" jdbcType="CHAR" />
+    <result column="state_time" property="stateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  <!-- 新增公告审核用户 -->
+	<insert id="addAuditNoticeCon" parameterType="org.jit.sose.domain.param.AddNoticeAuditParam" useGeneratedKeys="false" keyProperty="id">
+        insert into t_notice_audit
+	      <trim prefix="(" suffix=")" suffixOverrides=",">
+            notice_id, user_id
+        </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	        #{noticeId,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER}
+        </trim>
+    </insert>
+  
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.NoticeAudit" >
+    insert into t_notice_audit (id, notice_id, user_id, 
+      state, state_time)
+    values (#{id,jdbcType=INTEGER}, #{noticeId,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER}, 
+      #{state,jdbcType=CHAR}, #{stateTime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="org.jit.sose.domain.entity.NoticeAudit" >
+    insert into t_notice_audit
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="noticeId != null" >
+        notice_id,
+      </if>
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="state != null" >
+        state,
+      </if>
+      <if test="stateTime != null" >
+        state_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="noticeId != null" >
+        #{noticeId,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null" >
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="state != null" >
+        #{state,jdbcType=CHAR},
+      </if>
+      <if test="stateTime != null" >
+        #{stateTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+</mapper>

@@ -1,0 +1,127 @@
+package org.jit.sose.controller.config;
+
+import com.alibaba.fastjson.JSONObject;
+import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
+import com.github.xiaoymin.knife4j.annotations.DynamicParameter;
+import com.github.xiaoymin.knife4j.annotations.DynamicParameters;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import org.jit.sose.domain.entity.Eecstate;
+import org.jit.sose.domain.vo.PageInfoVo;
+import org.jit.sose.service.EecstateService;
+import org.jit.sose.util.ResponseUtil;
+import org.jit.sose.util.StringUtil;
+import org.jit.sose.web.response.CommonRespT;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@ApiResponses({@ApiResponse(code = 200, message = "Request Success"),
+        @ApiResponse(code = 401, message = "Authentication Failure"),
+        @ApiResponse(code = 402, message = "Login Information Invalid"),
+        @ApiResponse(code = 403, message = "No Permission"), @ApiResponse(code = 500, message = "Request fail")})
+@Api(tags = "域表接口")
+@RestController
+@RequestMapping("/config/eecstate")
+public class EecstateController {
+
+    @Autowired
+    private EecstateService eecstateService;
+
+    /**
+     * 根据table和colm查询域表集合
+     * @return Eecstate集合
+     */
+    @RequestMapping(value = "/listByTableColm", method = RequestMethod.POST)
+    public CommonRespT<List<Eecstate>> listByTableColm(@RequestBody Eecstate eecstate) {
+        List<Eecstate> eecstateList = eecstateService.listByTableColm(eecstate.getTable(), eecstate.getColm());
+        return ResponseUtil.successT(eecstateList);
+    }
+
+	@RequestMapping(value = "/selectById", method = RequestMethod.POST)
+	public Eecstate selectById(@RequestBody Integer id) {
+		return eecstateService.selectById(id);
+	}
+
+	/**
+	 * 插入域表信息
+	 * 
+	 * @param table_name 表名 (String----长度20)
+	 * @param colm_name  列名(String----长度20)
+	 * @param code       编码(char----长度1)
+	 * @param code_name  编码名(Stringr----长度20)
+	 * @param seq        序号(Integer----长度2)
+	 * @param remark     备注(String----长度200)
+	 * @return success/fail
+	 */
+	@RequestMapping(value = "/insert", method = RequestMethod.POST)
+	public String insert(@RequestBody Eecstate eecstate) {
+		String result = eecstateService.insert(eecstate);
+		return ResponseUtil.success(result);
+	}
+
+	/**
+	 * 插入域表信息
+	 * 
+	 * @param table_name 表名 (String----长度20)
+	 * @param colm_name  列名(String----长度20)
+	 * @param code       编码(char----长度1)
+	 * @param code_name  编码名(Stringr----长度20)
+	 * @param seq        序号(Integer----长度2)
+	 * @param remark     备注(Stringr----长度200)
+	 * @return success/fail
+	 */
+	@RequestMapping(value = "/update", method = RequestMethod.POST)
+	public void update(@RequestBody Eecstate eecstate) {
+		eecstateService.update(eecstate);
+	}
+
+	/**
+	 * 逻辑删除课程信息
+	 * 
+	 * @param id 课程标识(Integer----长度5)
+	 * @return map
+	 */
+	@RequestMapping(value = "/delete", method = RequestMethod.POST)
+	public void delete(@RequestBody Integer id) {
+		eecstateService.delete(id);
+	}
+
+	/**
+	 * 批量逻辑删除课程信息
+	 * 
+	 * @param id 课程标识(Integer----长度5)
+	 * @return map
+	 */
+	@RequestMapping(value = "/deleteSelection", method = RequestMethod.POST)
+	public Integer deleteSelection(@RequestBody List<Integer> idList) {
+		return eecstateService.deleteSelection(idList);
+	}
+
+    @ApiOperation(value = "查询域表集合", notes = "根据表名、列名过滤查询")
+    @ApiOperationSupport(params = @DynamicParameters(properties = {
+            @DynamicParameter(name = "tableName", value = "表名", required = true, dataTypeClass = String.class, example = "公用表"),
+            @DynamicParameter(name = "colmName", value = "列名", required = true, dataTypeClass = String.class, example = "状态"),
+            @DynamicParameter(name = "pageNum", value = "当前页码", required = true, dataTypeClass = String.class, example = "1"),
+            @DynamicParameter(name = "pageSize", value = "每页条数", required = true, dataTypeClass = String.class, example = "10")}))
+    @PostMapping(value = "/listPageInfo")
+    public CommonRespT<PageInfoVo<Eecstate>> listPageInfo(@RequestBody JSONObject json) {
+        Eecstate eecstate = new Eecstate();
+        // 过滤查询条件
+        String tableName = json.getString("tableName");
+        String colmName = json.getString("colmName");
+        eecstate.setTableName(StringUtil.isEmpty(tableName) ? null : tableName);
+        eecstate.setColmName(StringUtil.isEmpty(colmName) ? null : colmName);
+        // 当前页码
+        Integer pageNum = json.getInteger("pageNum");
+        // 每页条数
+        Integer pageSize = json.getInteger("pageSize");
+        System.out.println(eecstate);
+        PageInfoVo<Eecstate> pageInfo = eecstateService.selectPageInfo(eecstate, pageNum, pageSize);
+        return ResponseUtil.successT(pageInfo);
+    }
+
+}

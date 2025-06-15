@@ -1,0 +1,40 @@
+package org.jit.sose.mapper;
+
+import org.apache.ibatis.annotations.Param;
+import org.jit.sose.domain.entity.Category;
+import org.jit.sose.domain.vo.ListCategoryVo;
+
+import java.util.List;
+
+public interface CategoryMapper {
+
+    /**
+     * 根据类型获取分类
+     *
+     * @param type
+     * @return
+     */
+    List<ListCategoryVo> listCategoryByType(@Param("type") String type);
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(Category record);
+
+    int insertSelective(Category record);
+
+    Category selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(Category record);
+
+    int updateByPrimaryKey(Category record);
+
+    List<Category> selectCategory(Category one);//--------------------------------
+
+    Integer insertOneCategory(Category oneCategory);
+
+    Integer updateOneCategory(Category oneCategory);
+
+    Integer deleteOneCategory(@Param("id") Integer id);
+
+    Integer deleteSelectedCategory(int[] idList);
+}

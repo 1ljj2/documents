@@ -1,0 +1,89 @@
+package org.jit.sose.mapper;
+
+import org.jit.sose.domain.entity.ProcessSteps;
+
+public interface ProcessStepsMapper {
+
+
+    /**
+     * 根据id更新其父步骤标识
+     *
+     * @param id
+     * @param pStepId
+     */
+    void updateNextStep(@Param("id") Integer id, @Param("pStepId") Integer pStepId);
+
+    /**
+     * 将指定的步骤的父步骤置为0
+     *
+     * @param id
+     */
+    void updatePStepIdTo0(@Param("id") Integer id);
+
+    /**
+     * 删除指定id的流程
+     *
+     * @param id
+     */
+    void removeStep(@Param("id") Integer id);
+
+    /**
+     * 查询出该流程的下一个流程
+     *
+     * @param id
+     * @return
+     */
+    Integer selectNextStepIdById(@Param("id") Integer id);
+
+    /**
+     * 根据id查询pStepId，即查询该流程的上一个流程id
+     *
+     * @param id
+     * @return
+     */
+    Integer selectPStepIdById(@Param("id") Integer id);
+
+    /**
+     * 新增单个流程步骤
+     *
+     * @param param
+     */
+    void addStep(ProcessSteps param);
+
+    /**
+     * 用id作为p_step_id查询出下一个流程步骤
+     *
+     * @param pStepId
+     * @return
+     */
+    ListStepsVo selectStepByPStepId(@Param("pStepId") Integer pStepId);
+
+    /**
+     * 根据流程标识获取第一个流程步骤
+     *
+     * @param processId
+     * @return
+     */
+    ListStepsVo selectFirStepByProcessId(@Param("processId") Integer processId);
+
+    /**
+     * 根据idList流程步骤对象
+     *
+     * @param idList
+     * @return
+     */
+    List<ListStepsVo> viewStepByIdList(List<Integer> idList);
+
+
+    int deleteByPrimaryKey(Integer id);
+
+    int insert(ProcessSteps record);
+
+    int insertSelective(ProcessSteps record);
+
+    ProcessSteps selectByPrimaryKey(Integer id);
+
+    int updateByPrimaryKeySelective(ProcessSteps record);
+
+    int updateByPrimaryKey(ProcessSteps record);
+}

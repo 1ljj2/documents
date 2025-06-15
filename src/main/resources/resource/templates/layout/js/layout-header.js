@@ -1,0 +1,146 @@
+// 负责页面头部信息的展示
+module.exports = {
+    data: function () {
+        return {
+            realTime: '', userName: '', todoAffairCount: '',
+            projectName: 'project'
+        }
+    },
+    mounted() {
+        this.showProjectName();
+        this.showUserName();
+        // 页面加载完后显示当前时间
+        this.realTime = this.dealWithTime(new Date());
+        // 定时刷新时间
+        let _this = this;
+        // 定时器
+        this.timer = setInterval(function () {
+            _this.realTime = _this.dealWithTime(new Date()) // 修改数据date
+        }, 1000)
+    },
+    methods: {
+        /**
+         * 获取TXT文件中定义的项目名
+         */
+        // 通过 cookieUtil 从 cookie 中获取项目名，如果 cookie 中没有则通过 AJAX 请求 /config/txtRead/getSystemInfo 接口获取。
+        showProjectName() {
+            if (IsNotEmpty(window.cookieUtil.get("projectName"))) {
+                this.projectName = window.cookieUtil.get("projectName");
+            } else {
+                let url = '/config/txtRead/getSystemInfo';
+                CallAjaxGetNoParam(url, this.showProjectNameSuc);
+            }
+        },
+        showProjectNameSuc(data) {
+            var map = data.obj;
+            for (var key in map) {
+                window.cookieUtil.set(key, map[key]);
+            }
+            this.projectName = window.cookieUtil.get("projectName");
+        },
+        /**
+         * 用户名展示
+         */
+        showUserName() {
+            let userName = window.cookieUtil.get("userName");
+            if (IsNotEmpty(userName) && 'undefined' !== userName) {
+                this.userName = userName;
+                return;
+            }
+            this.userName = 'Test';
+            let url = '/account/login/getUserInfo';
+            // CallAjaxGetNoParam(url, this.showUserNameSuc);
+        },
+
+        /**
+         * 查询菜单列表回调函数
+         * @param data 请求返回参数
+         */
+        showUserNameSuc(data) {
+            this.userName = data.obj.user.userName;
+            // 将用户信息放入cookie中
+            window.cookieUtil.set("userName", data.obj.userName, '6h');
+        },
+
+        /**
+         * 展示需要读的消息条数
+         * 【先写静态的到时候再改】
+         */
+        showTodoAffairCount() {
+            let todoAffairCount = 10;
+        },
+        showTodoAffairCountSuc(data) {
+
+        },
+        jumpTodoAffair(path) {
+            window.location.href = METHOD_URL + '/affair/todoAffair.html';
+        },
+        /**
+         * 退出按钮
+         */
+        quitLogin() {
+            // 清除浏览器缓存
+            window.sessionStorage.removeItem("menuVoList");
+            window.cookieUtil.del("userName");
+            window.cookieUtil.del("Authorization");
+            let url = '/account/login/exit';
+            // CallAjaxGetNoParam(url, this.quitLoginSuc);
+            this.quitLoginSuc();
+        },
+
+        /**
+         * 查询菜单列表回调函数
+         * @param data 请求返回参数
+         */
+        quitLoginSuc(data) {
+            window.location.href = METHOD_URL
+        },
+        //实时时间
+        dealWithTime(data) {
+            let formatDateTime;
+            let Y = data.getFullYear();
+            let M = data.getMonth() + 1;
+            let D = data.getDate();
+            let H = data.getHours();
+            let Min = data.getMinutes();
+            let S = data.getSeconds();
+            let W = data.getDay();
+            H = H < 10 ? ('0' + H) : H;
+            Min = Min < 10 ? ('0' + Min) : Min;
+            S = S < 10 ? ('0' + S) : S;
+            switch (W) {
+                case 0:
+                    W = '天';
+                    break;
+                case 1:
+                    W = '一';
+                    break;
+                case 2:
+                    W = '二';
+                    break;
+                case 3:
+                    W = '三';
+                    break;
+                case 4:
+                    W = '四';
+                    break;
+                case 5:
+                    W = '五';
+                    break;
+                case 6:
+                    W = '六';
+                    break;
+                default:
+                    break
+            }
+            formatDateTime = Y + '年' + M + '月' + D + '日 ' + H + ':' + Min + ':' + S + ' 星期' + W;
+            return formatDateTime
+        }
+    },
+    // 注意在vue实例销毁前，清除我们的定时器。
+    destroyed() {
+        if (this.timer) {
+            clearInterval(this.timer)
+        }
+    }
+};

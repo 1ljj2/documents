@@ -1,0 +1,39 @@
+package org.jit.sose.web.filter;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * 在security中配置，自定义过滤器，在security过滤器链首先执行<br>
+ * 拦截所有直接以路径访问的页面，强制使用请求后端跳转
+ * 
+ * @author wangyue
+ * @date 2020-04-24 13:34:01
+ */
+@Slf4j
+public class BaseFilter extends OncePerRequestFilter {
+
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {
+		// 除去host（域名或者ip）部分的路径
+		String requestUri = request.getRequestURI();
+		System.out.println("执行BaseFiltger");
+		// 拦截所有.html的请求，但不拦截swagger和knife4j
+		if (requestUri.endsWith(".html") && !requestUri.contains("swagger") && !"/doc.html".equals(requestUri)
+				&& !"/index.html".equals(requestUri)) {
+			log.trace("禁止访问:" + requestUri);
+			// 重定向至首页
+			response.sendRedirect("/");
+			return;
+		}
+		filterChain.doFilter(request, response);
+	}
+
+}

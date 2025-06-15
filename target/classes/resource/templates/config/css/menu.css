@@ -1,0 +1,16 @@
+@CHARSET "UTF-8";
+
+.search-input {
+    width: 400px;
+}
+
+/*--------------------*/
+
+.ivu-table .table-cell-info-pstate-pass {
+    color: green;
+}
+
+.ivu-table .table-cell-info-pstate-back {
+    color: red;
+}
+

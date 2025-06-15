@@ -1,0 +1,137 @@
+package org.jit.sose.properties;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+
+/**
+ * 腾讯云短信配置项
+ *
+ * @author wangyue
+ * @date 2019-06-20 10:46:24
+ */
+@Configuration
+@PropertySource("classpath:properties/qcloudSms.properties")
+public class QcloudSmsProperties {
+
+    /**
+     * 短信应用SDK appId
+     */
+    public static Integer appId;
+
+    /**
+     * 短信应用SDK appKey
+     */
+    public static String appKey;
+
+    /**
+     * 签名使用的是`签名内容`，而不是`签名ID`
+     */
+    public static String smsSign;
+
+    /**
+     * 自定义短信验证码的长度
+     */
+    public static Integer smsCodeLength;
+
+    /**
+     * 注册模板ID
+     */
+    public static Integer registerTemplateId;
+
+    /**
+     * 忘记密码模板ID
+     */
+    public static Integer forgetPwdTemplateId;
+
+    /**
+     * 登录模板ID
+     */
+    public static Integer loginTemplateId;
+
+    /**
+     * 注册验证码有效时间,单位分钟
+     */
+    public static String registerFailureTime;
+
+    /**
+     * 忘记密码验证码有效时间,单位分钟
+     */
+    public static String forgetPwdFailureTime;
+
+    /**
+     * 登录验证码有效时间,单位分钟
+     */
+    public static String loginFailureTime;
+
+    /**
+     * 待办事宜的短信提醒模板ID
+     */
+    public static Integer backLogSmsTemplateIdId;
+
+    /**
+     * 【送审】- 短信提醒模板ID
+     */
+    public static Integer auditSmsTemplateId;
+
+    @Value("${auditSmsTemplateId}")
+    public void setAuditSmsTemplateId(Integer auditSmsTemplateId) {
+        QcloudSmsProperties.auditSmsTemplateId = auditSmsTemplateId;
+    }
+
+    @Value("${appId}")
+    public void setAppId(Integer appId) {
+        QcloudSmsProperties.appId = appId;
+    }
+
+    @Value("${appKey}")
+    public void setAppKey(String appKey) {
+        QcloudSmsProperties.appKey = appKey;
+    }
+
+    @Value("${smsSign}")
+    public void setSmsSign(String smsSign) {
+        QcloudSmsProperties.smsSign = smsSign;
+    }
+
+    @Value("${smsCodeLength}")
+    public void setSmsCodeLength(Integer smsCodeLength) {
+        QcloudSmsProperties.smsCodeLength = smsCodeLength;
+    }
+
+    @Value("${registerTemplateId}")
+    public void setRegisterTemplateId(Integer registerTemplateId) {
+        QcloudSmsProperties.registerTemplateId = registerTemplateId;
+    }
+
+    @Value("${forgetPwdTemplateId}")
+    public void setForgetPwdTemplateId(Integer forgetPwdTemplateId) {
+        QcloudSmsProperties.forgetPwdTemplateId = forgetPwdTemplateId;
+    }
+
+    @Value("${loginTemplateId}")
+    public void setLoginTemplateId(Integer loginTemplateId) {
+        QcloudSmsProperties.loginTemplateId = loginTemplateId;
+    }
+
+    @Value("${registerFailureTime}")
+    public void setRegisterFailureTime(String registerFailureTime) {
+        QcloudSmsProperties.registerFailureTime = registerFailureTime;
+    }
+
+    @Value("${forgetPwdFailureTime}")
+    public void setForgetPwdFailureTime(String forgetPwdFailureTime) {
+        QcloudSmsProperties.forgetPwdFailureTime = forgetPwdFailureTime;
+    }
+
+    @Value("${loginFailureTime}")
+    public void setLoginFailureTime(String loginFailureTime) {
+        QcloudSmsProperties.loginFailureTime = loginFailureTime;
+    }
+
+    @Value("${backLogSmsTemplateIdId}")
+    public void setBackLogSmsTemplateIdId(Integer backLogSmsTemplateIdId) {
+        QcloudSmsProperties.backLogSmsTemplateIdId = backLogSmsTemplateIdId;
+    }
+
+}

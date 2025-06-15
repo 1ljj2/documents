@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jit.sose.mapper.PermissionsTypeMapper" >
+  <resultMap id="BaseResultMap" type="org.jit.sose.domain.entity.PermissionsType" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="type_name" property="typeName" jdbcType="VARCHAR" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="seq" property="seq" jdbcType="INTEGER" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+    <result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="update_date" property="updateDate" jdbcType="TIMESTAMP" />
+    <result column="state" property="state" jdbcType="CHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, type_name, description, seq, remark, create_date, update_date, state
+  </sql>
+
+  <select id="listType"  resultMap="BaseResultMap">
+   SELECT
+        id,
+        type_name,
+        description
+    FROM
+        `a_permissions_type`
+    WHERE
+        state = 'A'
+    ORDER BY
+        update_date DESC
+  </select>
+
+  <select id="showPermissionsType" resultType="java.lang.String" parameterType="java.lang.Integer" >
+    SELECT
+        type_name
+    FROM
+        `a_permissions_type`
+    WHERE
+        state = 'A'
+    AND id = #{id,jdbcType=INTEGER}
+  </select>
+
+  <select id="getTypeName" resultType="java.lang.String">
+    SELECT DISTINCT
+        type_name
+    FROM
+        `a_permissions_type`
+    WHERE
+        state = 'A'
+  </select>
+
+  <select id="viewTypeByPermissionId" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    SELECT
+        t.id,
+        t.type_name,
+        t.description,
+        t.remark
+    FROM
+        `a_permissions` p
+    LEFT JOIN a_permissions_type t ON (
+        p.permissions_type_id = t.id
+        AND t.state = 'A'
+    )
+    WHERE
+        p.state = 'A'
+    AND p.id = #{permissionId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectIdByTypeName" resultType="java.lang.Integer" parameterType="java.lang.String" >
+    SELECT
+        id
+    FROM
+        `a_permissions_type`
+    WHERE
+        state = 'A'
+    AND type_name = #{typeName,jdbcType=VARCHAR}
+  </select>
+
+
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from a_permissions_type
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from a_permissions_type
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="org.jit.sose.domain.entity.PermissionsType" >
+    insert into a_permissions_type
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+        type_name,
+        description,
+      <if test="seq != null" >
+        seq,
+      </if>
+      <if test="remark != null" >
+        remark,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+        #{typeName,jdbcType=VARCHAR},
+        #{description,jdbcType=VARCHAR},
+      <if test="seq != null" >
+        #{seq,jdbcType=INTEGER},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="org.jit.sose.domain.entity.PermissionsType" >
+    update a_permissions_type
+    <set >
+      <if test="typeName != null" >
+        type_name = #{typeName,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="seq != null" >
+        seq = #{seq,jdbcType=INTEGER},
+      </if>
+      <if test="remark != null" >
+        remark = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateDate != null" >
+        update_date = #{updateDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="state != null" >
+        state = #{state,jdbcType=CHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="org.jit.sose.domain.entity.PermissionsType" >
+    update a_permissions_type
+    set type_name = #{typeName,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      seq = #{seq,jdbcType=INTEGER},
+      remark = #{remark,jdbcType=VARCHAR},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      update_date = #{updateDate,jdbcType=TIMESTAMP},
+      state = #{state,jdbcType=CHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

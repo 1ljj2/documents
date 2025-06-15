@@ -1,0 +1,45 @@
+@CHARSET "UTF-8";
+body {
+    height: 100%;
+    overflow: auto;
+}
+
+.layout-main {
+    float: right;
+    width: 87%;
+    height: 100%;
+    border: 24px solid #FFF5EE;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    background: #FFF5EE;
+}
+.class-float-left {
+    float: left;
+}
+.upload-tip {
+    font-size: 10px;
+}
+.modal-table {
+    border-collapse: separate;
+    border-spacing: 8px;
+}
+.ivu-table-cell-slot{
+	display: flex; 
+    align-items: center;
+}
+
+.modal-content{
+    min-height: 300px;
+}
+.upload-class{
+    padding-left: 10px;
+}
+
+.file-charge-css .input {
+    width: 180px;
+}
+
+.file-charge-search-button {
+    padding: 8px 0;
+}
+
