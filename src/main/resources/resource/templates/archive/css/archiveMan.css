@@ -17,7 +17,8 @@ body {
 .el-tabs__header {
     position: relative;
     margin: 0 0 0px;
-    background-color: #FFF5EE;
+    /*background-color: #FFF5EE;*/
+    background-color； #051E42;
     padding-bottom: 15px;
 }
 
@@ -106,7 +107,8 @@ body {
 }
 
 .file-pool-class {
-    border: 3px dashed #485460;
+    /*border: 3px dashed #485460;*/
+    margin-top: 15px;
 }
 .class-float-left {
     float: left;
